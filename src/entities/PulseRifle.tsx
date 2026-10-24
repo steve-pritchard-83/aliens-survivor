@@ -122,8 +122,18 @@ export function PulseRifle() {
           const spread = Math.min(0.03, continuousFireRef.current * 0.007);
           _rayDir.x += (Math.random() - 0.5) * spread; _rayDir.y += (Math.random() - 0.5) * spread; _rayDir.normalize();
           const res = CombatSystem.fireRay(_rayOrigin, _rayDir);
-          if (res.hitXenoId !== null) state.registerHit();
-          else if (Math.random() < 0.35) AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.32, 0.9 + Math.random() * 0.2);
+          const envRes = CombatSystem.fireEnvironmentRay(_rayOrigin, _rayDir);
+
+          if (res.hitXenoId !== null && res.hitPoint) {
+            const alienDist = _rayOrigin.distanceTo(res.hitPoint);
+            if (envRes && _rayOrigin.distanceTo(envRes.point) < alienDist) {
+              CombatSystem.triggerWallImpact(envRes.point, envRes.normal, _rayDir);
+              AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.45, 0.9 + Math.random() * 0.2);
+            } else state.registerHit();
+          } else if (envRes) {
+            CombatSystem.triggerWallImpact(envRes.point, envRes.normal, _rayDir);
+            AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.45, 0.9 + Math.random() * 0.2);
+          }
           if (state.ammo <= 0) { AudioManager.stopPulseLoop(true); wasFiringRef.current = false; }
         } else if (state.ammo <= 0) {
           if (wasFiringRef.current) { AudioManager.stopPulseLoop(true); wasFiringRef.current = false; }

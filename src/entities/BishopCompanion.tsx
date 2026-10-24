@@ -150,7 +150,11 @@ export function BishopCompanion() {
       const targetHeight = bestTarget.id === 99 ? 0.25 : 0.72;
       if (muzzleMarkerRef.current) muzzleMarkerRef.current.getWorldPosition(_rayOrigin); else _rayOrigin.set(st.x, 0.92, st.z);
       _rayDir.set(bestTarget.x - _rayOrigin.x, targetHeight - _rayOrigin.y, bestTarget.z - _rayOrigin.z).normalize();
-      CombatSystem.fireRay(_rayOrigin, _rayDir);
+      const hit = CombatSystem.fireRay(_rayOrigin, _rayDir);
+      const envHit = CombatSystem.fireEnvironmentRay(_rayOrigin, _rayDir);
+      if (envHit && (!hit.hitPoint || _rayOrigin.distanceTo(envHit.point) < _rayOrigin.distanceTo(hit.hitPoint))) {
+        CombatSystem.triggerWallImpact(envHit.point, envHit.normal, _rayDir);
+      }
       AudioManager.play3D('pulse_shot', st.x, 0.95, st.z, 0.36, 1.04 + Math.random() * 0.04);
     }
 

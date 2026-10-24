@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
+import { CombatSystem } from '../core/CombatEvents';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { AlienEggs } from './AlienEggs';
 
@@ -62,6 +63,7 @@ export function CorridorLevel() {
   const beacon3Ref = useRef<THREE.Group>(null);
   const beacon4Ref = useRef<THREE.Group>(null);
   const steamRef = useRef<THREE.Points>(null);
+  const sectorMeshGroupRef = useRef<THREE.Group>(null);
 
   const { c1, c2, c3, c4 } = useMemo(() => {
     const s1 = scene.clone(true), s2 = scene.clone(true), s3 = scene.clone(true), s4 = scene.clone(true);
@@ -92,6 +94,27 @@ export function CorridorLevel() {
         }
       });
     });
+
+    const raycaster = new THREE.Raycaster();
+    const _normMatrix = new THREE.Matrix3();
+    CombatSystem.registerEnvRaycaster((origin, dir) => {
+      const grp = sectorMeshGroupRef.current;
+      if (!grp) return null;
+      raycaster.set(origin, dir);
+      raycaster.far = 52.0;
+      const hits = raycaster.intersectObjects(grp.children, true);
+      if (hits.length > 0) {
+        const h = hits[0];
+        const norm = h.face ? h.face.normal.clone() : new THREE.Vector3(0, 1, 0);
+        _normMatrix.getNormalMatrix(h.object.matrixWorld);
+        norm.applyNormalMatrix(_normMatrix).normalize();
+        if (norm.dot(dir) > 0) norm.negate();
+        return { point: h.point, normal: norm };
+      }
+      return null;
+    });
+
+    return () => { CombatSystem.unregisterEnvRaycaster(); };
   }, [c1, c2, c3, c4]);
 
   const steamGeo = useMemo(() => {
@@ -156,12 +179,13 @@ export function CorridorLevel() {
         <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={15.0} decay={1.15} />
       ))}
 
-      {/* South Sector Loop (Z = 8.30..22.10) */}
-      <primitive object={c1} receiveShadow />
-      <primitive object={c2} position={[-13.8, 0, 30.4]} rotation={[0, Math.PI, 0]} receiveShadow />
-      {/* North Sector Loop (Z = 22.10..35.90) */}
-      <primitive object={c3} position={[0, 0, 13.8]} receiveShadow />
-      <primitive object={c4} position={[-13.8, 0, 44.2]} rotation={[0, Math.PI, 0]} receiveShadow />
+      {/* South & North Sector Loops */}
+      <group ref={sectorMeshGroupRef}>
+        <primitive object={c1} receiveShadow />
+        <primitive object={c2} position={[-13.8, 0, 30.4]} rotation={[0, Math.PI, 0]} receiveShadow />
+        <primitive object={c3} position={[0, 0, 13.8]} receiveShadow />
+        <primitive object={c4} position={[-13.8, 0, 44.2]} rotation={[0, Math.PI, 0]} receiveShadow />
+      </group>
       {/* Randomly positioned, subtly back-lit Ovomorph Eggs */}
       <AlienEggs />
 

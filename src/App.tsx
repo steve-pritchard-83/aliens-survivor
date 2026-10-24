@@ -8,6 +8,7 @@ import { PulseRifle } from './entities/PulseRifle';
 import { XenomorphPool } from './entities/XenomorphPool';
 import { SmallAlienSpawner } from './entities/SmallAlienSpawner';
 import { BishopCompanion } from './entities/BishopCompanion';
+import { WallImpactFX } from './entities/WallImpactFX';
 import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
 import { VRHud } from './ui/VRHud';
@@ -37,6 +38,7 @@ export function App() {
           <XROrigin position={[-0.8, 0, 13.0]} />
           <Suspense fallback={null}>
             <CorridorLevel />
+            <WallImpactFX />
             <PlayerController />
             <PulseRifle />
             <MotionTracker />
