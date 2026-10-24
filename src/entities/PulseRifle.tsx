@@ -2,13 +2,29 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, ActiveThreat } from '../core/GameStore';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem } from '../core/CombatEvents';
+import { Haptics } from '../core/Haptics';
 
 const FIRE_INTERVAL = 0.085; // ~700 RPM iconic M41A cycle rate
 const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3();
+
+function checkAutoTarget(camPos: THREE.Vector3, camDir: THREE.Vector3, threats: ActiveThreat[], small: ActiveThreat | null): boolean {
+  if (CombatSystem.fireRay(camPos, camDir).hitXenoId !== null) return true;
+  for (let i = 0; i < threats.length; i++) {
+    const t = threats[i];
+    if (t.state === 'DEAD') continue;
+    const dx = t.x - camPos.x, dz = t.z - camPos.z, d2 = dx * dx + dz * dz;
+    if (d2 > 0.4 && d2 < 625 && (dx * camDir.x + dz * camDir.z) / Math.sqrt(d2) > 0.985) return true;
+  }
+  if (small && small.state !== 'DEAD') {
+    const dx = small.x - camPos.x, dz = small.z - camPos.z, d2 = dx * dx + dz * dz;
+    if (d2 > 0.2 && d2 < 400 && (dx * camDir.x + dz * camDir.z) / Math.sqrt(d2) > 0.98) return true;
+  }
+  return false;
+}
 
 function createMuzzleStarTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas'); c.width = 512; c.height = 512;
@@ -73,10 +89,15 @@ export function PulseRifle() {
       } else if (state.reloadProgress > 0.85 && lastReloadStage.current === 2) {
         AudioManager.play2D('reload_slap', 0.85); lastReloadStage.current = 3;
         recoilOffset.current = -0.045; recoilPitch.current = -0.06; recoilRoll.current = 0.14; boltKick.current = 1.0;
+        Haptics.reload();
       }
     } else lastReloadStage.current = 0;
 
-    const isFiring = InputManager.isFiringActive();
+    let isFiring = InputManager.isFiringActive();
+    if (!isFiring && InputManager.mode === 'TOUCH' && !state.isReloading && !state.isJammed && state.ammo > 0) {
+      camera.getWorldPosition(_rayOrigin); camera.getWorldDirection(_camDir);
+      if (checkAutoTarget(_rayOrigin, _camDir, state.activeThreats, state.smallThreat)) isFiring = true;
+    }
     fireCooldown.current = Math.max(0, fireCooldown.current - dt);
     if (isFiring && !state.isReloading && !state.isJammed) {
       continuousFireRef.current += dt;
@@ -92,6 +113,7 @@ export function PulseRifle() {
           recoilRoll.current = (Math.random() - 0.5) * 0.065;
           boltKick.current = 1.0; muzzleTimer.current = 0.055;
           AudioManager.playPulseShot();
+          Haptics.fire();
           if (muzzleGroupRef.current) {
             muzzleGroupRef.current.rotation.z = Math.random() * Math.PI * 2;
             muzzleGroupRef.current.scale.setScalar(0.85 + Math.random() * 0.35);

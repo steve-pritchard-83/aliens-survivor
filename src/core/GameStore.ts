@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Haptics } from './Haptics';
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT';
 export type WavePhase = 1 | 2 | 3 | 4;
@@ -184,6 +185,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       shotsFired: state.shotsFired + 1,
       screenShake: Math.max(state.screenShake, 0.24)
     });
+    if (nextAmmo === 0) get().startReload();
     return true;
   },
 
@@ -197,6 +199,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   takeDamage: (amount, now) => {
     const state = get();
     if (state.status !== 'PLAYING') return;
+    Haptics.damage();
     const nextHp = Math.max(0, state.hp - amount);
     set({
       hp: nextHp,
@@ -208,8 +211,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   addScreenShake: (intensity) => set((s) => ({ screenShake: Math.min(1.0, Math.max(s.screenShake, intensity)) })),
-  registerKill: () => set((s) => ({ kills: s.kills + 1 })),
-  registerHit: () => set((s) => ({ shotsHit: s.shotsHit + 1 })),
+  registerKill: () => { Haptics.kill(); set((s) => ({ kills: s.kills + 1 })); },
+  registerHit: () => { Haptics.hit(); set((s) => ({ shotsHit: s.shotsHit + 1 })); },
   toggleTracker: () => set((s) => ({ trackerRaised: !s.trackerRaised })),
   toggleFlashlight: () => set((s) => ({ flashlightOn: !s.flashlightOn })),
   updatePlayerTransform: (x, y, z, yaw) => set({ playerPos: [x, y, z], playerYaw: yaw }),

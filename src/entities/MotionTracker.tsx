@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
+import { Haptics } from '../core/Haptics';
 import { trackerCanvasState } from '../core/TrackerState';
 
 const MAX_RANGE = 25.0; // 25 metres tactical corridor radar range
@@ -163,6 +164,7 @@ export function MotionTracker() {
       pingTriggeredOnSweepRef.current = true;
       const proximity = 1.0 - Math.min(1.0, closestDist / MAX_RANGE);
       AudioManager.play2D('tracker_ping', 0.24 + proximity * 0.14, 0.95 + proximity * 0.85);
+      Haptics.trackerPing();
     }
 
     ctx.fillStyle = '#02100a'; ctx.fillRect(4, 222, 248, 28);

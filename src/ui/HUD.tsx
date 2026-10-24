@@ -4,10 +4,13 @@ import { InputManager, InputMode } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { xrStore } from '../core/XRStore';
 
+interface BeforeInstallEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 function formatTimer(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  const ms = Math.floor((sec % 1) * 10);
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60), ms = Math.floor((sec % 1) * 10);
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
 }
 
@@ -22,12 +25,29 @@ export function HUD() {
   const resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
+  const [joyOrigin, setJoyOrigin] = useState<[number, number] | null>(null);
   const [joyOffset, setJoyOffset] = useState<[number, number]>([0, 0]);
-  const joyOriginRef = useRef<[number, number] | null>(null);
-  const lookTouchRef = useRef<[number, number] | null>(null);
+  const joyTouchId = useRef<number | null>(null);
+  const lookTouchId = useRef<number | null>(null);
+  const lookLastPos = useRef<[number, number] | null>(null);
+
+  const [isStandalone, setIsStandalone] = useState(true);
+  const [pwaBypassed, setPwaBypassed] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
-    return InputManager.onModeChange((m) => setInputMode(m));
+    const unsub = InputManager.onModeChange(setInputMode);
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    setIsStandalone(standalone);
+    const mobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent) || ('ontouchstart' in window && navigator.maxTouchPoints > 1);
+    setIsMobileDevice(mobile);
+
+    const handlePrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallEvent); };
+    window.addEventListener('beforeinstallprompt', handlePrompt);
+    return () => { unsub(); window.removeEventListener('beforeinstallprompt', handlePrompt); };
   }, []);
 
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
@@ -49,23 +69,72 @@ export function HUD() {
     InputManager.requestPointerLock();
   };
 
-  const onLeftTouchStart = (e: React.TouchEvent) => { joyOriginRef.current = [e.changedTouches[0].clientX, e.changedTouches[0].clientY]; };
-  const onLeftTouchMove = (e: React.TouchEvent) => {
-    if (!joyOriginRef.current) return;
-    const t = e.changedTouches[0], dx = t.clientX - joyOriginRef.current[0], dy = t.clientY - joyOriginRef.current[1];
-    const dist = Math.min(48, Math.hypot(dx, dy)), angle = Math.atan2(dy, dx);
-    const ox = Math.cos(angle) * dist, oy = Math.sin(angle) * dist;
-    setJoyOffset([ox, oy]); InputManager.setTouchMove(ox / 48, -oy / 48);
-  };
-  const onLeftTouchEnd = () => { joyOriginRef.current = null; setJoyOffset([0, 0]); InputManager.setTouchMove(0, 0); };
-  const onRightTouchStart = (e: React.TouchEvent) => { lookTouchRef.current = [e.changedTouches[0].clientX, e.changedTouches[0].clientY]; };
-  const onRightTouchMove = (e: React.TouchEvent) => {
-    if (!lookTouchRef.current) return;
+  const onLeftTouchStart = (e: React.TouchEvent) => {
     const t = e.changedTouches[0];
-    InputManager.addTouchLook((t.clientX - lookTouchRef.current[0]) * 0.0055, (t.clientY - lookTouchRef.current[1]) * 0.0055);
-    lookTouchRef.current = [t.clientX, t.clientY];
+    joyTouchId.current = t.identifier;
+    setJoyOrigin([t.clientX, t.clientY]);
+    setJoyOffset([0, 0]);
   };
-  const onRightTouchEnd = () => { lookTouchRef.current = null; };
+  const onLeftTouchMove = (e: React.TouchEvent) => {
+    if (!joyOrigin) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === joyTouchId.current) {
+        const dx = t.clientX - joyOrigin[0], dy = t.clientY - joyOrigin[1];
+        const dist = Math.min(48, Math.hypot(dx, dy)), angle = Math.atan2(dy, dx);
+        const ox = Math.cos(angle) * dist, oy = Math.sin(angle) * dist;
+        setJoyOffset([ox, oy]);
+        InputManager.setTouchMove(ox / 48, -oy / 48);
+        break;
+      }
+    }
+  };
+  const onLeftTouchEnd = (e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joyTouchId.current) {
+        joyTouchId.current = null;
+        setJoyOrigin(null);
+        setJoyOffset([0, 0]);
+        InputManager.setTouchMove(0, 0);
+        break;
+      }
+    }
+  };
+  const onRightTouchStart = (e: React.TouchEvent) => {
+    const t = e.changedTouches[0];
+    lookTouchId.current = t.identifier;
+    lookLastPos.current = [t.clientX, t.clientY];
+  };
+  const onRightTouchMove = (e: React.TouchEvent) => {
+    if (!lookLastPos.current) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === lookTouchId.current) {
+        const dx = t.clientX - lookLastPos.current[0], dy = t.clientY - lookLastPos.current[1];
+        InputManager.addTouchLook(dx * 0.0055, dy * 0.0055);
+        lookLastPos.current = [t.clientX, t.clientY];
+        break;
+      }
+    }
+  };
+  const onRightTouchEnd = (e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === lookTouchId.current) {
+        lookTouchId.current = null;
+        lookLastPos.current = null;
+        break;
+      }
+    }
+  };
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') setIsStandalone(true);
+      setDeferredPrompt(null);
+    }
+  };
+
   const accuracy = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
 
   return (
@@ -73,80 +142,68 @@ export function HUD() {
       {damageFlash > 0 && (
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle, transparent 40%, rgba(220, 15, 15, ${damageFlash * 0.68}) 100%)`, pointerEvents: 'none' }} />
       )}
-
-      {/* Center Reticle */}
       {status === 'PLAYING' && (
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 22, height: 22, transform: 'translate(-50%, -50%)', border: '1.5px solid rgba(0, 255, 136, 0.7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 4, height: 4, background: '#00ff88', borderRadius: '50%' }} />
         </div>
       )}
-
-      {/* Mobile Touch Controls - strictly only visible when touch input is active */}
       {status === 'PLAYING' && inputMode === 'TOUCH' && (
         <>
-          <div
-            onTouchStart={onLeftTouchStart}
-            onTouchMove={onLeftTouchMove}
-            onTouchEnd={onLeftTouchEnd}
-            style={{ position: 'absolute', bottom: 205, left: 28, width: 110, height: 110, borderRadius: '50%', border: '1.5px dashed rgba(0, 255, 136, 0.35)', background: 'rgba(0, 40, 25, 0.2)', pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(0, 255, 136, 0.45)', transform: `translate(${joyOffset[0]}px, ${joyOffset[1]}px)` }} />
-          </div>
-          <div onTouchStart={onRightTouchStart} onTouchMove={onRightTouchMove} onTouchEnd={onRightTouchEnd} style={{ position: 'absolute', top: 90, right: 0, width: '45%', bottom: 180, pointerEvents: 'auto' }} />
-          <button
-            onTouchStart={() => InputManager.setTouchFire(true)}
-            onTouchEnd={() => InputManager.setTouchFire(false)}
-            onMouseDown={() => InputManager.setTouchFire(true)}
-            onMouseUp={() => InputManager.setTouchFire(false)}
-            style={{ position: 'absolute', bottom: 125, right: 28, width: 84, height: 84, borderRadius: '50%', background: 'rgba(220, 40, 25, 0.55)', border: '2px solid #ff5533', color: '#fff', fontFamily: 'inherit', fontSize: 16, letterSpacing: 1, pointerEvents: 'auto', cursor: 'pointer' }}
-          >
-            FIRE
-          </button>
+          <div onTouchStart={onLeftTouchStart} onTouchMove={onLeftTouchMove} onTouchEnd={onLeftTouchEnd} onTouchCancel={onLeftTouchEnd} style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'auto' }} />
+          <div onTouchStart={onRightTouchStart} onTouchMove={onRightTouchMove} onTouchEnd={onRightTouchEnd} onTouchCancel={onRightTouchEnd} style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'auto' }} />
+          {joyOrigin && (
+            <div style={{ position: 'fixed', left: joyOrigin[0] - 55, top: joyOrigin[1] - 55, width: 110, height: 110, borderRadius: '50%', border: '2px solid rgba(0, 255, 136, 0.55)', background: 'radial-gradient(circle, rgba(0, 45, 25, 0.5) 0%, rgba(0, 255, 136, 0.1) 100%)', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0, 255, 136, 0.75)', boxShadow: '0 0 14px rgba(0, 255, 136, 0.6)', transform: `translate(${joyOffset[0]}px, ${joyOffset[1]}px)` }} />
+            </div>
+          )}
+          <div style={{ position: 'absolute', bottom: 18, left: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[LEFT SCREEN: MOVE]</div>
+          <div style={{ position: 'absolute', bottom: 18, right: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[RIGHT SCREEN: AIM // AUTO-FIRE]</div>
         </>
       )}
-
-      {/* Pause Overlay Modal */}
-      {status === 'PAUSED' && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{ position: 'absolute', inset: 0, background: 'rgba(3, 10, 7, 0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}
-        >
-          <h1 style={{ fontSize: 50, letterSpacing: 6, color: '#00ff88', marginBottom: 8 }}>TACTICAL PAUSE</h1>
-          <p style={{ color: '#99d6be', fontSize: 16, marginBottom: 24 }}>
-            TIME REMAINING: {formatTimer(timeRemaining)} // HOSTILES ELIMINATED: {kills}
-          </p>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={handleResume} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>
-              RESUME MISSION
-            </button>
-            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#ff6644', border: '2px solid #ff6644', borderRadius: 4, cursor: 'pointer' }}>
-              RESTART DROP
+      {isMobileDevice && !isStandalone && !pwaBypassed && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.94)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 100, padding: 24, textAlign: 'center' }}>
+          <div style={{ border: '2px solid #00ff88', padding: '24px 28px', maxWidth: 480, background: 'rgba(0, 20, 10, 0.85)', borderRadius: 6, boxShadow: '0 0 30px rgba(0, 255, 136, 0.25)' }}>
+            <div style={{ color: '#ffaa33', fontSize: 13, letterSpacing: 3, marginBottom: 8 }}>WEYLAND-YUTANI // USCM PROTOCOL</div>
+            <h2 style={{ fontSize: 24, letterSpacing: 4, color: '#00ff88', marginBottom: 14 }}>INSTALL PWA FOR FULL IMMERSION</h2>
+            <p style={{ color: '#99d6be', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
+              Directives mandate installing the tactical terminal to your home screen for ultra-low latency haptics, full-screen lock, and hardware acceleration.
+            </p>
+            {deferredPrompt ? (
+              <button onClick={handleInstallPWA} style={{ width: '100%', padding: '14px 20px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', marginBottom: 12 }}>
+                INSTALL MISSION PWA
+              </button>
+            ) : (
+              <div style={{ background: 'rgba(0, 255, 136, 0.1)', border: '1px solid rgba(0, 255, 136, 0.3)', padding: 12, borderRadius: 4, fontSize: 13, color: '#aaffd4', marginBottom: 16 }}>
+                Tap Share [⎋] or Browser Menu (⋮) &amp; select <strong>"Add to Home Screen"</strong>
+              </div>
+            )}
+            <button onClick={() => setPwaBypassed(true)} style={{ background: 'transparent', border: '1px solid #669988', color: '#88bbaa', padding: '8px 16px', fontSize: 13, fontFamily: 'inherit', letterSpacing: 1.5, cursor: 'pointer', borderRadius: 4 }}>
+              BYPASS PROTOCOL (BROWSER MODE)
             </button>
           </div>
         </div>
       )}
-
-      {/* Main Briefing / Victory / Defeat Modal */}
+      {status === 'PAUSED' && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 10, 7, 0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 50, letterSpacing: 6, color: '#00ff88', marginBottom: 8 }}>TACTICAL PAUSE</h1>
+          <p style={{ color: '#99d6be', fontSize: 16, marginBottom: 24 }}>TIME REMAINING: {formatTimer(timeRemaining)} // HOSTILES ELIMINATED: {kills}</p>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={handleResume} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>RESUME MISSION</button>
+            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#ff6644', border: '2px solid #ff6644', borderRadius: 4, cursor: 'pointer' }}>RESTART DROP</button>
+          </div>
+        </div>
+      )}
       {(status === 'MENU' || status === 'VICTORY' || status === 'DEFEAT') && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}
-        >
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}>
           <h1 style={{ fontSize: 54, letterSpacing: 6, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
             {status === 'MENU' ? 'ALIENS SURVIVOR' : status === 'VICTORY' ? 'DROPSHIP DOCKED // SURVIVED' : 'MIA // BIO-SIGNALS FLATLINED'}
           </h1>
           <p style={{ maxWidth: 540, color: '#99d6be', fontSize: 16, lineHeight: 1.5, marginBottom: 24 }}>
-            {status === 'MENU'
-              ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.'
-              : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
+            {status === 'MENU' ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.' : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>
-              {status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}
-            </button>
-            <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#00ff88', border: '2px solid #00ff88', borderRadius: 4, cursor: 'pointer' }}>
-              ENTER META QUEST XR
-            </button>
+            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
+            <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#00ff88', border: '2px solid #00ff88', borderRadius: 4, cursor: 'pointer' }}>ENTER META QUEST XR</button>
           </div>
         </div>
       )}
