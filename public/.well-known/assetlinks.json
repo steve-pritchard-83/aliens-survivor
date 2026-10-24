@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.aliens_survivor.twa",
+      "sha256_cert_fingerprints": [
+        "E7:68:41:71:55:58:D9:58:D1:91:CE:3A:96:3E:6A:44:64:EF:31:24:42:91:AB:8C:CD:4D:2E:0B:FC:AE:4A:25"
+      ]
+    }
+  }
+]
