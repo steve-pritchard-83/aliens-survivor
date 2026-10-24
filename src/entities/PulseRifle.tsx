@@ -176,8 +176,9 @@ export function PulseRifle() {
           camera.parent.position.z + xrControllerState.rightHand.position.z
         );
         weaponGroupRef.current.quaternion.copy(xrControllerState.rightHand.quaternion);
-        weaponGroupRef.current.translateZ(recoilOffset.current);
-        weaponGroupRef.current.rotateX(-0.18 + recoilPitch.current);
+        weaponGroupRef.current.translateY(-0.02);
+        weaponGroupRef.current.translateZ(-0.06 + recoilOffset.current);
+        weaponGroupRef.current.rotateX(-0.62 + recoilPitch.current);
         weaponGroupRef.current.getWorldDirection(_camDir).negate();
         flashLightTarget.position.copy(weaponGroupRef.current.position).addScaledVector(_camDir, 28.0);
       } else {

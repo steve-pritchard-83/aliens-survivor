@@ -5,7 +5,7 @@ export const xrStore = createXRStore({
   hand: false,
   emulate: false,
   offerSession: false,
-  enterGrantedSession: false,
+  enterGrantedSession: ['immersive-vr'],
   domOverlay: false,
   layers: false,
   meshDetection: false,
