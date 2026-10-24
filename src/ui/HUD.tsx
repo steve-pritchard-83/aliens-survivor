@@ -66,7 +66,8 @@ export function HUD() {
     if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
       AudioManager.stopBGM(); AudioManager.setKlaxonActive(false); AudioManager.play2D('defeat', 0.95);
     } else if (status === 'VICTORY' && prevStatusRef.current !== 'VICTORY') {
-      AudioManager.stopBGM(); AudioManager.setKlaxonActive(false);
+      AudioManager.setKlaxonActive(false);
+      AudioManager.resumeBGM();
     }
     prevStatusRef.current = status;
   }, [status]);
