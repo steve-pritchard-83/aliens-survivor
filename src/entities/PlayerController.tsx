@@ -9,6 +9,7 @@ import { constrainToCorridor } from '../core/CorridorNav';
 
 const MOVE_SPEED = 4.2; // metres per second
 const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
+const _worldQuat = new THREE.Quaternion();
 const _forward = new THREE.Vector3();
 const _right = new THREE.Vector3();
 
@@ -142,7 +143,15 @@ export function PlayerController() {
       _euler.set(pitchRef.current + shakePitch, yawRef.current + shakeYaw, shakeRoll, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
     } else {
-      _euler.setFromQuaternion(camera.quaternion, 'YXZ');
+      if (camera.parent) {
+        if (snap.snapTurn !== 0) {
+          xrYawRef.current += snap.snapTurn;
+          camera.parent.rotation.y = xrYawRef.current;
+        }
+        camera.parent.updateMatrixWorld();
+      }
+      camera.getWorldQuaternion(_worldQuat);
+      _euler.setFromQuaternion(_worldQuat, 'YXZ');
       yawRef.current = _euler.y;
     }
 
@@ -170,11 +179,8 @@ export function PlayerController() {
     const shakeX = shake > 0 ? Math.sin(now * 63) * shake * 0.025 : 0;
     const eyeY = 1.15 + bobOffset + shakeY;
     if (snap.mode === 'XR' && camera.parent) {
-      if (snap.snapTurn !== 0) {
-        xrYawRef.current += snap.snapTurn;
-        camera.parent.rotation.y = xrYawRef.current;
-      }
       camera.parent.position.set(nextX, 0, nextZ);
+      camera.parent.updateMatrixWorld();
     } else {
       camera.position.set(nextX + _right.x * shakeX, eyeY, nextZ + _right.z * shakeX);
     }

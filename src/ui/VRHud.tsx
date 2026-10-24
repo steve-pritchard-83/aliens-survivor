@@ -8,7 +8,7 @@ import { AudioManager } from '../core/AudioManager';
 import { trackerCanvasState } from '../core/TrackerState';
 import { xrControllerState } from '../core/XRControllerState';
 
-const _camFwd = new THREE.Vector3();
+const _camFwd = new THREE.Vector3(), _wristPos = new THREE.Vector3(), _camPos = new THREE.Vector3(), _camQuat = new THREE.Quaternion();
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -142,9 +142,11 @@ export function VRHud() {
       defeatTimerRef.current += dt;
       if (statusMeshRef.current) {
         statusMeshRef.current.visible = true;
-        _camFwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
-        statusMeshRef.current.position.copy(camera.position).addScaledVector(_camFwd, 1.7);
-        statusMeshRef.current.quaternion.copy(camera.quaternion);
+        camera.getWorldDirection(_camFwd);
+        camera.getWorldPosition(_camPos);
+        camera.getWorldQuaternion(_camQuat);
+        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
+        statusMeshRef.current.quaternion.copy(_camQuat);
         drawPanel(st.status, st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
       }
       if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
@@ -165,8 +167,9 @@ export function VRHud() {
     if (wristGroupRef.current) {
       wristGroupRef.current.visible = st.status === 'PLAYING';
       if (xrControllerState.leftHand.active && camera.parent) {
-        wristGroupRef.current.position.set(camera.parent.position.x + xrControllerState.leftHand.position.x, xrControllerState.leftHand.position.y, camera.parent.position.z + xrControllerState.leftHand.position.z);
-        wristGroupRef.current.quaternion.copy(xrControllerState.leftHand.quaternion);
+        _wristPos.copy(xrControllerState.leftHand.position).applyQuaternion(camera.parent.quaternion);
+        wristGroupRef.current.position.copy(camera.parent.position).add(_wristPos);
+        wristGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(xrControllerState.leftHand.quaternion);
         wristGroupRef.current.translateY(0.06); wristGroupRef.current.translateZ(-0.04); wristGroupRef.current.rotateX(-Math.PI / 2);
       } else {
         wristGroupRef.current.position.copy(camera.position); wristGroupRef.current.quaternion.copy(camera.quaternion);

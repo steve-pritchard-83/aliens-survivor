@@ -11,7 +11,7 @@ import { xrControllerState } from '../core/XRControllerState';
 import { getMuzzleStarTexture } from '../core/MuzzleTexture';
 
 const FIRE_INTERVAL = 0.085;
-const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3(), _losDir = new THREE.Vector3();
+const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3(), _losDir = new THREE.Vector3(), _handPos = new THREE.Vector3();
 
 function checkAutoTarget(camPos: THREE.Vector3, camDir: THREE.Vector3, threats: ActiveThreat[], small: ActiveThreat | null): boolean {
   let hasCandidate = false;
@@ -170,12 +170,9 @@ export function PulseRifle() {
 
     if (weaponGroupRef.current) {
       if (xrControllerState.rightHand.active && camera.parent) {
-        weaponGroupRef.current.position.set(
-          camera.parent.position.x + xrControllerState.rightHand.position.x,
-          xrControllerState.rightHand.position.y,
-          camera.parent.position.z + xrControllerState.rightHand.position.z
-        );
-        weaponGroupRef.current.quaternion.copy(xrControllerState.rightHand.quaternion);
+        _handPos.copy(xrControllerState.rightHand.position).applyQuaternion(camera.parent.quaternion);
+        weaponGroupRef.current.position.copy(camera.parent.position).add(_handPos);
+        weaponGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(xrControllerState.rightHand.quaternion);
         weaponGroupRef.current.translateY(-0.02);
         weaponGroupRef.current.translateZ(-0.06 + recoilOffset.current);
         weaponGroupRef.current.rotateX(-0.62 + recoilPitch.current);
