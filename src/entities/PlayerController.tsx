@@ -18,6 +18,7 @@ export function PlayerController() {
   const ripleyRef = useRef<THREE.Group>(null);
   const yawRef = useRef(Math.PI);
   const pitchRef = useRef(0);
+  const xrYawRef = useRef(0);
   const headBobTimer = useRef(0);
   const prevStatusRef = useRef(useGameStore.getState().status);
 
@@ -66,6 +67,8 @@ export function PlayerController() {
       camera.rotation.z = 0;
       yawRef.current = Math.PI;
       pitchRef.current = 0;
+      xrYawRef.current = 0;
+      if (camera.parent) camera.parent.rotation.y = 0;
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
     } else if (status === 'DEFEAT' || status === 'VICTORY' || status === 'PAUSED') {
@@ -167,6 +170,10 @@ export function PlayerController() {
     const shakeX = shake > 0 ? Math.sin(now * 63) * shake * 0.025 : 0;
     const eyeY = 1.15 + bobOffset + shakeY;
     if (snap.mode === 'XR' && camera.parent) {
+      if (snap.snapTurn !== 0) {
+        xrYawRef.current += snap.snapTurn;
+        camera.parent.rotation.y = xrYawRef.current;
+      }
       camera.parent.position.set(nextX, 0, nextZ);
     } else {
       camera.position.set(nextX + _right.x * shakeX, eyeY, nextZ + _right.z * shakeX);

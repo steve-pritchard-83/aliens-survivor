@@ -6,6 +6,7 @@ export interface InputSnapshot {
   moveZ: number; // -1 (backward) to +1 (forward)
   lookDeltaX: number;
   lookDeltaY: number;
+  snapTurn: number;
   isFiring: boolean;
   reloadRequested: boolean;
   pointerLocked: boolean;
@@ -20,6 +21,7 @@ class InputManagerController {
   private xrMoveZ = 0;
   private lookDX = 0;
   private lookDY = 0;
+  private snapTurnAngle = 0;
   private mouseDown = false;
   private touchFiring = false;
   private xrFiring = false;
@@ -176,7 +178,7 @@ class InputManagerController {
   }
 
   public addSnapTurn(angle: number): void {
-    this.lookDX += angle;
+    this.snapTurnAngle += angle;
   }
 
   public isFiringActive(): boolean {
@@ -213,6 +215,7 @@ class InputManagerController {
     const moveZ = this.mode === 'XR' ? this.xrMoveZ : (kbZ !== 0 ? kbZ : this.touchMoveZ);
     const isFiring = this.mouseDown || this.touchFiring || this.xrFiring;
     const reloadRequested = this.reloadFlag;
+    const snapTurn = this.snapTurnAngle;
 
     const snap: InputSnapshot = {
       mode: this.mode,
@@ -220,6 +223,7 @@ class InputManagerController {
       moveZ,
       lookDeltaX: Math.max(-0.22, Math.min(0.22, this.lookDX)),
       lookDeltaY: Math.max(-0.22, Math.min(0.22, this.lookDY)),
+      snapTurn,
       isFiring,
       reloadRequested,
       pointerLocked: this.pointerLocked
@@ -227,6 +231,7 @@ class InputManagerController {
 
     this.lookDX = 0;
     this.lookDY = 0;
+    this.snapTurnAngle = 0;
     this.reloadFlag = false;
     return snap;
   }

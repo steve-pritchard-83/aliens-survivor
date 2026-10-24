@@ -14,7 +14,7 @@ export const xrStore = createXRStore({
   anchors: false,
   foveation: 1.0,
   frameRate: () => 72,
-  frameBufferScaling: 1.0,
+  frameBufferScaling: 0.70,
   customSessionInit: {
     requiredFeatures: ['local-floor'],
     optionalFeatures: ['hand-tracking']

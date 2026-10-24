@@ -129,7 +129,7 @@ export function VRHud() {
           const turnAxis = axes.length >= 4 ? axes[2] : (axes.length >= 2 ? axes[0] : 0);
           if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
             snapTurnCoolRef.current = true;
-            InputManager.addSnapTurn(turnAxis > 0 ? Math.PI / 2 : -Math.PI / 2);
+            InputManager.addSnapTurn(turnAxis > 0 ? -Math.PI / 2 : Math.PI / 2);
           } else if (Math.abs(turnAxis) < 0.25) snapTurnCoolRef.current = false;
         }
       }
