@@ -7,8 +7,10 @@ import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem } from '../core/CombatEvents';
 import { Haptics } from '../core/Haptics';
+import { xrControllerState } from '../core/XRControllerState';
+import { getMuzzleStarTexture } from '../core/MuzzleTexture';
 
-const FIRE_INTERVAL = 0.085; // ~700 RPM iconic M41A cycle rate
+const FIRE_INTERVAL = 0.085;
 const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3(), _losDir = new THREE.Vector3();
 
 function checkAutoTarget(camPos: THREE.Vector3, camDir: THREE.Vector3, threats: ActiveThreat[], small: ActiveThreat | null): boolean {
@@ -49,31 +51,6 @@ function checkAutoTarget(camPos: THREE.Vector3, camDir: THREE.Vector3, threats: 
   return false;
 }
 
-function createMuzzleStarTexture(): THREE.CanvasTexture {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
-  const ctx = c.getContext('2d')!, cx = 256, cy = 256;
-  const coreGrad = ctx.createRadialGradient(cx, cy, 4, cx, cy, 240);
-  coreGrad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
-  coreGrad.addColorStop(0.18, 'rgba(255, 245, 190, 0.96)');
-  coreGrad.addColorStop(0.45, 'rgba(255, 145, 25, 0.55)');
-  coreGrad.addColorStop(0.75, 'rgba(255, 60, 0, 0.15)');
-  coreGrad.addColorStop(1.0, 'rgba(255, 30, 0, 0.0)');
-  ctx.fillStyle = coreGrad; ctx.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 4; i++) {
-    ctx.save(); ctx.translate(cx, cy); ctx.rotate((i * Math.PI) / 2 + Math.PI / 4); ctx.scale(1.0, 0.16);
-    const plumeGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 248);
-    plumeGrad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
-    plumeGrad.addColorStop(0.35, 'rgba(255, 210, 95, 0.85)');
-    plumeGrad.addColorStop(0.7, 'rgba(255, 110, 15, 0.35)');
-    plumeGrad.addColorStop(1.0, 'rgba(255, 50, 0, 0.0)');
-    ctx.fillStyle = plumeGrad; ctx.beginPath(); ctx.arc(0, 0, 248, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
-  tex.generateMipmaps = false; tex.needsUpdate = true;
-  return tex;
-}
-
 export function PulseRifle() {
   const { scene } = useGLTF('/models/pulse_rifle.glb');
   const { camera, scene: worldScene } = useThree();
@@ -89,7 +66,7 @@ export function PulseRifle() {
     return { clonedRifle: r, sliderNode: r.getObjectByName('slider_low'), triggerNode: r.getObjectByName('trigger_a_low') };
   }, [scene]);
   const flashLightTarget = useMemo(() => new THREE.Object3D(), []);
-  const muzzleTexture = useMemo(() => createMuzzleStarTexture(), []);
+  const muzzleTexture = useMemo(() => getMuzzleStarTexture(), []);
 
   useEffect(() => {
     worldScene.add(flashLightTarget);
@@ -141,7 +118,12 @@ export function PulseRifle() {
             muzzleGroupRef.current.rotation.z = Math.random() * Math.PI * 2;
             muzzleGroupRef.current.scale.setScalar(0.85 + Math.random() * 0.35);
           }
-          camera.getWorldPosition(_rayOrigin); camera.getWorldDirection(_rayDir);
+          if (xrControllerState.rightHand.active && muzzleGroupRef.current && weaponGroupRef.current) {
+            muzzleGroupRef.current.getWorldPosition(_rayOrigin);
+            weaponGroupRef.current.getWorldDirection(_rayDir).negate();
+          } else {
+            camera.getWorldPosition(_rayOrigin); camera.getWorldDirection(_rayDir);
+          }
           const spread = Math.min(0.03, continuousFireRef.current * 0.007);
           _rayDir.x += (Math.random() - 0.5) * spread; _rayDir.y += (Math.random() - 0.5) * spread; _rayDir.normalize();
           const res = CombatSystem.fireRay(_rayOrigin, _rayDir);
@@ -164,10 +146,7 @@ export function PulseRifle() {
         }
       }
     } else {
-      if (wasFiringRef.current) {
-        AudioManager.stopPulseLoop(true);
-        wasFiringRef.current = false;
-      }
+      if (wasFiringRef.current) { AudioManager.stopPulseLoop(true); wasFiringRef.current = false; }
       continuousFireRef.current = Math.max(0, continuousFireRef.current - dt * 2.5);
     }
 
@@ -190,32 +169,45 @@ export function PulseRifle() {
     if (tracerMeshRef.current) tracerMeshRef.current.visible = muzzleTimer.current > 0.02;
 
     if (weaponGroupRef.current) {
-      const t = clock.getElapsedTime(), p = state.reloadProgress;
-      const swayX = Math.sin(t * 2.2) * 0.0025, swayY = Math.cos(t * 4.4) * 0.0025;
-      let rX = 0, rY = 0, rZ = 0, rPitch = 0, rYaw = 0, rRoll = 0;
-      if (state.isReloading) {
-        if (p < 0.36) {
-          const k = Math.sin((p / 0.36) * (Math.PI / 2));
-          rX = -0.03 * k; rY = -0.09 * k; rPitch = -0.24 * k; rRoll = 0.52 * k; rYaw = 0.16 * k;
-        } else if (p < 0.72) {
-          const u = (p - 0.36) / 0.36, slap = Math.exp(-Math.pow((u - 0.56) * 8, 2)) * 0.065;
-          rX = -0.03; rY = -0.12 + slap; rPitch = -0.28 + slap * 1.6; rRoll = 0.56 - u * 0.15; rYaw = 0.16;
-        } else {
-          const u = (p - 0.72) / 0.28, snap = Math.sin(u * Math.PI), rack = Math.exp(-Math.pow((u - 0.52) * 7, 2));
-          rX = -0.02 * (1 - u); rY = -0.04 * (1 - u); rZ = rack * 0.04;
-          rPitch = -0.10 * (1 - u); rRoll = -0.44 * snap; rYaw = -0.14 * snap;
+      if (xrControllerState.rightHand.active && camera.parent) {
+        weaponGroupRef.current.position.set(
+          camera.parent.position.x + xrControllerState.rightHand.position.x,
+          xrControllerState.rightHand.position.y,
+          camera.parent.position.z + xrControllerState.rightHand.position.z
+        );
+        weaponGroupRef.current.quaternion.copy(xrControllerState.rightHand.quaternion);
+        weaponGroupRef.current.translateZ(recoilOffset.current);
+        weaponGroupRef.current.rotateX(-0.18 + recoilPitch.current);
+        weaponGroupRef.current.getWorldDirection(_camDir).negate();
+        flashLightTarget.position.copy(weaponGroupRef.current.position).addScaledVector(_camDir, 28.0);
+      } else {
+        const t = clock.getElapsedTime(), p = state.reloadProgress;
+        const swayX = Math.sin(t * 2.2) * 0.0025, swayY = Math.cos(t * 4.4) * 0.0025;
+        let rX = 0, rY = 0, rZ = 0, rPitch = 0, rYaw = 0, rRoll = 0;
+        if (state.isReloading) {
+          if (p < 0.36) {
+            const k = Math.sin((p / 0.36) * (Math.PI / 2));
+            rX = -0.03 * k; rY = -0.09 * k; rPitch = -0.24 * k; rRoll = 0.52 * k; rYaw = 0.16 * k;
+          } else if (p < 0.72) {
+            const u = (p - 0.36) / 0.36, slap = Math.exp(-Math.pow((u - 0.56) * 8, 2)) * 0.065;
+            rX = -0.03; rY = -0.12 + slap; rPitch = -0.28 + slap * 1.6; rRoll = 0.56 - u * 0.15; rYaw = 0.16;
+          } else {
+            const u = (p - 0.72) / 0.28, snap = Math.sin(u * Math.PI), rack = Math.exp(-Math.pow((u - 0.52) * 7, 2));
+            rX = -0.02 * (1 - u); rY = -0.04 * (1 - u); rZ = rack * 0.04;
+            rPitch = -0.10 * (1 - u); rRoll = -0.44 * snap; rYaw = -0.14 * snap;
+          }
         }
+        weaponGroupRef.current.position.copy(camera.position);
+        weaponGroupRef.current.quaternion.copy(camera.quaternion);
+        weaponGroupRef.current.translateX(0.155 + swayX + rX + recoilYaw.current * 0.25);
+        weaponGroupRef.current.translateY(-0.145 + swayY + rY - recoilOffset.current * 0.16);
+        weaponGroupRef.current.translateZ(-0.29 + recoilOffset.current + rZ);
+        weaponGroupRef.current.rotateY(0.065 + recoilYaw.current + rYaw);
+        weaponGroupRef.current.rotateX(0.02 + recoilPitch.current + rPitch);
+        weaponGroupRef.current.rotateZ(recoilRoll.current + rRoll);
+        camera.getWorldDirection(_camDir);
+        flashLightTarget.position.copy(camera.position).addScaledVector(_camDir, 28.0);
       }
-      weaponGroupRef.current.position.copy(camera.position);
-      weaponGroupRef.current.quaternion.copy(camera.quaternion);
-      weaponGroupRef.current.translateX(0.155 + swayX + rX + recoilYaw.current * 0.25);
-      weaponGroupRef.current.translateY(-0.145 + swayY + rY - recoilOffset.current * 0.16);
-      weaponGroupRef.current.translateZ(-0.29 + recoilOffset.current + rZ);
-      weaponGroupRef.current.rotateY(0.065 + recoilYaw.current + rYaw);
-      weaponGroupRef.current.rotateX(0.02 + recoilPitch.current + rPitch);
-      weaponGroupRef.current.rotateZ(recoilRoll.current + rRoll);
-      camera.getWorldDirection(_camDir);
-      flashLightTarget.position.copy(camera.position).addScaledVector(_camDir, 28.0);
       flashLightTarget.updateMatrixWorld();
     }
   });

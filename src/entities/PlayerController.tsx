@@ -164,7 +164,11 @@ export function PlayerController() {
     const shakeY = shake > 0 ? Math.cos(now * 74) * shake * 0.032 : 0;
     const shakeX = shake > 0 ? Math.sin(now * 63) * shake * 0.025 : 0;
     const eyeY = 1.15 + bobOffset + shakeY;
-    camera.position.set(nextX + _right.x * shakeX, eyeY, nextZ + _right.z * shakeX);
+    if (snap.mode === 'XR' && camera.parent) {
+      camera.parent.position.set(nextX, 0, nextZ);
+    } else {
+      camera.position.set(nextX + _right.x * shakeX, eyeY, nextZ + _right.z * shakeX);
+    }
 
     if (ripleyRef.current) {
       ripleyRef.current.position.set(nextX + _forward.x * -0.14, 0.0, nextZ + _forward.z * -0.14);

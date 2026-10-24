@@ -175,6 +175,10 @@ class InputManagerController {
     this.reloadFlag = true;
   }
 
+  public addSnapTurn(angle: number): void {
+    this.lookDX += angle;
+  }
+
   public isFiringActive(): boolean {
     return this.mouseDown || this.touchFiring || this.xrFiring;
   }

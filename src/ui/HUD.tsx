@@ -38,13 +38,14 @@ export function HUD() {
 
   useEffect(() => {
     const unsub = InputManager.onModeChange(setInputMode);
+    const isQuest = /OculusBrowser|Quest/i.test(navigator.userAgent);
     const standalone = window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: fullscreen)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
-      window.location.search.includes('source=pwa');
+      window.location.search.includes('source=pwa') || isQuest;
     setIsStandalone(standalone);
-    const mobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) ||
-      ('ontouchstart' in window && (navigator.maxTouchPoints > 1 || window.innerWidth < 1024));
+    const mobile = !isQuest && (/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window && (navigator.maxTouchPoints > 1 || window.innerWidth < 1024)));
     setIsMobileDevice(mobile);
 
     const handlePrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallEvent); };
