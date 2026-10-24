@@ -64,7 +64,7 @@ export function HUD() {
 
   useEffect(() => {
     if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
-      AudioManager.stopBGM(); AudioManager.setKlaxonActive(false); AudioManager.play2D('defeat', 0.95);
+      AudioManager.triggerDefeat();
     } else if (status === 'VICTORY' && prevStatusRef.current !== 'VICTORY') {
       AudioManager.setKlaxonActive(false);
       AudioManager.resumeBGM();
@@ -75,6 +75,7 @@ export function HUD() {
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
     try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ }
     setPwaDismissed(true);
+    AudioManager.resetAudio();
     await AudioManager.unlock();
     AudioManager.play2D('ui_beep', 0.8);
     AudioManager.startBGM();
@@ -211,20 +212,27 @@ export function HUD() {
           </div>
         </div>
       )}
-      {(status === 'MENU' || status === 'VICTORY' || status === 'DEFEAT') && (
+      {status === 'VICTORY' && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 60, pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <video src="/movies/victory.mp4" autoPlay playsInline controls style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', top: 18, left: 22, zIndex: 65, color: '#00ff88', textShadow: '0 0 10px rgba(0,0,0,0.9)', letterSpacing: 3, fontSize: 16 }}>USS SULACO // EXTRACTION COMPLETE</div>
+          <div style={{ position: 'absolute', bottom: 20, zIndex: 65, display: 'flex', gap: 14, alignItems: 'center', background: 'rgba(2, 10, 6, 0.85)', padding: '10px 20px', borderRadius: 6, border: '1px solid rgba(0, 255, 136, 0.55)', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ color: '#aaffd4', fontSize: 13, letterSpacing: 1.5 }}>SURVIVAL TIME: 05:00.0 | KILLS: {kills} | ACC: {accuracy}%</span>
+            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '8px 22px', fontSize: 15, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>REDEPLOY MARINE</button>
+          </div>
+        </div>
+      )}
+      {(status === 'MENU' || status === 'DEFEAT') && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
-          <h1 style={{ fontSize: status === 'VICTORY' ? 44 : 52, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
-            {status === 'MENU' ? 'ALIENS SURVIVOR' : status === 'VICTORY' ? 'DROPSHIP EXTRACTION SUCCESS' : 'MIA // BIO-SIGNALS FLATLINED'}
+          <h1 style={{ fontSize: 52, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
+            {status === 'MENU' ? 'ALIENS SURVIVOR' : 'MIA // BIO-SIGNALS FLATLINED'}
           </h1>
-          {status === 'VICTORY' && (
-            <video src="/movies/victory.mp4" autoPlay playsInline controls style={{ width: '100%', maxWidth: 560, maxHeight: '42vh', borderRadius: 6, border: '2px solid #00ff88', boxShadow: '0 0 25px rgba(0, 255, 136, 0.35)', marginBottom: 14, background: '#000' }} />
-          )}
-          <p style={{ maxWidth: 540, color: '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>
+          <p style={{ maxWidth: 540, color: status === 'DEFEAT' ? '#ff9999' : '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>
             {status === 'MENU' ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.' : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
-            <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#00ff88', border: '2px solid #00ff88', borderRadius: 4, cursor: 'pointer' }}>ENTER META QUEST XR</button>
+            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
+            <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: status === 'DEFEAT' ? '#ff6666' : '#00ff88', border: `2px solid ${status === 'DEFEAT' ? '#ff6666' : '#00ff88'}`, borderRadius: 4, cursor: 'pointer' }}>ENTER META QUEST XR</button>
           </div>
         </div>
       )}

@@ -43,6 +43,8 @@ class WebAudioController {
   private activePulseSrc: AudioBufferSourceNode | null = null;
   private activePulseGain: GainNode | null = null;
   private activeTailSrc: AudioBufferSourceNode | null = null;
+  private activeSources = new Set<AudioBufferSourceNode>();
+  private defeatMute = false;
 
   public async unlock(): Promise<void> {
     if (!this.ctx) {
@@ -108,7 +110,7 @@ class WebAudioController {
   }
 
   public play2D(key: SoundKey, volume = 0.6, playbackRate = 1.0): void {
-    if (!this.ctx) return;
+    if (!this.ctx || (this.defeatMute && key !== 'defeat')) return;
     const buf = this.buffers.get(key);
     if (!buf) return;
     const src = this.ctx.createBufferSource();
@@ -118,12 +120,14 @@ class WebAudioController {
     gain.gain.value = volume;
     src.connect(gain);
     gain.connect(this.ctx.destination);
+    this.activeSources.add(src);
+    src.onended = () => { this.activeSources.delete(src); };
     src.start(0);
   }
 
   // Monophonic Pulse Rifle Burst Controller: prevents overlapping multi-shot comb-filtering echo
   public playPulseShot(): void {
-    if (!this.ctx) return;
+    if (!this.ctx || this.defeatMute) return;
     const now = this.ctx.currentTime;
     if (this.activeTailSrc) {
       try { this.activeTailSrc.stop(); } catch { /* ignore */ }
@@ -146,6 +150,8 @@ class WebAudioController {
     gain.gain.setValueAtTime(0.58, now);
     src.connect(gain);
     gain.connect(this.ctx.destination);
+    this.activeSources.add(src);
+    src.onended = () => { this.activeSources.delete(src); };
     src.start(0);
     this.activePulseSrc = src;
     this.activePulseGain = gain;
@@ -177,7 +183,7 @@ class WebAudioController {
   }
 
   public play3D(key: SoundKey, x: number, y: number, z: number, volume = 0.85, playbackRate = 1.0): void {
-    if (!this.ctx) return;
+    if (!this.ctx || (this.defeatMute && key !== 'defeat')) return;
     const buf = this.buffers.get(key);
     if (!buf) return;
     const src = this.ctx.createBufferSource();
@@ -197,7 +203,27 @@ class WebAudioController {
     src.connect(panner);
     panner.connect(gain);
     gain.connect(this.ctx.destination);
+    this.activeSources.add(src);
+    src.onended = () => { this.activeSources.delete(src); };
     src.start(0);
+  }
+
+  public stopAllSFX(): void {
+    this.activeSources.forEach((s) => { try { s.stop(); s.disconnect(); } catch { /* ignore */ } });
+    this.activeSources.clear();
+    this.stopPulseLoop(false);
+  }
+
+  public triggerDefeat(): void {
+    this.defeatMute = true;
+    this.stopBGM();
+    this.setKlaxonActive(false);
+    this.stopAllSFX();
+    this.play2D('defeat', 1.0);
+  }
+
+  public resetAudio(): void {
+    this.defeatMute = false;
   }
 
   public setKlaxonActive(active: boolean): void {
