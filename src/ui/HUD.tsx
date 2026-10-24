@@ -56,15 +56,6 @@ export function HUD() {
   }, []);
 
   useEffect(() => {
-    if (!isVrApp) return;
-    const launch = () => handleLaunch('VR');
-    xrStore.enterVR().then(() => launch()).catch(() => {
-      const retry = () => { window.removeEventListener('pointerdown', retry); window.removeEventListener('keydown', retry); launch(); };
-      window.addEventListener('pointerdown', retry, { once: true }); window.addEventListener('keydown', retry, { once: true });
-    });
-  }, [isVrApp]);
-
-  useEffect(() => {
     if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
       AudioManager.triggerDefeat();
     } else if (status === 'VICTORY' && prevStatusRef.current !== 'VICTORY') {
@@ -178,7 +169,7 @@ export function HUD() {
           <div style={{ position: 'absolute', bottom: 18, right: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[RIGHT SCREEN: AIM // AUTO-FIRE]</div>
         </>
       )}
-      {status === 'PLAYING' && isQuest && inputMode !== 'XR' && (
+      {status === 'PLAYING' && !isVrApp && isQuest && inputMode !== 'XR' && (
         <button onClick={() => xrStore.enterVR().catch(() => {})} style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', pointerEvents: 'auto', zIndex: 30, boxShadow: '0 0 25px rgba(0,255,136,0.6)' }}>
           ENTER FULLSCREEN 3D VR
         </button>
@@ -234,7 +225,7 @@ export function HUD() {
           </div>
         </div>
       )}
-      {(status === 'MENU' || (!isVrApp && status === 'DEFEAT')) && (
+      {!isVrApp && (status === 'MENU' || status === 'DEFEAT') && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
           <h1 style={{ fontSize: 50, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>{status === 'MENU' ? 'ALIENS SURVIVOR' : 'MIA // BIO-SIGNALS FLATLINED'}</h1>
           <p style={{ maxWidth: 540, color: status === 'DEFEAT' ? '#ff9999' : '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>{status === 'MENU' ? (isQuest || isVrApp ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready.' : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.') : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}</p>

@@ -12,6 +12,7 @@ import { WallImpactFX } from './entities/WallImpactFX';
 import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
 import { VRHud } from './ui/VRHud';
+import { VRAutoLauncher } from './ui/VRAutoLauncher';
 import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 
@@ -35,6 +36,7 @@ export function App() {
         gl={{ antialias: true, powerPreference: 'high-performance' }}
       >
         <XR store={xrStore}>
+          <VRAutoLauncher />
           <XROrigin position={[-0.8, 0, 13.0]} />
           <Suspense fallback={null}>
             <CorridorLevel />

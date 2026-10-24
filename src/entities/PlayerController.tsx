@@ -69,7 +69,10 @@ export function PlayerController() {
       yawRef.current = Math.PI;
       pitchRef.current = 0;
       xrYawRef.current = 0;
-      if (camera.parent) camera.parent.rotation.y = 0;
+      if (camera.parent) {
+        camera.parent.rotation.y = 0;
+        camera.parent.position.set(-0.8, 0, 13.0);
+      }
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
     } else if (status === 'DEFEAT' || status === 'VICTORY' || status === 'PAUSED') {
