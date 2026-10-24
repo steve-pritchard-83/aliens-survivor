@@ -83,7 +83,9 @@ export function HUD() {
     try { await navigator.wakeLock?.request('screen'); } catch { /* ignore */ }
     startGame();
     if (mode === 'VR') xrStore.enterVR().catch(() => {});
-    else InputManager.requestPointerLock();
+    else if (inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+      InputManager.requestPointerLock();
+    }
   };
 
   const handleResume = () => {
@@ -91,7 +93,9 @@ export function HUD() {
     AudioManager.resumeBGM();
     AudioManager.setKlaxonActive(true);
     resumeGame();
-    InputManager.requestPointerLock();
+    if (inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+      InputManager.requestPointerLock();
+    }
   };
 
   const onLeftTouchStart = (e: React.TouchEvent) => {

@@ -49,8 +49,8 @@ class InputManagerController {
     if (this.initialized || typeof window === 'undefined') return;
     this.initialized = true;
 
-    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia?.('(pointer: fine)').matches;
-    if (isCoarse) {
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia?.('(pointer: coarse)').matches;
+    if (isTouch) {
       this.setMode('TOUCH');
     }
 
@@ -145,6 +145,9 @@ class InputManagerController {
   };
 
   public requestPointerLock(): void {
+    if (typeof window === 'undefined') return;
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || this.mode === 'TOUCH';
+    if (isTouch) return;
     const canvas = document.querySelector('canvas');
     if (canvas && !this.pointerLocked && this.mode === 'DESKTOP') {
       canvas.requestPointerLock?.();
