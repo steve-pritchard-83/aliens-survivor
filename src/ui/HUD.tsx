@@ -15,22 +15,18 @@ function formatTimer(sec: number): string {
 }
 
 export function HUD() {
-  const status = useGameStore((s) => s.status);
-  const timeRemaining = useGameStore((s) => s.timeRemaining);
+  const status = useGameStore((s) => s.status), timeRemaining = useGameStore((s) => s.timeRemaining);
   const kills = useGameStore((s) => s.kills), shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit), damageFlash = useGameStore((s) => s.damageFlash);
-  const startGame = useGameStore((s) => s.startGame), pauseGame = useGameStore((s) => s.pauseGame);
-  const resumeGame = useGameStore((s) => s.resumeGame);
+  const startGame = useGameStore((s) => s.startGame), pauseGame = useGameStore((s) => s.pauseGame), resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
-  const [joyOrigin, setJoyOrigin] = useState<[number, number] | null>(null);
-  const [joyOffset, setJoyOffset] = useState<[number, number]>([0, 0]);
+  const [joyOrigin, setJoyOrigin] = useState<[number, number] | null>(null), [joyOffset, setJoyOffset] = useState<[number, number]>([0, 0]);
   const joyTouchId = useRef<number | null>(null), lookTouchId = useRef<number | null>(null), lookLastPos = useRef<[number, number] | null>(null);
 
+  const [isQuest] = useState(() => typeof navigator !== 'undefined' && /OculusBrowser|Quest/i.test(navigator.userAgent));
   const [isStandalone, setIsStandalone] = useState(true);
-  const [pwaDismissed, setPwaDismissed] = useState(() => {
-    try { return sessionStorage.getItem('uscm_pwa_ack') === 'true'; } catch { return false; }
-  });
+  const [pwaDismissed, setPwaDismissed] = useState(() => { try { return sessionStorage.getItem('uscm_pwa_ack') === 'true'; } catch { return false; } });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [victoryVideoEnded, setVictoryVideoEnded] = useState(false);
@@ -38,7 +34,6 @@ export function HUD() {
 
   useEffect(() => {
     const unsub = InputManager.onModeChange(setInputMode);
-    const isQuest = /OculusBrowser|Quest/i.test(navigator.userAgent);
     const standalone = window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: fullscreen)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
@@ -47,6 +42,12 @@ export function HUD() {
     const mobile = !isQuest && (/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) ||
       ('ontouchstart' in window && (navigator.maxTouchPoints > 1 || window.innerWidth < 1024)));
     setIsMobileDevice(mobile);
+
+    if (isQuest && typeof navigator !== 'undefined' && navigator.xr) {
+      navigator.xr.isSessionSupported?.('immersive-vr').then((sup) => {
+        if (sup) handleLaunch('VR');
+      }).catch(() => {});
+    }
 
     const handlePrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallEvent); };
     const handleInstalled = () => { setIsStandalone(true); };
@@ -73,15 +74,16 @@ export function HUD() {
     try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ }
     setPwaDismissed(true);
     setVictoryVideoEnded(false);
-    AudioManager.resetAudio();
-    await AudioManager.unlock();
-    AudioManager.play2D('ui_beep', 0.8);
-    AudioManager.startBGM();
-    AudioManager.setKlaxonActive(true);
-    try { await navigator.wakeLock?.request('screen'); } catch { /* ignore */ }
     startGame();
     if (mode === 'VR') xrStore.enterVR().catch(() => {});
-    else if (inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+    AudioManager.resetAudio();
+    AudioManager.unlock().then(() => {
+      AudioManager.play2D('ui_beep', 0.8);
+      AudioManager.startBGM();
+      AudioManager.setKlaxonActive(true);
+    }).catch(() => {});
+    try { await navigator.wakeLock?.request('screen'); } catch { /* ignore */ }
+    if (mode !== 'VR' && inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
       InputManager.requestPointerLock();
     }
   };
@@ -232,8 +234,14 @@ export function HUD() {
             {status === 'MENU' ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.' : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
-            <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: status === 'DEFEAT' ? '#ff6666' : '#00ff88', border: `2px solid ${status === 'DEFEAT' ? '#ff6666' : '#00ff88'}`, borderRadius: 4, cursor: 'pointer' }}>ENTER META QUEST XR</button>
+            {isQuest ? (
+              <button onClick={() => handleLaunch('VR')} style={{ padding: '16px 36px', fontSize: 22, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 25px rgba(0,255,136,0.6)' }}>ENTER FULLSCREEN 3D VR</button>
+            ) : (
+              <>
+                <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
+                <button onClick={() => handleLaunch('VR')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: status === 'DEFEAT' ? '#ff6666' : '#00ff88', border: `2px solid ${status === 'DEFEAT' ? '#ff6666' : '#00ff88'}`, borderRadius: 4, cursor: 'pointer' }}>ENTER META QUEST XR</button>
+              </>
+            )}
           </div>
         </div>
       )}
