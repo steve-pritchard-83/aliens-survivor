@@ -1,0 +1,192 @@
+import { useRef, useMemo, useEffect } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
+import { useGameStore } from '../core/GameStore';
+import { InputManager } from '../core/InputManager';
+import { AudioManager } from '../core/AudioManager';
+import { CombatSystem } from '../core/CombatEvents';
+
+const FIRE_INTERVAL = 0.085; // ~700 RPM iconic M41A cycle rate
+const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3();
+
+function createMuzzleStarTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+  const ctx = c.getContext('2d')!, cx = 256, cy = 256;
+  const coreGrad = ctx.createRadialGradient(cx, cy, 4, cx, cy, 240);
+  coreGrad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  coreGrad.addColorStop(0.18, 'rgba(255, 245, 190, 0.96)');
+  coreGrad.addColorStop(0.45, 'rgba(255, 145, 25, 0.55)');
+  coreGrad.addColorStop(0.75, 'rgba(255, 60, 0, 0.15)');
+  coreGrad.addColorStop(1.0, 'rgba(255, 30, 0, 0.0)');
+  ctx.fillStyle = coreGrad; ctx.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 4; i++) {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate((i * Math.PI) / 2 + Math.PI / 4); ctx.scale(1.0, 0.16);
+    const plumeGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 248);
+    plumeGrad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+    plumeGrad.addColorStop(0.35, 'rgba(255, 210, 95, 0.85)');
+    plumeGrad.addColorStop(0.7, 'rgba(255, 110, 15, 0.35)');
+    plumeGrad.addColorStop(1.0, 'rgba(255, 50, 0, 0.0)');
+    ctx.fillStyle = plumeGrad; ctx.beginPath(); ctx.arc(0, 0, 248, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false; tex.needsUpdate = true;
+  return tex;
+}
+
+export function PulseRifle() {
+  const { scene } = useGLTF('/models/pulse_rifle.glb');
+  const { camera, scene: worldScene } = useThree();
+  const weaponGroupRef = useRef<THREE.Group>(null), muzzleGroupRef = useRef<THREE.Group>(null);
+  const muzzleLightRef = useRef<THREE.PointLight>(null), spotLightRef = useRef<THREE.SpotLight>(null);
+  const tracerMeshRef = useRef<THREE.Mesh>(null);
+  const fireCooldown = useRef(0), recoilOffset = useRef(0), recoilPitch = useRef(0);
+  const recoilYaw = useRef(0), recoilRoll = useRef(0), boltKick = useRef(0);
+  const muzzleTimer = useRef(0), lastReloadStage = useRef(0), continuousFireRef = useRef(0), wasFiringRef = useRef(false);
+
+  const { clonedRifle, sliderNode, triggerNode } = useMemo(() => {
+    const r = scene.clone(true);
+    return { clonedRifle: r, sliderNode: r.getObjectByName('slider_low'), triggerNode: r.getObjectByName('trigger_a_low') };
+  }, [scene]);
+  const flashLightTarget = useMemo(() => new THREE.Object3D(), []);
+  const muzzleTexture = useMemo(() => createMuzzleStarTexture(), []);
+
+  useEffect(() => {
+    worldScene.add(flashLightTarget);
+    return () => { worldScene.remove(flashLightTarget); };
+  }, [worldScene, flashLightTarget]);
+
+  const flashlightOn = useGameStore((s) => s.flashlightOn);
+
+  useFrame(({ clock }, dt) => {
+    const state = useGameStore.getState();
+    if (state.status !== 'PLAYING') return;
+
+    if (state.isReloading) {
+      if (state.reloadProgress > 0.05 && lastReloadStage.current === 0) {
+        AudioManager.play2D('reload_out', 0.75); lastReloadStage.current = 1;
+        recoilPitch.current = -0.05; recoilOffset.current = 0.025;
+      } else if (state.reloadProgress > 0.55 && lastReloadStage.current === 1) {
+        AudioManager.play2D('reload_in', 0.8); lastReloadStage.current = 2;
+        recoilPitch.current = 0.085; recoilRoll.current = -0.09;
+      } else if (state.reloadProgress > 0.85 && lastReloadStage.current === 2) {
+        AudioManager.play2D('reload_slap', 0.85); lastReloadStage.current = 3;
+        recoilOffset.current = -0.045; recoilPitch.current = -0.06; recoilRoll.current = 0.14; boltKick.current = 1.0;
+      }
+    } else lastReloadStage.current = 0;
+
+    const isFiring = InputManager.isFiringActive();
+    fireCooldown.current = Math.max(0, fireCooldown.current - dt);
+    if (isFiring && !state.isReloading && !state.isJammed) {
+      continuousFireRef.current += dt;
+      if (continuousFireRef.current > 5.0) {
+        if (wasFiringRef.current) { AudioManager.stopPulseLoop(false); wasFiringRef.current = false; }
+        useGameStore.setState({ isJammed: true }); AudioManager.play2D('empty_click', 0.85); state.startReload();
+      } else if (fireCooldown.current <= 0) {
+        if (state.ammo > 0 && state.fireRound()) {
+          fireCooldown.current = FIRE_INTERVAL; wasFiringRef.current = true;
+          recoilOffset.current = 0.058 + Math.random() * 0.015;
+          recoilPitch.current = 0.038 + Math.random() * 0.018;
+          recoilYaw.current = (Math.random() - 0.5) * 0.026;
+          recoilRoll.current = (Math.random() - 0.5) * 0.065;
+          boltKick.current = 1.0; muzzleTimer.current = 0.055;
+          AudioManager.playPulseShot();
+          if (muzzleGroupRef.current) {
+            muzzleGroupRef.current.rotation.z = Math.random() * Math.PI * 2;
+            muzzleGroupRef.current.scale.setScalar(0.85 + Math.random() * 0.35);
+          }
+          camera.getWorldPosition(_rayOrigin); camera.getWorldDirection(_rayDir);
+          const spread = Math.min(0.03, continuousFireRef.current * 0.007);
+          _rayDir.x += (Math.random() - 0.5) * spread; _rayDir.y += (Math.random() - 0.5) * spread; _rayDir.normalize();
+          const res = CombatSystem.fireRay(_rayOrigin, _rayDir);
+          if (res.hitXenoId !== null) state.registerHit();
+          else if (Math.random() < 0.35) AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.32, 0.9 + Math.random() * 0.2);
+          if (state.ammo <= 0) { AudioManager.stopPulseLoop(true); wasFiringRef.current = false; }
+        } else if (state.ammo <= 0) {
+          if (wasFiringRef.current) { AudioManager.stopPulseLoop(true); wasFiringRef.current = false; }
+          fireCooldown.current = 0.25; AudioManager.play2D('empty_click', 0.7); state.startReload();
+        }
+      }
+    } else {
+      if (wasFiringRef.current) {
+        AudioManager.stopPulseLoop(true);
+        wasFiringRef.current = false;
+      }
+      continuousFireRef.current = Math.max(0, continuousFireRef.current - dt * 2.5);
+    }
+
+    recoilOffset.current = THREE.MathUtils.lerp(recoilOffset.current, 0, dt * 22);
+    recoilPitch.current = THREE.MathUtils.lerp(recoilPitch.current, 0, dt * 19);
+    recoilYaw.current = THREE.MathUtils.lerp(recoilYaw.current, 0, dt * 22);
+    recoilRoll.current = THREE.MathUtils.lerp(recoilRoll.current, 0, dt * 20);
+    boltKick.current = THREE.MathUtils.lerp(boltKick.current, 0, dt * 28);
+    muzzleTimer.current = Math.max(0, muzzleTimer.current - dt);
+
+    if (sliderNode) {
+      const rackPull = state.isReloading && state.reloadProgress > 0.68 && state.reloadProgress < 0.87 ? 5.5 : 0;
+      sliderNode.position.z = -(boltKick.current * 4.8 + rackPull);
+    }
+    if (triggerNode) triggerNode.position.z = isFiring && !state.isReloading ? -0.9 : 0;
+
+    const flashActive = muzzleTimer.current > 0;
+    if (muzzleLightRef.current) muzzleLightRef.current.intensity = flashActive ? 24 * (muzzleTimer.current / 0.055) : 0;
+    if (muzzleGroupRef.current) muzzleGroupRef.current.visible = flashActive;
+    if (tracerMeshRef.current) tracerMeshRef.current.visible = muzzleTimer.current > 0.02;
+
+    if (weaponGroupRef.current) {
+      const t = clock.getElapsedTime(), p = state.reloadProgress;
+      const swayX = Math.sin(t * 2.2) * 0.0025, swayY = Math.cos(t * 4.4) * 0.0025;
+      let rX = 0, rY = 0, rZ = 0, rPitch = 0, rYaw = 0, rRoll = 0;
+      if (state.isReloading) {
+        if (p < 0.36) {
+          const k = Math.sin((p / 0.36) * (Math.PI / 2));
+          rX = -0.03 * k; rY = -0.09 * k; rPitch = -0.24 * k; rRoll = 0.52 * k; rYaw = 0.16 * k;
+        } else if (p < 0.72) {
+          const u = (p - 0.36) / 0.36, slap = Math.exp(-Math.pow((u - 0.56) * 8, 2)) * 0.065;
+          rX = -0.03; rY = -0.12 + slap; rPitch = -0.28 + slap * 1.6; rRoll = 0.56 - u * 0.15; rYaw = 0.16;
+        } else {
+          const u = (p - 0.72) / 0.28, snap = Math.sin(u * Math.PI), rack = Math.exp(-Math.pow((u - 0.52) * 7, 2));
+          rX = -0.02 * (1 - u); rY = -0.04 * (1 - u); rZ = rack * 0.04;
+          rPitch = -0.10 * (1 - u); rRoll = -0.44 * snap; rYaw = -0.14 * snap;
+        }
+      }
+      weaponGroupRef.current.position.copy(camera.position);
+      weaponGroupRef.current.quaternion.copy(camera.quaternion);
+      weaponGroupRef.current.translateX(0.155 + swayX + rX + recoilYaw.current * 0.25);
+      weaponGroupRef.current.translateY(-0.145 + swayY + rY - recoilOffset.current * 0.16);
+      weaponGroupRef.current.translateZ(-0.29 + recoilOffset.current + rZ);
+      weaponGroupRef.current.rotateY(0.065 + recoilYaw.current + rYaw);
+      weaponGroupRef.current.rotateX(0.02 + recoilPitch.current + rPitch);
+      weaponGroupRef.current.rotateZ(recoilRoll.current + rRoll);
+      camera.getWorldDirection(_camDir);
+      flashLightTarget.position.copy(camera.position).addScaledVector(_camDir, 28.0);
+      flashLightTarget.updateMatrixWorld();
+    }
+  });
+
+  return (
+    <group ref={weaponGroupRef}>
+      <group scale={0.0056} position={[-0.043, -0.01, 0.04]} rotation={[0, Math.PI, 0]}>
+        <primitive object={clonedRifle} />
+      </group>
+      <pointLight ref={muzzleLightRef} position={[0, 0.018, -0.38]} color="#ffaa33" intensity={0} distance={18} decay={1.2} />
+      {flashlightOn && (
+        <>
+          <spotLight ref={spotLightRef} position={[0, -0.01, -0.28]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={78} distance={38} decay={1.0} color="#eef8ff" />
+          <pointLight position={[0, 0.02, -0.45]} color="#d6ebff" intensity={12} distance={22} decay={1.2} />
+        </>
+      )}
+      <group ref={muzzleGroupRef} position={[0, 0.018, -0.36]} visible={false}>
+        <mesh><planeGeometry args={[0.32, 0.32]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0, -0.12]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.36, 0.2]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, Math.PI / 2]}><planeGeometry args={[0.36, 0.2]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+      </group>
+      <mesh ref={tracerMeshRef} position={[0, 0.015, -4.6]} rotation={[Math.PI / 2, 0, 0]} visible={false}>
+        <cylinderGeometry args={[0.004, 0.001, 8.5, 12]} />
+        <meshBasicMaterial color="#ffdd77" transparent opacity={0.75} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+useGLTF.preload('/models/pulse_rifle.glb');
