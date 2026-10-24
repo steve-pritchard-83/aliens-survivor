@@ -30,7 +30,7 @@ export function App() {
       <HUD />
 
       <Canvas
-        dpr={[1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.75)]}
+        dpr={1}
         camera={{ fov: 62, near: 0.05, far: 65, position: [-0.8, 1.15, 13.0] }}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
       >

@@ -128,9 +128,7 @@ export function CorridorAtmosphereFX() {
 
   return (
     <group name="CorridorAtmosphereFX">
-      <pointLight ref={strobeLight1Ref} position={[-0.8, 2.25, 14.2]} color="#d8f0ff" intensity={0} distance={15} decay={1.4} />
-      <pointLight ref={strobeLight2Ref} position={[-13.2, 2.25, 16.0]} color="#ffddaa" intensity={0} distance={16} decay={1.4} />
-      <pointLight ref={sparkLightRef} color="#88ddff" intensity={0} distance={9} decay={1.5} />
+      <pointLight ref={strobeLight1Ref} position={[-6.8, 2.25, 22.1]} color="#d8f0ff" intensity={0} distance={18} decay={1.4} />
 
       <points ref={sparkPointsRef} geometry={sparkGeo} visible={false}>
         <pointsMaterial

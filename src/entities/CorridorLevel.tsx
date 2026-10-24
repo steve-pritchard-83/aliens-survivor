@@ -131,18 +131,14 @@ export function CorridorLevel() {
     if (beacon4Ref.current) beacon4Ref.current.rotation.y = -t * rotSpeed * 1.1;
   });
 
-  const ambientIntensity = phase === 1 ? 0.78 : phase === 2 ? 0.62 : 0.54;
-  const hemiIntensity = phase === 1 ? 0.82 : phase === 2 ? 0.65 : 0.58;
+  const ambientIntensity = phase === 1 ? 0.95 : phase === 2 ? 0.82 : 0.74;
+  const hemiIntensity = phase === 1 ? 1.05 : phase === 2 ? 0.88 : 0.78;
   const beaconColor = phase === 1 ? '#ff7700' : '#ff1111';
-  const beaconPower = phase === 1 ? 11.0 : 14.0;
-  const stripPower = phase === 1 ? 6.8 : 5.4;
+  const beaconPower = phase === 1 ? 9.0 : 12.0;
+  const stripPower = phase === 1 ? 7.5 : 6.0;
 
   const STRIP_LIGHTS: [number, number, number][] = [
-    [-0.32, 2.15, 10.5], [-0.32, 2.15, 16.5], [-0.32, 2.15, 22.1], [-0.32, 2.15, 28.5], [-0.32, 2.15, 34.0],
-    [-13.48, 2.15, 10.5], [-13.48, 2.15, 16.5], [-13.48, 2.15, 22.1], [-13.48, 2.15, 28.5], [-13.48, 2.15, 34.0],
-    [-4.5, 2.15, 8.3], [-6.9, 2.15, 8.3], [-9.5, 2.15, 8.3],
-    [-4.5, 2.15, 22.1], [-6.9, 2.15, 22.1], [-9.5, 2.15, 22.1],
-    [-4.5, 2.15, 35.9], [-6.9, 2.15, 35.9], [-9.5, 2.15, 35.9]
+    [-0.32, 2.2, 22.1], [-13.48, 2.2, 22.1], [-6.9, 2.2, 22.1]
   ];
 
   return (
@@ -151,9 +147,9 @@ export function CorridorLevel() {
       <ambientLight intensity={ambientIntensity} color={phase === 1 ? '#86a2be' : '#5e3232'} />
       <hemisphereLight args={['#6e94b8', '#1a2634', hemiIntensity]} />
 
-      {/* Uniform Sulaco Bulkhead Strip Lights across all halls and crossways */}
+      {/* Optimized Sulaco Bulkhead Strip Lights */}
       {STRIP_LIGHTS.map((pos, i) => (
-        <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={11.0} decay={1.2} />
+        <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={28.0} decay={1.1} />
       ))}
 
       {/* South & North Sector Loops */}
@@ -166,18 +162,12 @@ export function CorridorLevel() {
       {/* Randomly positioned, subtly back-lit Ovomorph Eggs */}
       <AlienEggs />
 
-      {/* Balanced 4-Quadrant Emergency Beacons */}
+      {/* Balanced 2-Quadrant Emergency Beacons */}
       <group position={[-0.32, 2.15, 14.0]} ref={beacon1Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={10} decay={1.5} />
-      </group>
-      <group position={[-13.48, 2.15, 14.0]} ref={beacon2Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={10} decay={1.5} />
-      </group>
-      <group position={[-0.32, 2.15, 30.0]} ref={beacon3Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={10} decay={1.5} />
+        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={8} decay={1.8} />
       </group>
       <group position={[-13.48, 2.15, 30.0]} ref={beacon4Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={10} decay={1.5} />
+        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={8} decay={1.8} />
       </group>
 
       <CorridorAtmosphereFX />
