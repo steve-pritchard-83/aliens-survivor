@@ -96,12 +96,17 @@ export function CorridorLevel() {
 
     const raycaster = new THREE.Raycaster();
     const _normMatrix = new THREE.Matrix3();
+    const corridorMeshes: THREE.Mesh[] = [];
+    sectorMeshGroupRef.current?.traverse((c) => { if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh); });
+
     CombatSystem.registerEnvRaycaster((origin, dir) => {
-      const grp = sectorMeshGroupRef.current;
-      if (!grp) return null;
+      if (corridorMeshes.length === 0 && sectorMeshGroupRef.current) {
+        sectorMeshGroupRef.current.traverse((c) => { if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh); });
+      }
+      if (corridorMeshes.length === 0) return null;
       raycaster.set(origin, dir);
       raycaster.far = 52.0;
-      const hits = raycaster.intersectObjects(grp.children, true);
+      const hits = raycaster.intersectObjects(corridorMeshes, false);
       if (hits.length > 0) {
         const h = hits[0];
         const norm = h.face ? h.face.normal.clone() : new THREE.Vector3(0, 1, 0);
@@ -148,7 +153,7 @@ export function CorridorLevel() {
 
       {/* Uniform Sulaco Bulkhead Strip Lights across all halls and crossways */}
       {STRIP_LIGHTS.map((pos, i) => (
-        <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={15.0} decay={1.15} />
+        <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={11.0} decay={1.2} />
       ))}
 
       {/* South & North Sector Loops */}

@@ -56,9 +56,11 @@ export function WallImpactFX() {
   const flashTimerRef = useRef(0);
   const nextDecalIdx = useRef(0);
   const nextSparkIdx = useRef(0);
+  const hadSparksRef = useRef(false);
 
   const markTexture = useMemo(() => createBulletMarkTexture(), []);
   const sparkTexture = useMemo(() => createSparkTexture(), []);
+  const decalGeo = useMemo(() => new THREE.PlaneGeometry(0.22, 0.22), []);
 
   const decalStates = useMemo<DecalState[]>(() =>
     Array.from({ length: MAX_DECAL_COUNT }, () => ({ active: false, age: 0, maxAge: 25.0 })), []
@@ -179,10 +181,11 @@ export function WallImpactFX() {
       sparkPositions[i * 3 + 2] = s.z;
     }
 
-    if (sparkPointsRef.current) {
+    if (sparkPointsRef.current && (hasLiveSparks || hadSparksRef.current)) {
       sparkPointsRef.current.geometry.attributes.position.needsUpdate = true;
       sparkPointsRef.current.visible = hasLiveSparks;
     }
+    hadSparksRef.current = hasLiveSparks;
 
     // Animate impact point light flash
     if (impactLightRef.current && flashTimerRef.current > 0) {
@@ -196,8 +199,7 @@ export function WallImpactFX() {
     <group>
       <group ref={decalGroupRef}>
         {Array.from({ length: MAX_DECAL_COUNT }, (_, i) => (
-          <mesh key={i} visible={false}>
-            <planeGeometry args={[0.22, 0.22]} />
+          <mesh key={i} geometry={decalGeo} visible={false}>
             <meshBasicMaterial
               map={markTexture}
               transparent

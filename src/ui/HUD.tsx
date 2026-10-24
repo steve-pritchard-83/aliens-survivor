@@ -17,20 +17,15 @@ function formatTimer(sec: number): string {
 export function HUD() {
   const status = useGameStore((s) => s.status);
   const timeRemaining = useGameStore((s) => s.timeRemaining);
-  const kills = useGameStore((s) => s.kills);
-  const shotsFired = useGameStore((s) => s.shotsFired);
-  const shotsHit = useGameStore((s) => s.shotsHit);
-  const damageFlash = useGameStore((s) => s.damageFlash);
-  const startGame = useGameStore((s) => s.startGame);
-  const pauseGame = useGameStore((s) => s.pauseGame);
+  const kills = useGameStore((s) => s.kills), shotsFired = useGameStore((s) => s.shotsFired);
+  const shotsHit = useGameStore((s) => s.shotsHit), damageFlash = useGameStore((s) => s.damageFlash);
+  const startGame = useGameStore((s) => s.startGame), pauseGame = useGameStore((s) => s.pauseGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
   const [joyOrigin, setJoyOrigin] = useState<[number, number] | null>(null);
   const [joyOffset, setJoyOffset] = useState<[number, number]>([0, 0]);
-  const joyTouchId = useRef<number | null>(null);
-  const lookTouchId = useRef<number | null>(null);
-  const lookLastPos = useRef<[number, number] | null>(null);
+  const joyTouchId = useRef<number | null>(null), lookTouchId = useRef<number | null>(null), lookLastPos = useRef<[number, number] | null>(null);
 
   const [isStandalone, setIsStandalone] = useState(true);
   const [pwaDismissed, setPwaDismissed] = useState(() => {
@@ -38,6 +33,7 @@ export function HUD() {
   });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [victoryVideoEnded, setVictoryVideoEnded] = useState(false);
   const prevStatusRef = useRef(status);
 
   useEffect(() => {
@@ -75,6 +71,7 @@ export function HUD() {
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
     try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ }
     setPwaDismissed(true);
+    setVictoryVideoEnded(false);
     AudioManager.resetAudio();
     await AudioManager.unlock();
     AudioManager.play2D('ui_beep', 0.8);
@@ -89,13 +86,8 @@ export function HUD() {
   };
 
   const handleResume = () => {
-    AudioManager.play2D('ui_beep', 0.65);
-    AudioManager.resumeBGM();
-    AudioManager.setKlaxonActive(true);
-    resumeGame();
-    if (inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
-      InputManager.requestPointerLock();
-    }
+    AudioManager.play2D('ui_beep', 0.65); AudioManager.resumeBGM(); AudioManager.setKlaxonActive(true); resumeGame();
+    if (inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) InputManager.requestPointerLock();
   };
 
   const onLeftTouchStart = (e: React.TouchEvent) => {
@@ -107,9 +99,8 @@ export function HUD() {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
       if (t.identifier === joyTouchId.current) {
-        const dx = t.clientX - joyOrigin[0], dy = t.clientY - joyOrigin[1];
-        const dist = Math.min(48, Math.hypot(dx, dy)), angle = Math.atan2(dy, dx);
-        const ox = Math.cos(angle) * dist, oy = Math.sin(angle) * dist;
+        const dx = t.clientX - joyOrigin[0], dy = t.clientY - joyOrigin[1], dist = Math.min(48, Math.hypot(dx, dy)), a = Math.atan2(dy, dx);
+        const ox = Math.cos(a) * dist, oy = Math.sin(a) * dist;
         setJoyOffset([ox, oy]); InputManager.setTouchMove(ox / 48, -oy / 48); break;
       }
     }
@@ -129,8 +120,7 @@ export function HUD() {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
       if (t.identifier === lookTouchId.current) {
-        const dx = t.clientX - lookLastPos.current[0], dy = t.clientY - lookLastPos.current[1];
-        InputManager.addTouchLook(dx * 0.0115, dy * 0.0105);
+        InputManager.addTouchLook((t.clientX - lookLastPos.current[0]) * 0.0115, (t.clientY - lookLastPos.current[1]) * 0.0105);
         lookLastPos.current = [t.clientX, t.clientY]; break;
       }
     }
@@ -218,7 +208,13 @@ export function HUD() {
       )}
       {status === 'VICTORY' && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 60, pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <video src="/movies/victory.mp4" autoPlay playsInline controls style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <video src="/movies/victory.mp4" autoPlay playsInline onEnded={() => setVictoryVideoEnded(true)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {victoryVideoEnded && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.42)', zIndex: 64, pointerEvents: 'none' }}>
+              <h1 style={{ fontSize: 'clamp(54px, 11vw, 96px)', letterSpacing: 10, color: '#00ff88', textShadow: '0 0 35px rgba(0, 255, 136, 0.85), 0 0 70px rgba(0, 255, 136, 0.45)', fontWeight: 'bold', margin: 0 }}>VICTORY</h1>
+              <p style={{ color: '#cceecc', fontSize: 'clamp(12px, 2.5vw, 17px)', letterSpacing: 5, textShadow: '0 0 10px rgba(0,0,0,0.9)', marginTop: 8 }}>EXTRACTION SUCCESSFUL // SECTOR 4 SECURED</p>
+            </div>
+          )}
           <div style={{ position: 'absolute', top: 18, left: 22, zIndex: 65, color: '#00ff88', textShadow: '0 0 10px rgba(0,0,0,0.9)', letterSpacing: 3, fontSize: 16 }}>USS SULACO // EXTRACTION COMPLETE</div>
           <div style={{ position: 'absolute', bottom: 20, zIndex: 65, display: 'flex', gap: 14, alignItems: 'center', background: 'rgba(2, 10, 6, 0.85)', padding: '10px 20px', borderRadius: 6, border: '1px solid rgba(0, 255, 136, 0.55)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{ color: '#aaffd4', fontSize: 13, letterSpacing: 1.5 }}>SURVIVAL TIME: 05:00.0 | KILLS: {kills} | ACC: {accuracy}%</span>
