@@ -7,7 +7,7 @@ export type SoundKey =
   | 'small_screech1' | 'small_screech2' | 'small_death' | 'small_skitter' | 'small_bite' | 'small_leap'
   | 'bullet_flesh1' | 'bullet_flesh2' | 'ricochet1' | 'ricochet2'
   | 'acid_fizz' | 'acid_burn' | 'vent_clang' | 'marine_pain' | 'marine_death'
-  | 'torch_on' | 'torch_off' | 'distant_boom1' | 'distant_boom2' | 'console_alarm' | 'spark' | 'ui_beep';
+  | 'torch_on' | 'torch_off' | 'distant_boom1' | 'distant_boom2' | 'console_alarm' | 'spark' | 'ui_beep' | 'defeat';
 
 const SOUND_URLS: Record<SoundKey, string> = {
   pulse_shot: '/audio/sfx_pulse.wav', pulse_shot2: '/audio/sfx_pulse2.wav',
@@ -30,7 +30,8 @@ const SOUND_URLS: Record<SoundKey, string> = {
   marine_pain: '/audio/sfx_marine_pain.wav', marine_death: '/audio/sfx_marine_death.wav',
   torch_on: '/audio/sfx_torch_on.wav', torch_off: '/audio/sfx_torch_off.wav',
   distant_boom1: '/audio/sfx_distant_boom1.wav', distant_boom2: '/audio/sfx_distant_boom2.wav',
-  console_alarm: '/audio/sfx_console_alarm.wav', spark: '/audio/sfx_spark.wav', ui_beep: '/audio/sfx_ui_beep.wav'
+  console_alarm: '/audio/sfx_console_alarm.wav', spark: '/audio/sfx_spark.wav', ui_beep: '/audio/sfx_ui_beep.wav',
+  defeat: '/audio/defeat.mp3'
 };
 
 class WebAudioController {

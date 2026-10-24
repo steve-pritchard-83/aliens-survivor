@@ -22,6 +22,7 @@ export function HUD() {
   const shotsHit = useGameStore((s) => s.shotsHit);
   const damageFlash = useGameStore((s) => s.damageFlash);
   const startGame = useGameStore((s) => s.startGame);
+  const pauseGame = useGameStore((s) => s.pauseGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
@@ -32,8 +33,12 @@ export function HUD() {
   const lookLastPos = useRef<[number, number] | null>(null);
 
   const [isStandalone, setIsStandalone] = useState(true);
+  const [pwaDismissed, setPwaDismissed] = useState(() => {
+    try { return sessionStorage.getItem('uscm_pwa_ack') === 'true'; } catch { return false; }
+  });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const prevStatusRef = useRef(status);
 
   useEffect(() => {
     const unsub = InputManager.onModeChange(setInputMode);
@@ -57,7 +62,18 @@ export function HUD() {
     };
   }, []);
 
+  useEffect(() => {
+    if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
+      AudioManager.stopBGM(); AudioManager.setKlaxonActive(false); AudioManager.play2D('defeat', 0.95);
+    } else if (status === 'VICTORY' && prevStatusRef.current !== 'VICTORY') {
+      AudioManager.stopBGM(); AudioManager.setKlaxonActive(false);
+    }
+    prevStatusRef.current = status;
+  }, [status]);
+
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
+    try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ }
+    setPwaDismissed(true);
     await AudioManager.unlock();
     AudioManager.play2D('ui_beep', 0.8);
     AudioManager.startBGM();
@@ -77,10 +93,8 @@ export function HUD() {
   };
 
   const onLeftTouchStart = (e: React.TouchEvent) => {
-    const t = e.changedTouches[0];
-    joyTouchId.current = t.identifier;
-    setJoyOrigin([t.clientX, t.clientY]);
-    setJoyOffset([0, 0]);
+    const t = e.changedTouches[0]; joyTouchId.current = t.identifier;
+    setJoyOrigin([t.clientX, t.clientY]); setJoyOffset([0, 0]);
   };
   const onLeftTouchMove = (e: React.TouchEvent) => {
     if (!joyOrigin) return;
@@ -90,27 +104,19 @@ export function HUD() {
         const dx = t.clientX - joyOrigin[0], dy = t.clientY - joyOrigin[1];
         const dist = Math.min(48, Math.hypot(dx, dy)), angle = Math.atan2(dy, dx);
         const ox = Math.cos(angle) * dist, oy = Math.sin(angle) * dist;
-        setJoyOffset([ox, oy]);
-        InputManager.setTouchMove(ox / 48, -oy / 48);
-        break;
+        setJoyOffset([ox, oy]); InputManager.setTouchMove(ox / 48, -oy / 48); break;
       }
     }
   };
   const onLeftTouchEnd = (e: React.TouchEvent) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       if (e.changedTouches[i].identifier === joyTouchId.current) {
-        joyTouchId.current = null;
-        setJoyOrigin(null);
-        setJoyOffset([0, 0]);
-        InputManager.setTouchMove(0, 0);
-        break;
+        joyTouchId.current = null; setJoyOrigin(null); setJoyOffset([0, 0]); InputManager.setTouchMove(0, 0); break;
       }
     }
   };
   const onRightTouchStart = (e: React.TouchEvent) => {
-    const t = e.changedTouches[0];
-    lookTouchId.current = t.identifier;
-    lookLastPos.current = [t.clientX, t.clientY];
+    const t = e.changedTouches[0]; lookTouchId.current = t.identifier; lookLastPos.current = [t.clientX, t.clientY];
   };
   const onRightTouchMove = (e: React.TouchEvent) => {
     if (!lookLastPos.current) return;
@@ -119,21 +125,20 @@ export function HUD() {
       if (t.identifier === lookTouchId.current) {
         const dx = t.clientX - lookLastPos.current[0], dy = t.clientY - lookLastPos.current[1];
         InputManager.addTouchLook(dx * 0.0115, dy * 0.0105);
-        lookLastPos.current = [t.clientX, t.clientY];
-        break;
+        lookLastPos.current = [t.clientX, t.clientY]; break;
       }
     }
   };
   const onRightTouchEnd = (e: React.TouchEvent) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       if (e.changedTouches[i].identifier === lookTouchId.current) {
-        lookTouchId.current = null;
-        lookLastPos.current = null;
-        break;
+        lookTouchId.current = null; lookLastPos.current = null; break;
       }
     }
   };
   const handleInstallPWA = async () => {
+    try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ }
+    setPwaDismissed(true);
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
@@ -156,6 +161,9 @@ export function HUD() {
       )}
       {status === 'PLAYING' && inputMode === 'TOUCH' && (
         <>
+          <button onClick={() => pauseGame()} onTouchStart={(e) => { e.stopPropagation(); pauseGame(); }} style={{ position: 'absolute', top: 16, right: 16, padding: '8px 18px', background: 'rgba(2, 24, 15, 0.75)', border: '1.5px solid rgba(0, 255, 136, 0.7)', color: '#00ff88', fontFamily: 'inherit', fontSize: 13, letterSpacing: 2, borderRadius: 4, pointerEvents: 'auto', cursor: 'pointer', zIndex: 20 }}>
+            PAUSE
+          </button>
           <div onTouchStart={onLeftTouchStart} onTouchMove={onLeftTouchMove} onTouchEnd={onLeftTouchEnd} onTouchCancel={onLeftTouchEnd} style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'auto' }} />
           <div onTouchStart={onRightTouchStart} onTouchMove={onRightTouchMove} onTouchEnd={onRightTouchEnd} onTouchCancel={onRightTouchEnd} style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'auto' }} />
           {joyOrigin && (
@@ -167,7 +175,7 @@ export function HUD() {
           <div style={{ position: 'absolute', bottom: 18, right: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[RIGHT SCREEN: AIM // AUTO-FIRE]</div>
         </>
       )}
-      {isMobileDevice && !isStandalone && (
+      {status === 'MENU' && isMobileDevice && !isStandalone && !pwaDismissed && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 100, padding: 24, textAlign: 'center' }}>
           <div style={{ border: '2px solid #00ff88', padding: '26px 24px', maxWidth: 460, background: 'rgba(0, 20, 10, 0.92)', borderRadius: 6, boxShadow: '0 0 35px rgba(0, 255, 136, 0.3)' }}>
             <div style={{ color: '#ffaa33', fontSize: 13, letterSpacing: 3, marginBottom: 8 }}>WEYLAND-YUTANI // USCM PROTOCOL</div>
@@ -186,7 +194,7 @@ export function HUD() {
                 <div>3. Launch from your Home Screen app icon</div>
               </div>
             )}
-            <button onClick={() => { window.location.href = '/?source=pwa'; }} style={{ width: '100%', background: 'rgba(0, 255, 136, 0.12)', border: '1px solid #00ff88', color: '#00ff88', padding: '10px 16px', fontSize: 13, fontFamily: 'inherit', letterSpacing: 2, cursor: 'pointer', borderRadius: 4 }}>
+            <button onClick={() => { try { sessionStorage.setItem('uscm_pwa_ack', 'true'); } catch { /* ignore */ } setPwaDismissed(true); window.location.href = '/?source=pwa'; }} style={{ width: '100%', background: 'rgba(0, 255, 136, 0.12)', border: '1px solid #00ff88', color: '#00ff88', padding: '10px 16px', fontSize: 13, fontFamily: 'inherit', letterSpacing: 2, cursor: 'pointer', borderRadius: 4 }}>
               TRIGGER / LAUNCH INSTALLED PWA
             </button>
           </div>
@@ -203,11 +211,14 @@ export function HUD() {
         </div>
       )}
       {(status === 'MENU' || status === 'VICTORY' || status === 'DEFEAT') && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.88)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}>
-          <h1 style={{ fontSize: 54, letterSpacing: 6, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
-            {status === 'MENU' ? 'ALIENS SURVIVOR' : status === 'VICTORY' ? 'DROPSHIP DOCKED // SURVIVED' : 'MIA // BIO-SIGNALS FLATLINED'}
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
+          <h1 style={{ fontSize: status === 'VICTORY' ? 44 : 52, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
+            {status === 'MENU' ? 'ALIENS SURVIVOR' : status === 'VICTORY' ? 'DROPSHIP EXTRACTION SUCCESS' : 'MIA // BIO-SIGNALS FLATLINED'}
           </h1>
-          <p style={{ maxWidth: 540, color: '#99d6be', fontSize: 16, lineHeight: 1.5, marginBottom: 24 }}>
+          {status === 'VICTORY' && (
+            <video src="/movies/victory.mp4" autoPlay playsInline controls style={{ width: '100%', maxWidth: 560, maxHeight: '42vh', borderRadius: 6, border: '2px solid #00ff88', boxShadow: '0 0 25px rgba(0, 255, 136, 0.35)', marginBottom: 14, background: '#000' }} />
+          )}
+          <p style={{ maxWidth: 540, color: '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>
             {status === 'MENU' ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.' : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
