@@ -158,7 +158,7 @@ export function HUD() {
           <div style={{ width: 4, height: 4, background: '#00ff88', borderRadius: '50%' }} />
         </div>
       )}
-      {status === 'PLAYING' && inputMode === 'TOUCH' && (
+      {status === 'PLAYING' && inputMode === 'TOUCH' && !isQuest && (
         <>
           <button onClick={() => pauseGame()} onTouchStart={(e) => { e.stopPropagation(); pauseGame(); }} style={{ position: 'absolute', top: 16, right: 16, padding: '8px 18px', background: 'rgba(2, 24, 15, 0.75)', border: '1.5px solid rgba(0, 255, 136, 0.7)', color: '#00ff88', fontFamily: 'inherit', fontSize: 13, letterSpacing: 2, borderRadius: 4, pointerEvents: 'auto', cursor: 'pointer', zIndex: 20 }}>
             PAUSE
@@ -173,6 +173,11 @@ export function HUD() {
           <div style={{ position: 'absolute', bottom: 18, left: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[LEFT SCREEN: MOVE]</div>
           <div style={{ position: 'absolute', bottom: 18, right: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[RIGHT SCREEN: AIM // AUTO-FIRE]</div>
         </>
+      )}
+      {status === 'PLAYING' && isQuest && inputMode !== 'XR' && (
+        <button onClick={() => xrStore.enterVR().catch(() => {})} style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', pointerEvents: 'auto', zIndex: 30, boxShadow: '0 0 25px rgba(0,255,136,0.6)' }}>
+          ENTER FULLSCREEN 3D VR
+        </button>
       )}
       {status === 'MENU' && isMobileDevice && !isStandalone && !pwaDismissed && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 100, padding: 24, textAlign: 'center' }}>
@@ -226,16 +231,16 @@ export function HUD() {
         </div>
       )}
       {(status === 'MENU' || status === 'DEFEAT') && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
+        <div onClick={(e) => { e.stopPropagation(); if (isQuest) handleLaunch('VR'); }} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: isQuest ? 'pointer' : 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
           <h1 style={{ fontSize: 52, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
             {status === 'MENU' ? 'ALIENS SURVIVOR' : 'MIA // BIO-SIGNALS FLATLINED'}
           </h1>
           <p style={{ maxWidth: 540, color: status === 'DEFEAT' ? '#ff9999' : '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>
-            {status === 'MENU' ? 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.' : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
+            {status === 'MENU' ? (isQuest ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready. Click button below or pull trigger to enter.' : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.') : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             {isQuest ? (
-              <button onClick={() => handleLaunch('VR')} style={{ padding: '16px 36px', fontSize: 22, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 25px rgba(0,255,136,0.6)' }}>ENTER FULLSCREEN 3D VR</button>
+              <button onClick={() => handleLaunch('VR')} style={{ padding: '18px 40px', fontSize: 24, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 30px rgba(0,255,136,0.8)' }}>▶ ENTER FULLSCREEN 3D VR</button>
             ) : (
               <>
                 <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
