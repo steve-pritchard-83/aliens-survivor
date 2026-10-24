@@ -9,19 +9,37 @@ import { CombatSystem } from '../core/CombatEvents';
 import { Haptics } from '../core/Haptics';
 
 const FIRE_INTERVAL = 0.085; // ~700 RPM iconic M41A cycle rate
-const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3();
+const _rayOrigin = new THREE.Vector3(), _rayDir = new THREE.Vector3(), _camDir = new THREE.Vector3(), _losDir = new THREE.Vector3();
 
 function checkAutoTarget(camPos: THREE.Vector3, camDir: THREE.Vector3, threats: ActiveThreat[], small: ActiveThreat | null): boolean {
-  if (CombatSystem.fireRay(camPos, camDir).hitXenoId !== null) return true;
+  const probe = CombatSystem.fireRay(camPos, camDir);
+  const envProbe = CombatSystem.fireEnvironmentRay(camPos, camDir);
+  const wallDist = envProbe ? camPos.distanceTo(envProbe.point) : 55.0;
+  if (probe.hitXenoId !== null && probe.hitPoint && camPos.distanceTo(probe.hitPoint) < wallDist) return true;
+
   for (let i = 0; i < threats.length; i++) {
     const t = threats[i];
     if (t.state === 'DEAD') continue;
     const dx = t.x - camPos.x, dz = t.z - camPos.z, d2 = dx * dx + dz * dz;
-    if (d2 > 0.4 && d2 < 625 && (dx * camDir.x + dz * camDir.z) / Math.sqrt(d2) > 0.985) return true;
+    if (d2 > 0.4 && d2 < 576) {
+      const dist = Math.sqrt(d2);
+      if (dist < wallDist && (dx * camDir.x + dz * camDir.z) / dist > 0.982) {
+        _losDir.set(dx, 0.9 - camPos.y, dz).normalize();
+        const losWall = CombatSystem.fireEnvironmentRay(camPos, _losDir);
+        if (!losWall || camPos.distanceTo(losWall.point) >= dist - 0.35) return true;
+      }
+    }
   }
   if (small && small.state !== 'DEAD') {
     const dx = small.x - camPos.x, dz = small.z - camPos.z, d2 = dx * dx + dz * dz;
-    if (d2 > 0.2 && d2 < 400 && (dx * camDir.x + dz * camDir.z) / Math.sqrt(d2) > 0.98) return true;
+    if (d2 > 0.2 && d2 < 324) {
+      const dist = Math.sqrt(d2);
+      if (dist < wallDist && (dx * camDir.x + dz * camDir.z) / dist > 0.98) {
+        _losDir.set(dx, 0.25 - camPos.y, dz).normalize();
+        const losWall = CombatSystem.fireEnvironmentRay(camPos, _losDir);
+        if (!losWall || camPos.distanceTo(losWall.point) >= dist - 0.25) return true;
+      }
+    }
   }
   return false;
 }

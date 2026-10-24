@@ -32,7 +32,6 @@ export function HUD() {
   const lookLastPos = useRef<[number, number] | null>(null);
 
   const [isStandalone, setIsStandalone] = useState(true);
-  const [pwaBypassed, setPwaBypassed] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
 
@@ -40,14 +39,22 @@ export function HUD() {
     const unsub = InputManager.onModeChange(setInputMode);
     const standalone = window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: fullscreen)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
+      window.location.search.includes('source=pwa');
     setIsStandalone(standalone);
-    const mobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent) || ('ontouchstart' in window && navigator.maxTouchPoints > 1);
+    const mobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window && (navigator.maxTouchPoints > 1 || window.innerWidth < 1024));
     setIsMobileDevice(mobile);
 
     const handlePrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallEvent); };
+    const handleInstalled = () => { setIsStandalone(true); };
     window.addEventListener('beforeinstallprompt', handlePrompt);
-    return () => { unsub(); window.removeEventListener('beforeinstallprompt', handlePrompt); };
+    window.addEventListener('appinstalled', handleInstalled);
+    return () => {
+      unsub();
+      window.removeEventListener('beforeinstallprompt', handlePrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
   }, []);
 
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
@@ -111,7 +118,7 @@ export function HUD() {
       const t = e.changedTouches[i];
       if (t.identifier === lookTouchId.current) {
         const dx = t.clientX - lookLastPos.current[0], dy = t.clientY - lookLastPos.current[1];
-        InputManager.addTouchLook(dx * 0.0055, dy * 0.0055);
+        InputManager.addTouchLook(dx * 0.0115, dy * 0.0105);
         lookLastPos.current = [t.clientX, t.clientY];
         break;
       }
@@ -160,25 +167,27 @@ export function HUD() {
           <div style={{ position: 'absolute', bottom: 18, right: 24, fontSize: 11, letterSpacing: 1.5, color: 'rgba(0, 255, 136, 0.45)', pointerEvents: 'none' }}>[RIGHT SCREEN: AIM // AUTO-FIRE]</div>
         </>
       )}
-      {isMobileDevice && !isStandalone && !pwaBypassed && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.94)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 100, padding: 24, textAlign: 'center' }}>
-          <div style={{ border: '2px solid #00ff88', padding: '24px 28px', maxWidth: 480, background: 'rgba(0, 20, 10, 0.85)', borderRadius: 6, boxShadow: '0 0 30px rgba(0, 255, 136, 0.25)' }}>
+      {isMobileDevice && !isStandalone && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 100, padding: 24, textAlign: 'center' }}>
+          <div style={{ border: '2px solid #00ff88', padding: '26px 24px', maxWidth: 460, background: 'rgba(0, 20, 10, 0.92)', borderRadius: 6, boxShadow: '0 0 35px rgba(0, 255, 136, 0.3)' }}>
             <div style={{ color: '#ffaa33', fontSize: 13, letterSpacing: 3, marginBottom: 8 }}>WEYLAND-YUTANI // USCM PROTOCOL</div>
-            <h2 style={{ fontSize: 24, letterSpacing: 4, color: '#00ff88', marginBottom: 14 }}>INSTALL PWA FOR FULL IMMERSION</h2>
-            <p style={{ color: '#99d6be', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
-              Directives mandate installing the tactical terminal to your home screen for ultra-low latency haptics, full-screen lock, and hardware acceleration.
+            <h2 style={{ fontSize: 24, letterSpacing: 4, color: '#00ff88', marginBottom: 12 }}>PWA INSTALLATION MANDATORY</h2>
+            <p style={{ color: '#99d6be', fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
+              Mobile browser play is restricted. Install the simulator to your Home Screen for full hardware acceleration, low-latency haptics, and fullscreen targeting.
             </p>
             {deferredPrompt ? (
               <button onClick={handleInstallPWA} style={{ width: '100%', padding: '14px 20px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', marginBottom: 12 }}>
                 INSTALL MISSION PWA
               </button>
             ) : (
-              <div style={{ background: 'rgba(0, 255, 136, 0.1)', border: '1px solid rgba(0, 255, 136, 0.3)', padding: 12, borderRadius: 4, fontSize: 13, color: '#aaffd4', marginBottom: 16 }}>
-                Tap Share [⎋] or Browser Menu (⋮) &amp; select <strong>"Add to Home Screen"</strong>
+              <div style={{ background: 'rgba(0, 255, 136, 0.1)', border: '1px solid rgba(0, 255, 136, 0.35)', padding: '12px 14px', borderRadius: 4, fontSize: 13, color: '#aaffd4', marginBottom: 14, textAlign: 'left', lineHeight: 1.6 }}>
+                <div>1. Tap Safari Share button <strong>[ ⎋ ]</strong></div>
+                <div>2. Select <strong>"Add to Home Screen" [+]</strong></div>
+                <div>3. Launch from your Home Screen app icon</div>
               </div>
             )}
-            <button onClick={() => setPwaBypassed(true)} style={{ background: 'transparent', border: '1px solid #669988', color: '#88bbaa', padding: '8px 16px', fontSize: 13, fontFamily: 'inherit', letterSpacing: 1.5, cursor: 'pointer', borderRadius: 4 }}>
-              BYPASS PROTOCOL (BROWSER MODE)
+            <button onClick={() => { window.location.href = '/?source=pwa'; }} style={{ width: '100%', background: 'rgba(0, 255, 136, 0.12)', border: '1px solid #00ff88', color: '#00ff88', padding: '10px 16px', fontSize: 13, fontFamily: 'inherit', letterSpacing: 2, cursor: 'pointer', borderRadius: 4 }}>
+              TRIGGER / LAUNCH INSTALLED PWA
             </button>
           </div>
         </div>

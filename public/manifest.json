@@ -2,7 +2,7 @@
   "name": "Aliens Survivor: USS Sulaco",
   "short_name": "Aliens Survivor",
   "description": "10-minute Colonial Marine survival wave shooter aboard the USS Sulaco",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#050709",
