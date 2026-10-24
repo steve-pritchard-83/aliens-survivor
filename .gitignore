@@ -35,3 +35,7 @@ Thumbs.db
 
 .vercel
 .env*
+
+# Quest build artifacts
+quest-build/
+*.idsig
