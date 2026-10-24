@@ -43,12 +43,6 @@ export function HUD() {
       ('ontouchstart' in window && (navigator.maxTouchPoints > 1 || window.innerWidth < 1024)));
     setIsMobileDevice(mobile);
 
-    if (isQuest && typeof navigator !== 'undefined' && navigator.xr) {
-      navigator.xr.isSessionSupported?.('immersive-vr').then((sup) => {
-        if (sup) handleLaunch('VR');
-      }).catch(() => {});
-    }
-
     const handlePrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallEvent); };
     const handleInstalled = () => { setIsStandalone(true); };
     window.addEventListener('beforeinstallprompt', handlePrompt);
@@ -231,16 +225,16 @@ export function HUD() {
         </div>
       )}
       {(status === 'MENU' || status === 'DEFEAT') && (
-        <div onClick={(e) => { e.stopPropagation(); if (isQuest) handleLaunch('VR'); }} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: isQuest ? 'pointer' : 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 8, 6, 0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center', zIndex: 30 }}>
           <h1 style={{ fontSize: 52, letterSpacing: 5, color: status === 'DEFEAT' ? '#ff3333' : '#00ff88', marginBottom: 8 }}>
             {status === 'MENU' ? 'ALIENS SURVIVOR' : 'MIA // BIO-SIGNALS FLATLINED'}
           </h1>
           <p style={{ maxWidth: 540, color: status === 'DEFEAT' ? '#ff9999' : '#99d6be', fontSize: 15, lineHeight: 1.5, marginBottom: 20 }}>
-            {status === 'MENU' ? (isQuest ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready. Click button below or pull trigger to enter.' : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.') : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
+            {status === 'MENU' ? (isQuest ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready. Click button below to launch.' : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.') : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             {isQuest ? (
-              <button onClick={() => handleLaunch('VR')} style={{ padding: '18px 40px', fontSize: 24, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 30px rgba(0,255,136,0.8)' }}>▶ ENTER FULLSCREEN 3D VR</button>
+              <button onClick={(e) => { e.stopPropagation(); handleLaunch('VR'); }} style={{ padding: '18px 40px', fontSize: 24, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 30px rgba(0,255,136,0.8)' }}>▶ ENTER FULLSCREEN 3D VR</button>
             ) : (
               <>
                 <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
