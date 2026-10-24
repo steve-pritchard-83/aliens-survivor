@@ -98,8 +98,10 @@ export function PlayerController() {
     }
 
     if (state.status === 'DEFEAT') {
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.25, dt * 4);
-      camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, 0.45, dt * 3);
+      if (InputManager.mode !== 'XR') {
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.25, dt * 4);
+        camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, 0.45, dt * 3);
+      }
       return;
     }
 

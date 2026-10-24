@@ -57,7 +57,8 @@ function playClip(xeno: PooledXenomorph, clipName: string, loop = true, timeScal
 export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');
   const containerRef = useRef<THREE.Group>(null), fxRef = useRef<ImpactFXHandle>(null);
-  const spawnCooldownRef = useRef(0.5), hissTimerRef = useRef(2.5), lastSpawnIndexRef = useRef(-1), deathCounterRef = useRef(0);
+  const spawnCooldownRef = useRef(5.0), hissTimerRef = useRef(3.5), lastSpawnIndexRef = useRef(-1), deathCounterRef = useRef(0);
+  const prevStatusRef = useRef(useGameStore.getState().status);
   const cleanClips = useMemo(() => sanitizeClips(animations), [animations]);
 
   const pool = useMemo<PooledXenomorph[]>(() => Array.from({ length: POOL_SIZE }, (_, i) => {
@@ -131,6 +132,11 @@ export function XenomorphPool() {
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState(), now = clock.getElapsedTime();
     if (state.status === 'PAUSED') return;
+    if (state.status === 'PLAYING' && prevStatusRef.current !== 'PLAYING') {
+      pool.forEach((x) => { x.active = false; x.state = 'DEAD'; x.root.visible = false; x.y = -50; });
+      spawnCooldownRef.current = 5.0;
+    }
+    prevStatusRef.current = state.status;
     if (state.status === 'MENU') { pool.forEach((x) => { x.active = false; x.root.visible = false; }); return; }
     if (state.status === 'VICTORY') { pool.forEach((x) => { if (x.active && (x.y += dt * 2.5) > 3.0) { x.active = false; x.root.visible = false; } else if (x.active) x.root.position.set(x.x, x.y, x.z); }); return; }
     const phase = state.phase, spawnInterval = phase === 1 ? 3.5 : phase === 2 ? 2.8 : phase === 3 ? 2.2 : 1.6;

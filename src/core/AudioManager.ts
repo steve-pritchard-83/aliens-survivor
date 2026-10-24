@@ -47,6 +47,7 @@ class WebAudioController {
   private defeatMute = false;
 
   public async unlock(): Promise<void> {
+    this.defeatMute = false;
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
@@ -224,6 +225,7 @@ class WebAudioController {
 
   public resetAudio(): void {
     this.defeatMute = false;
+    if (this.ctx && this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
   public setKlaxonActive(active: boolean): void {

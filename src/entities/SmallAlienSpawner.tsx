@@ -18,13 +18,14 @@ const _sphere = new THREE.Sphere(), _ray = new THREE.Ray(), _hitVec = new THREE.
 export function SmallAlienSpawner() {
   const fhGltf = useGLTF('/models/facehugger.glb'), cbGltf = useGLTF('/models/chestburster.glb');
   const rootRef = useRef<THREE.Group>(null), fxRef = useRef<ImpactFXHandle>(null);
+  const prevStatusRef = useRef(useGameStore.getState().status);
 
   const entityRef = useRef({
     active: false, kind: 'FACEHUGGER' as 'FACEHUGGER' | 'CHESTBURSTER',
     state: 'DEAD' as 'SPAWNING' | 'PURSUING' | 'LEAPING' | 'ATTACKING' | 'DEAD',
     hp: 90, maxHp: 90, x: 0, y: 0, z: 0, yaw: 0, speed: 4.5,
     targetCorner: -1, leapCooldown: 0.6, leapVx: 0, leapVz: 0,
-    stateTimer: 0, attackCooldown: 0, hitFlashTimer: 0, vocalTimer: 1.5, spawnCooldown: 4.2, animTime: 0
+    stateTimer: 0, attackCooldown: 0, hitFlashTimer: 0, vocalTimer: 1.5, spawnCooldown: 7.0, animTime: 0
   });
 
   const { fhGroup, cbGroup, fhMats, cbMats, faceRig, wormRig } = useMemo(() => {
@@ -81,6 +82,11 @@ export function SmallAlienSpawner() {
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState(), now = clock.getElapsedTime(), e = entityRef.current, r = rootRef.current;
     if (state.status === 'PAUSED' || !r) return;
+    if (state.status === 'PLAYING' && prevStatusRef.current !== 'PLAYING') {
+      e.active = false; e.state = 'DEAD'; e.spawnCooldown = 7.0;
+      fhGroup.visible = false; cbGroup.visible = false; state.setSmallThreat(null);
+    }
+    prevStatusRef.current = state.status;
     if (state.status === 'MENU' || state.status === 'VICTORY') {
       e.active = false; fhGroup.visible = false; cbGroup.visible = false; state.setSmallThreat(null); return;
     }

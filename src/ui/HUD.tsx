@@ -58,7 +58,7 @@ export function HUD() {
   useEffect(() => {
     if (!isVrApp) return;
     const launch = () => handleLaunch('VR');
-    xrStore.enterVR().then(() => startGame()).catch(() => {
+    xrStore.enterVR().then(() => launch()).catch(() => {
       const retry = () => { window.removeEventListener('pointerdown', retry); window.removeEventListener('keydown', retry); launch(); };
       window.addEventListener('pointerdown', retry, { once: true }); window.addEventListener('keydown', retry, { once: true });
     });
