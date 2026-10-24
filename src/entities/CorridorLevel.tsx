@@ -62,7 +62,6 @@ export function CorridorLevel() {
   const beacon2Ref = useRef<THREE.Group>(null);
   const beacon3Ref = useRef<THREE.Group>(null);
   const beacon4Ref = useRef<THREE.Group>(null);
-  const steamRef = useRef<THREE.Points>(null);
   const sectorMeshGroupRef = useRef<THREE.Group>(null);
 
   const { c1, c2, c3, c4 } = useMemo(() => {
@@ -117,24 +116,7 @@ export function CorridorLevel() {
     return () => { CombatSystem.unregisterEnvRaycaster(); };
   }, [c1, c2, c3, c4]);
 
-  const steamGeo = useMemo(() => {
-    const count = 280;
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const arm = i % 5;
-      if (arm === 0) { positions[i * 3] = -0.8 + Math.random() * 0.9; positions[i * 3 + 2] = 8.4 + Math.random() * 27.2; }
-      else if (arm === 1) { positions[i * 3] = -13.9 + Math.random() * 0.9; positions[i * 3 + 2] = 8.4 + Math.random() * 27.2; }
-      else if (arm === 2) { positions[i * 3] = -13.5 + Math.random() * 13.0; positions[i * 3 + 2] = 35.4 + Math.random() * 0.9; }
-      else if (arm === 3) { positions[i * 3] = -13.5 + Math.random() * 13.0; positions[i * 3 + 2] = 21.6 + Math.random() * 0.9; }
-      else { positions[i * 3] = -13.5 + Math.random() * 13.0; positions[i * 3 + 2] = 7.9 + Math.random() * 0.9; }
-      positions[i * 3 + 1] = Math.random() * 2.2;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    return geo;
-  }, []);
-
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock }) => {
     if (status === 'PAUSED') return;
     const t = clock.getElapsedTime();
     const rotSpeed = phase === 1 ? 3.2 : phase === 2 ? 4.8 : 6.8;
@@ -142,16 +124,6 @@ export function CorridorLevel() {
     if (beacon2Ref.current) beacon2Ref.current.rotation.y = -t * rotSpeed * 1.05;
     if (beacon3Ref.current) beacon3Ref.current.rotation.y = t * rotSpeed * 0.95;
     if (beacon4Ref.current) beacon4Ref.current.rotation.y = -t * rotSpeed * 1.1;
-
-    if (steamRef.current && phase >= 3) {
-      const pos = steamRef.current.geometry.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < pos.count; i++) {
-        let y = pos.getY(i) - dt * 0.65;
-        if (y < 0.1) y = 2.2;
-        pos.setY(i, y);
-      }
-      pos.needsUpdate = true;
-    }
   });
 
   const ambientIntensity = phase === 1 ? 0.78 : phase === 2 ? 0.62 : 0.54;
@@ -204,12 +176,6 @@ export function CorridorLevel() {
       </group>
 
       <CorridorAtmosphereFX />
-
-      {phase >= 3 && (
-        <points ref={steamRef} geometry={steamGeo}>
-          <pointsMaterial color="#88aabb" size={0.32} transparent opacity={0.28} depthWrite={false} />
-        </points>
-      )}
     </group>
   );
 }
