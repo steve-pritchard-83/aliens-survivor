@@ -25,6 +25,7 @@ export function HUD() {
   const joyTouchId = useRef<number | null>(null), lookTouchId = useRef<number | null>(null), lookLastPos = useRef<[number, number] | null>(null);
 
   const [isQuest] = useState(() => typeof navigator !== 'undefined' && /OculusBrowser|Quest/i.test(navigator.userAgent));
+  const [isVrApp] = useState(() => typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('vr') === '1' || /OculusBrowser|Quest/i.test(navigator.userAgent)));
   const [isStandalone, setIsStandalone] = useState(true);
   const [pwaDismissed, setPwaDismissed] = useState(() => { try { return sessionStorage.getItem('uscm_pwa_ack') === 'true'; } catch { return false; } });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
@@ -53,6 +54,15 @@ export function HUD() {
       window.removeEventListener('appinstalled', handleInstalled);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isVrApp) return;
+    const launch = () => handleLaunch('VR');
+    xrStore.enterVR().then(() => startGame()).catch(() => {
+      const retry = () => { window.removeEventListener('pointerdown', retry); window.removeEventListener('keydown', retry); launch(); };
+      window.addEventListener('pointerdown', retry, { once: true }); window.addEventListener('keydown', retry, { once: true });
+    });
+  }, [isVrApp]);
 
   useEffect(() => {
     if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
@@ -233,8 +243,8 @@ export function HUD() {
             {status === 'MENU' ? (isQuest ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready. Click button below to launch.' : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.') : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
           </p>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {isQuest ? (
-              <button onClick={(e) => { e.stopPropagation(); handleLaunch('VR'); }} style={{ padding: '18px 40px', fontSize: 24, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 30px rgba(0,255,136,0.8)' }}>▶ ENTER FULLSCREEN 3D VR</button>
+            {isQuest || isVrApp ? (
+              <button onClick={(e) => { e.stopPropagation(); handleLaunch('VR'); }} style={{ padding: '18px 40px', fontSize: 24, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 30px rgba(0,255,136,0.8)' }}>▶ DEPLOY 3D VR</button>
             ) : (
               <>
                 <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: status === 'DEFEAT' ? '#ff3333' : '#00ff88', color: status === 'DEFEAT' ? '#fff' : '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>{status === 'MENU' ? 'INITIATE COMBAT DROP' : 'REDEPLOY MARINE'}</button>
