@@ -6,6 +6,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
+import { shouldSpawnBoss } from '../systems/waveDirector';
 import {
   CORRIDOR_SPAWN_NODES,
   constrainToCorridor,
@@ -46,6 +47,7 @@ export function XenomorphPool() {
     deathCounterRef = useRef(0),
     threatsTimerRef = useRef(0);
   const lastRunIdRef = useRef(useGameStore.getState().runId);
+  const bossPhasesRef = useRef(new Set<number>());
   const cleanClips = useMemo(() => sanitizeClips(animations), [animations]);
 
   const pool = useMemo<PooledXenomorph[]>(
@@ -216,6 +218,7 @@ export function XenomorphPool() {
       now = clock.getElapsedTime();
     if (state.status === 'PLAYING' && state.runId !== lastRunIdRef.current) {
       lastRunIdRef.current = state.runId;
+      bossPhasesRef.current.clear();
       pool.forEach((x) => {
         x.active = false;
         x.state = 'DEAD';
@@ -268,7 +271,12 @@ export function XenomorphPool() {
       if (idx === lastSpawnIndexRef.current && cands.length > 1) idx = cands[(cands.indexOf(idx) + 1) % cands.length];
       lastSpawnIndexRef.current = idx;
       const node = CORRIDOR_SPAWN_NODES[idx];
-      const isBoss = phase >= 3 && !pool.some((x) => x.active && x.isBoss);
+      const isBoss = shouldSpawnBoss(
+        phase,
+        bossPhasesRef.current,
+        pool.some((x) => x.active && x.isBoss)
+      );
+      if (isBoss) bossPhasesRef.current.add(phase);
       const droneHp = isBoss ? 1100 : maxHp,
         droneScale = isBoss ? 0.62 : 0.45;
       freeXeno.isBoss = isBoss;

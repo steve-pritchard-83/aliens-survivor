@@ -3,9 +3,9 @@
 Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100).
 
 ## Phase 0 — Stabilise
-- [ ] P0.0 Progress tracker
-- [ ] P0.1 Mechanical reformat
-- [ ] P0.2 Run identity / isSimulationFrozen (C5, H2)
+- [x] P0.0 (cd96aeb) Progress tracker
+- [x] P0.1 (c5cedb3) Mechanical reformat
+- [x] P0.2 (1f2dcb4) Run identity / isSimulationFrozen (C5, H2)
 - [ ] P0.3 Hit query vs damage separation (C1, C2)
 - [ ] P0.4 Boss once per phase (H1)
 - [ ] P0.5 VR level-up selection (C3)
