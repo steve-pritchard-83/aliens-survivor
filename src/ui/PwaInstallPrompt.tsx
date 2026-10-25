@@ -1,22 +1,26 @@
-import { GREEN, solidButton, overlay } from './uiStyles';
+import { GREEN, INK, solidButton, overlay } from './uiStyles';
+import { PwaInstallMode, INSTALL_STEPS } from './pwaInstall';
 
 export interface BeforeInstallEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-/** Full-screen gate shown to mobile browsers that have not installed the PWA. */
+/** Optional install suggestion for mobile browsers: playing in the browser is always one tap away. */
 export function PwaInstallPrompt({
-  canPrompt,
+  mode,
   onInstall,
-  onLaunchInstalled
+  onContinue
 }: {
-  canPrompt: boolean;
+  mode: PwaInstallMode;
   onInstall: () => void;
-  onLaunchInstalled: () => void;
+  onContinue: () => void;
 }) {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Install the app"
       onClick={(e) => e.stopPropagation()}
       style={overlay({ position: 'fixed', inset: 0, background: 'rgba(2, 6, 4, 0.96)', zIndex: 100 })}
     >
@@ -33,64 +37,63 @@ export function PwaInstallPrompt({
         <div style={{ color: '#ffaa33', fontSize: 13, letterSpacing: 3, marginBottom: 8 }}>
           WEYLAND-YUTANI // USCM PROTOCOL
         </div>
-        <h2 style={{ fontSize: 24, letterSpacing: 4, color: GREEN, marginBottom: 12 }}>PWA INSTALLATION MANDATORY</h2>
+        <h2 style={{ fontSize: 24, letterSpacing: 4, color: GREEN, marginBottom: 12 }}>
+          INSTALL FOR THE BEST EXPERIENCE
+        </h2>
         <p style={{ color: '#99d6be', fontSize: 14, lineHeight: 1.5, marginBottom: 18 }}>
-          Mobile browser play is restricted. Install the simulator to your Home Screen for full hardware acceleration,
-          low-latency haptics, and fullscreen targeting.
+          Installing adds a home screen icon, fullscreen play and offline support. You can also play right now in the
+          browser.
         </p>
-        {canPrompt ? (
+        <button
+          onClick={onContinue}
+          style={solidButton({
+            width: '100%',
+            padding: '14px 20px',
+            fontSize: 18,
+            letterSpacing: 2,
+            color: INK,
+            marginBottom: 12
+          })}
+        >
+          PLAY IN BROWSER
+        </button>
+        {mode === 'native' ? (
           <button
             onClick={onInstall}
-            style={solidButton({
+            style={{
               width: '100%',
-              padding: '14px 20px',
-              fontSize: 18,
+              background: 'rgba(0, 255, 136, 0.12)',
+              border: `1px solid ${GREEN}`,
+              color: GREEN,
+              padding: '10px 16px',
+              fontSize: 13,
+              fontFamily: 'inherit',
               letterSpacing: 2,
-              marginBottom: 12
-            })}
+              cursor: 'pointer',
+              borderRadius: 4
+            }}
           >
-            INSTALL MISSION PWA
+            INSTALL APP
           </button>
         ) : (
-          <div
+          <ol
+            aria-label="How to install"
             style={{
               background: 'rgba(0, 255, 136, 0.1)',
               border: '1px solid rgba(0, 255, 136, 0.35)',
-              padding: '12px 14px',
+              padding: '12px 14px 12px 32px',
               borderRadius: 4,
               fontSize: 13,
               color: '#aaffd4',
-              marginBottom: 14,
               textAlign: 'left',
               lineHeight: 1.6
             }}
           >
-            <div>
-              1. Tap Safari Share button <strong>[ ⎋ ]</strong>
-            </div>
-            <div>
-              2. Select <strong>"Add to Home Screen" [+]</strong>
-            </div>
-            <div>3. Launch from your Home Screen app icon</div>
-          </div>
+            {INSTALL_STEPS[mode].map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
         )}
-        <button
-          onClick={onLaunchInstalled}
-          style={{
-            width: '100%',
-            background: 'rgba(0, 255, 136, 0.12)',
-            border: `1px solid ${GREEN}`,
-            color: GREEN,
-            padding: '10px 16px',
-            fontSize: 13,
-            fontFamily: 'inherit',
-            letterSpacing: 2,
-            cursor: 'pointer',
-            borderRadius: 4
-          }}
-        >
-          TRIGGER / LAUNCH INSTALLED PWA
-        </button>
       </div>
     </div>
   );

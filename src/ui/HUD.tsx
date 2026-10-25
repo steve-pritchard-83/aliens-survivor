@@ -9,27 +9,10 @@ import { SettingsPanel } from './SettingsPanel';
 import { LevelUpModal } from './LevelUpModal';
 import { TouchControls } from './TouchControls';
 import { PwaInstallPrompt, BeforeInstallEvent } from './PwaInstallPrompt';
+import { pwaInstallMode, readPwaDismissed, writePwaDismissed } from './pwaInstall';
 import { VictoryScreen } from './VictoryScreen';
 import { MainMenu } from './MainMenu';
 import { GREEN, INK, solidButton } from './uiStyles';
-
-const PWA_ACK_KEY = 'uscm_pwa_ack';
-
-function readPwaAck(): boolean {
-  try {
-    return sessionStorage.getItem(PWA_ACK_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function writePwaAck(): void {
-  try {
-    sessionStorage.setItem(PWA_ACK_KEY, 'true');
-  } catch {
-    /* sessionStorage unavailable: non-fatal */
-  }
-}
 
 function isDesktopPointer(inputMode: InputMode): boolean {
   return inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
@@ -50,7 +33,7 @@ export function HUD() {
   const [isQuest] = useState(() => Platform.isQuest);
   const [isVrApp] = useState(() => Platform.isVrApp);
   const [isStandalone, setIsStandalone] = useState(true);
-  const [pwaDismissed, setPwaDismissed] = useState(readPwaAck);
+  const [pwaDismissed, setPwaDismissed] = useState(readPwaDismissed);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const prevStatusRef = useRef(status);
@@ -84,8 +67,6 @@ export function HUD() {
   }, [status]);
 
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
-    writePwaAck();
-    setPwaDismissed(true);
     launchMission();
     if (mode === 'VR') xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e));
     try {
@@ -104,9 +85,13 @@ export function HUD() {
     if (isDesktopPointer(inputMode)) InputManager.requestPointerLock();
   };
 
-  const handleInstallPWA = async () => {
-    writePwaAck();
+  const dismissPwaPrompt = () => {
+    writePwaDismissed();
     setPwaDismissed(true);
+  };
+
+  const handleInstallPWA = async () => {
+    dismissPwaPrompt();
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
@@ -173,13 +158,9 @@ export function HUD() {
       )}
       {status === 'MENU' && isMobileDevice && !isStandalone && !pwaDismissed && (
         <PwaInstallPrompt
-          canPrompt={deferredPrompt !== null}
+          mode={pwaInstallMode(navigator.userAgent, deferredPrompt !== null)}
           onInstall={handleInstallPWA}
-          onLaunchInstalled={() => {
-            writePwaAck();
-            setPwaDismissed(true);
-            window.location.href = '/?source=pwa';
-          }}
+          onContinue={dismissPwaPrompt}
         />
       )}
       <SettingsPanel onResume={handleResume} onRestart={() => handleLaunch('STANDARD')} />
