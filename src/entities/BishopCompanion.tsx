@@ -15,6 +15,29 @@ const _goal = { x: 0, z: 0 };
 const _dmg: DamageSpec = { amount: BALANCE.BISHOP.DAMAGE, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
+const _best = { id: -1, x: 0, z: 0, dist: 0 };
+
+/** Updates `_best` in place if `t` is a closer, visible, live threat than whatever `_best` already holds. */
+function considerThreat(
+  t: { id: number; x: number; z: number; state: string },
+  st: { x: number; z: number },
+  curHall: number,
+  bestId: number
+): number {
+  if (t.state === 'DEAD') return bestId;
+  const d = Math.hypot(t.x - st.x, t.z - st.z);
+  if (d > BALANCE.BISHOP.ENGAGE_RANGE) return bestId;
+  const tHall = getHallId(t.x, t.z);
+  const hasLOS = tHall === curHall || d < 5.2 || sharesLane(st.x, st.z, t.x, t.z);
+  if (hasLOS && (bestId === -1 || d < _best.dist)) {
+    _best.id = t.id;
+    _best.x = t.x;
+    _best.z = t.z;
+    _best.dist = d;
+    return t.id;
+  }
+  return bestId;
+}
 
 export function BishopCompanion() {
   const bishopGltf = useGLTF('/models/bishop.glb');
@@ -139,21 +162,14 @@ export function BishopCompanion() {
     const frameDisplacement = Math.hypot(st.x - prevX, st.z - prevZ);
     const isMoving = frameDisplacement > 0.001;
 
-    // Acquire nearest visible hostile (Xenomorph, Facehugger, or Chestburster) in the same hallway or within line-of-sight
-    const allThreats = store.smallThreat ? [...store.activeThreats, store.smallThreat] : store.activeThreats;
-    let bestTarget: { id: number; x: number; z: number; dist: number } | null = null;
+    // Acquire nearest visible hostile (Xenomorph, Facehugger, or Chestburster) in the same hallway or within line-of-sight.
+    // Walks activeThreats then smallThreat directly into the shared `_best` scratch object, rather than spreading
+    // them into a new array every frame.
     const curHall = getHallId(st.x, st.z);
-
-    for (const t of allThreats) {
-      if (t.state === 'DEAD') continue;
-      const d = Math.hypot(t.x - st.x, t.z - st.z);
-      if (d > BALANCE.BISHOP.ENGAGE_RANGE) continue;
-      const tHall = getHallId(t.x, t.z);
-      const hasLOS = tHall === curHall || d < 5.2 || sharesLane(st.x, st.z, t.x, t.z);
-      if (hasLOS && (!bestTarget || d < bestTarget.dist)) {
-        bestTarget = { id: t.id, x: t.x, z: t.z, dist: d };
-      }
-    }
+    let bestId = -1;
+    for (const t of store.activeThreats) bestId = considerThreat(t, st, curHall, bestId);
+    if (store.smallThreat) bestId = considerThreat(store.smallThreat, st, curHall, bestId);
+    const bestTarget = bestId === -1 ? null : _best;
 
     // Rotate Bishop toward his target if engaging, otherwise toward movement direction or player's look direction
     const desiredYaw = bestTarget

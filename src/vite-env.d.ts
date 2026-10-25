@@ -14,4 +14,6 @@ interface Window {
 
 interface ImportMetaEnv {
   readonly VITE_E2E_XR?: string;
+  /** Build-time flag that lets ?e2e=1 enable the Playwright test hooks (see core/e2e.ts). Absent from normal builds. */
+  readonly VITE_E2E?: string;
 }
