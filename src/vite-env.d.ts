@@ -6,6 +6,8 @@ interface Window {
   __game?: typeof import('./core/GameStore').useGameStore;
   /** XR store, exposed for e2e (see main.tsx). */
   __xr?: typeof import('./core/XRStore').xrStore;
+  /** World position of the player's head/camera, exposed for e2e (see PlayerController). */
+  __headPosition?: () => { x: number; y: number; z: number };
   /** Emulated Quest 3 (IWER), installed only in e2e builds with ?iwer=1. */
   __xrDevice?: import('iwer').XRDevice;
 }

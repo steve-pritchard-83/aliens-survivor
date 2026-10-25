@@ -4,15 +4,22 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
 import { BALANCE } from '../data/balance';
+import { isE2E } from '../core/e2e';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
-import { constrainToCorridorInto } from '../core/CorridorNav';
+import { constrainToCorridorInto, XZ } from '../core/CorridorNav';
+import { velocityDelta } from './player/playerMotion';
+import { readHeadLocal, turnAboutHead, moveHeadClamped, placeHeadAt } from './player/xrRig';
 
-const _clamped = { x: 0, z: 0 };
+const START_X = -0.32;
+const START_Z = 13.0;
+const EYE_HEIGHT = 1.15;
+const TRANSFORM_SYNC_SECONDS = 0.05;
+
 const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
 const _worldQuat = new THREE.Quaternion();
-const _forward = new THREE.Vector3();
-const _right = new THREE.Vector3();
+const _delta: XZ = { x: 0, z: 0 };
+const _headLocal = new THREE.Vector3();
 
 export function PlayerController() {
   const { camera } = useThree();
@@ -24,6 +31,9 @@ export function PlayerController() {
   const headBobTimer = useRef(0);
   const prevStatusRef = useRef(useGameStore.getState().status);
   const lastTransformSync = useRef(0);
+  // Player position (the head in VR), integrated locally every frame; the store copy is throttled for other systems
+  const posRef = useRef<XZ>({ x: START_X, z: START_Z });
+  const wasXrRef = useRef(false);
 
   const status = useGameStore((s) => s.status);
 
@@ -42,8 +52,15 @@ export function PlayerController() {
   }, [ripleyGltf.scene]);
 
   useEffect(() => {
+    if (isE2E()) {
+      const probe = new THREE.Vector3();
+      window.__headPosition = () => {
+        camera.getWorldPosition(probe);
+        return { x: probe.x, y: probe.y, z: probe.z };
+      };
+    }
     InputManager.init();
-    camera.position.set(-0.32, 1.15, 13.0);
+    camera.position.set(START_X, EYE_HEIGHT, START_Z);
     yawRef.current = Math.PI;
     pitchRef.current = 0;
 
@@ -66,14 +83,17 @@ export function PlayerController() {
     prevStatusRef.current = status;
 
     if (status === 'PLAYING' && (prev === 'MENU' || prev === 'DEFEAT' || prev === 'VICTORY')) {
-      camera.position.set(-0.32, 1.15, 13.0);
+      posRef.current.x = START_X;
+      posRef.current.z = START_Z;
+      camera.position.set(START_X, EYE_HEIGHT, START_Z);
       camera.rotation.z = 0;
       yawRef.current = Math.PI;
       pitchRef.current = 0;
       xrYawRef.current = 0;
+      wasXrRef.current = false;
       if (camera.parent) {
         camera.parent.rotation.y = 0;
-        camera.parent.position.set(-0.8, 0, 13.0);
+        camera.parent.position.set(START_X, 0, START_Z);
       }
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
@@ -82,7 +102,7 @@ export function PlayerController() {
     }
   }, [status, camera]);
 
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock, gl }, dt, frame) => {
     const state = useGameStore.getState();
     const now = clock.getElapsedTime();
 
@@ -136,8 +156,9 @@ export function PlayerController() {
     const shakePitch = shake > 0 ? Math.sin(now * 58) * shake * 0.032 : 0;
     const shakeYaw = shake > 0 ? Math.cos(now * 67) * shake * 0.024 : 0;
     const shakeRoll = shake > 0 ? Math.sin(now * 49 + 1.1) * shake * 0.042 : 0;
+    const xrOrigin = snap.mode === 'XR' ? camera.parent : null;
 
-    if (snap.mode !== 'XR') {
+    if (!xrOrigin) {
       yawRef.current -= snap.lookDeltaX;
       while (yawRef.current > Math.PI * 2) yawRef.current -= Math.PI * 2;
       while (yawRef.current < 0) yawRef.current += Math.PI * 2;
@@ -145,32 +166,36 @@ export function PlayerController() {
       _euler.set(pitchRef.current + shakePitch, yawRef.current + shakeYaw, shakeRoll, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
     } else {
-      if (camera.parent) {
-        if (snap.snapTurn !== 0) {
-          xrYawRef.current += snap.snapTurn;
-          camera.parent.rotation.y = xrYawRef.current;
-        }
-        camera.parent.updateMatrixWorld();
+      readHeadLocal(frame, gl.xr.getReferenceSpace(), camera, _headLocal);
+      if (!wasXrRef.current) {
+        // First VR frame of this run or session: put the head on the player's position
+        placeHeadAt(xrOrigin, _headLocal, posRef.current.x, posRef.current.z);
       }
+      if (snap.snapTurn !== 0) {
+        xrYawRef.current += snap.snapTurn;
+        turnAboutHead(xrOrigin, _headLocal, xrYawRef.current);
+      }
+      xrOrigin.position.y = state.settings.seatedMode ? BALANCE.PLAYER.SEATED_HEIGHT_OFFSET : 0;
+      xrOrigin.updateMatrixWorld(true);
       camera.getWorldQuaternion(_worldQuat);
       _euler.setFromQuaternion(_worldQuat, 'YXZ');
       yawRef.current = _euler.y;
     }
 
-    _forward.set(-Math.sin(yawRef.current), 0, -Math.cos(yawRef.current)).normalize();
-    _right.set(Math.cos(yawRef.current), 0, -Math.sin(yawRef.current)).normalize();
-
+    wasXrRef.current = xrOrigin !== null;
+    const yaw = yawRef.current;
     const moveMag = Math.hypot(snap.moveX, snap.moveZ);
-    const [basePosX, , basePosZ] = state.playerPos;
-    let nextX = basePosX + (_right.x * snap.moveX + _forward.x * snap.moveZ) * BALANCE.PLAYER.MOVE_SPEED * dt;
-    let nextZ = basePosZ + (_right.z * snap.moveX + _forward.z * snap.moveZ) * BALANCE.PLAYER.MOVE_SPEED * dt;
-
-    constrainToCorridorInto(nextX, nextZ, 0, _clamped);
-    nextX = _clamped.x;
-    nextZ = _clamped.z;
+    velocityDelta(snap.moveX, snap.moveZ, yaw, dt, _delta);
+    const pos = posRef.current;
+    if (xrOrigin) {
+      // VR: the head is the player; walking into a wall (by stick or by room-scale) is clamped and pushed back
+      moveHeadClamped(xrOrigin, _headLocal, _delta.x, _delta.z, BALANCE.PLAYER.XR_WALL_MARGIN, pos);
+    } else {
+      constrainToCorridorInto(pos.x + _delta.x, pos.z + _delta.z, 0, pos);
+    }
 
     let bobOffset = 0;
-    if (moveMag > 0.05 && snap.mode !== 'XR') {
+    if (moveMag > 0.05 && !xrOrigin) {
       headBobTimer.current += dt * 10.5;
       bobOffset = Math.sin(headBobTimer.current) * 0.035;
     } else {
@@ -179,24 +204,23 @@ export function PlayerController() {
 
     const shakeY = shake > 0 ? Math.cos(now * 74) * shake * 0.032 : 0;
     const shakeX = shake > 0 ? Math.sin(now * 63) * shake * 0.025 : 0;
-    const eyeY = 1.15 + bobOffset + shakeY;
-    if (snap.mode === 'XR' && camera.parent) {
-      camera.parent.position.set(nextX, 0, nextZ);
-      camera.parent.updateMatrixWorld();
-    } else {
-      camera.position.set(nextX + _right.x * shakeX, eyeY, nextZ + _right.z * shakeX);
+    const eyeY = EYE_HEIGHT + bobOffset + shakeY;
+    if (!xrOrigin) {
+      const rightX = Math.cos(yaw),
+        rightZ = -Math.sin(yaw);
+      camera.position.set(pos.x + rightX * shakeX, eyeY, pos.z + rightZ * shakeX);
     }
 
     if (ripleyRef.current) {
-      ripleyRef.current.position.set(nextX + _forward.x * -0.14, 0.0, nextZ + _forward.z * -0.14);
-      ripleyRef.current.rotation.set(0, yawRef.current + Math.PI, 0);
+      ripleyRef.current.position.set(pos.x + Math.sin(yaw) * 0.14, 0.0, pos.z + Math.cos(yaw) * 0.14);
+      ripleyRef.current.rotation.set(0, yaw + Math.PI, 0);
     }
 
-    if (now - lastTransformSync.current > 0.05) {
+    if (now - lastTransformSync.current > TRANSFORM_SYNC_SECONDS) {
       lastTransformSync.current = now;
-      state.updatePlayerTransform(nextX, 1.15 + bobOffset, nextZ, yawRef.current);
+      state.updatePlayerTransform(pos.x, EYE_HEIGHT + bobOffset, pos.z, yaw);
     }
-    AudioManager.updateListener(nextX, eyeY, nextZ, yawRef.current);
+    AudioManager.updateListener(pos.x, eyeY, pos.z, yaw);
   });
 
   return (
