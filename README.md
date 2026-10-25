@@ -1,63 +1,50 @@
 # Aliens Survivor: USS Sulaco
 
-A 300-second (5-minute) survival wave shooter set aboard the *USS Sulaco*, built with React 19, Three.js, React Three Fiber, `@react-three/xr`, and Zustand. Designed for cross-platform play across Meta Quest 2/3 (WebXR TWA), Desktop Web (WASD + Pointer Lock), and Mobile PWA (Dual Virtual Joysticks).
+A 5-minute (300-second) first-person survival wave shooter set aboard the *USS Sulaco*, built with React 19, three.js, React Three Fiber, `@react-three/xr` and Zustand. Plays on Meta Quest 2/3 (WebXR), desktop web (WASD + pointer lock) and mobile (PWA with dual touch zones).
+
+> Engineering detail: [`HANDOFF.md`](./HANDOFF.md). Audit and roadmap: [`docs/AUDIT.md`](./docs/AUDIT.md). Credits and IP inventory: [`CREDITS.md`](./CREDITS.md), [`docs/IP_REVIEW.md`](./docs/IP_REVIEW.md).
 
 ---
 
 ## Features
 
-- **Engineering Handoff & Technical Specifications**: See [`HANDOFF.md`](./HANDOFF.md) for architecture rules, light budgets, line limits, and developer cheat sheets.
-- **Cross-Platform Dual-Mode Input**:
-  - **Meta Quest 2/3**: Stereoscopic 3D 6DoF with Touch Controller aiming, 45°/90°/smooth snap turn options, haptics, and wrist-mounted M314 Motion Tracker.
-  - **Desktop Web**: First-person WASD corridor locomotion with mouse look and smooth recoil recovery.
-  - **Mobile PWA**: Dual-zone touch controls (left stick locomotion, right stick aiming & auto-engagement).
-- **Iconic USCM Arsenal**:
-  - M41A Pulse Rifle (canonical 76cm prop scale, 99-round digital counter, 2.5s reload, overheat jamming).
-  - Tactical Underslung Spotlight & Muzzle Strobe.
-  - M314 Motion Tracker (180° / 360° radar sweep, pitch-modulated audio pings).
-- **Xenomorph Threat & Dismemberment**:
-  - Object-pooled Xenomorph Drones with 5-zone limb dismemberment (arms, legs, head decapitation).
-  - Facehuggers and Chestbursters with serpentine procedural locomotion.
-  - Phase 3/4 Praetorian Guard mini-boss (1.35x scale, armored DR, heavy charge attack).
-- **Survivor RPG Progression**:
-  - XP from hostile eliminations with Field Promotion Level-Ups.
-  - 6 Upgrade Cards (Overclocked Actuator, 150-Round Drum, Chitin Armor, Armor Piercing Rounds, 360° Scanner, Hazmat Acid Resistance).
-- **Comfort & Accessibility Settings**:
-  - VR Snap Turn angles (30°, 45°, 90°, or smooth continuous turning).
-  - Reduced-Flash Mode for photosensitive comfort.
-  - Left-Handed Mode (swaps weapon and motion tracker hands).
+- **Three ways to play**
+  - **Meta Quest 2/3:** 6DoF controller aiming, an in-headset start/pause/level-up menu, snap or smooth turning, comfort vignette, seated mode, left-handed mode, haptics and a wrist-mounted M314 motion tracker.
+  - **Desktop:** WASD, mouse look with adjustable sensitivity and invert-Y, status bar.
+  - **Mobile:** left-half move stick, right-half look with auto-fire on targets; installable PWA (optional).
+- **Arsenal and gear:** M41A pulse rifle (digital ammo counter, 2.5 s reload, overheat jams), underslung flashlight, muzzle strobe, M314 motion tracker (sweep radar with pitch-modulated pings).
+- **Enemies:** pooled Xenomorph drones with five-zone dismemberment, facehuggers and chestbursters, and a Praetorian boss once in each of the last two phases.
+- **Progression:** XP from kills, Field Promotion level-ups with six upgrade cards, a best-kills record.
+- **Comfort and accessibility:** snap-turn angles (30°, 45°, 90°) or smooth turning, comfort vignette (off/low/high), reduced-flash mode, seated mode, left-handed mode, master/music/effects volumes, keyboard-focusable settings with labels, zoomable menus on mobile.
 
 ---
 
-## Quick Start
+## Quick start
 
-### Development
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
 ```
 
-### Run Unit Tests
-```bash
-npm test
-```
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run verify` | The full gate: lint, format check, type-check, tests with coverage, production build, budgets |
+| `npm test` | Unit tests (`npm run test:coverage` adds the coverage gate) |
+| `npm run e2e` | Playwright browser tests: desktop, mobile emulation and an emulated Quest 3 |
+| `npm run format` | Prettier |
+| `npm run build` | Type-check and production build |
 
-### Production Build
-```bash
-npm run build
-```
+Append `?debug=1` to the URL for FPS, draw calls, triangles and the adaptive-quality tier.
 
 ---
 
-## Automated CI/CD & Build Pipelines
+## CI/CD
 
-- **CI Pipeline (`.github/workflows/ci.yml`)**: Automated Node 22 TypeScript type-checking, Vitest suite execution, and production Vite compilation on every commit and PR to `main`.
-- **Quest APK Pipeline (`.github/workflows/build-quest-apk.yml`)**: Automated Gradle compilation for Meta Quest Horizon OS APKs on release tags.
+- **CI (`.github/workflows/ci.yml`):** `npm run verify` on every push and pull request to `main`, followed by the Playwright suite in a separate job.
+- **Quest APK (`.github/workflows/build-quest-apk.yml`):** builds the signed Trusted Web Activity wrapper in `quest-build/` on `v*` tags or manual runs. It needs the signing secrets listed in the workflow header and in `HANDOFF.md`.
 
----
+## Deployment
 
-## Deployment & Quest Sideloading
-
-- **Production URL**: `https://aliens-survivor.vercel.app`
-- **Quest 2 Launch**: Launch via Quest Browser or sideloadable Horizon OS TWA APK at `https://aliens-survivor.vercel.app/?vr=1`.
-- **Debug Telemetry**: Append `?debug=1` to display real-time FPS, frame time, draw calls, triangles, and memory counters.
+- **Production:** `https://aliens-survivor.vercel.app` (Vercel builds `main`).
+- **Quest:** open the URL in the Quest Browser, or sideload the APK. The game enters VR automatically on Quest; pull the trigger in the start menu to deploy.

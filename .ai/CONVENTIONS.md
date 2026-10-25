@@ -1,11 +1,19 @@
 # Coding Conventions & AI Rules: Aliens Survivor
 
-1. **File Length Limit:** No source file (`src/**/*.{ts,tsx}`) may exceed **250 lines of code**. Keep components modular, split state and helpers into focused files, and never compress logic onto single lines to meet this limit.
-2. **TypeScript Strictness:** Always use strict typing. Avoid `any` unless bridging untyped Three.js internals.
-3. **Zero Frame-Loop Allocations:** Never instantiate `new THREE.Vector3()`, `new THREE.Euler()`, or `new THREE.Quaternion()` inside `useFrame` callbacks or event handlers. Pre-allocate scratch vectors and matrices at module scope.
-4. **Object Pooling & Performance Budget:** Do not mount/unmount Xenomorph entities dynamically during gameplay. Maintain a strict fixed pool of **6 instances** (`POOL_SIZE = 6`) using `SkeletonUtils.clone` and toggle visibility/state in-place to protect the Quest 2 mobile GPU budget.
-5. **Mobile GPU Light Cap:** Meta Quest 2 Adreno forward rendering budget permits a maximum of **4 active dynamic lights** in the scene simultaneously. Never dynamically mount/unmount point/spot lights (use `visible = false` or `intensity = 0` to prevent WebGL shader re-compilations).
-6. **Cross-Platform Input:** All player movement, aiming, firing, and reloading must flow through `src/core/InputManager.ts` so Desktop (`WASD` + PointerLock), Mobile PWA (dual virtual touch zones), and Meta Quest 2 (`@react-three/xr` controllers) work seamlessly from a single state store.
-7. **Centralized Game Balance & Types:** All mission constants, phase thresholds, player attributes, weapon parameters, and upgrade catalogs reside in `src/data/balance.ts`. Store interfaces reside in `src/core/GameTypes.ts`.
-8. **Automated Unit Testing:** Every core logic change (game store, phase transitions, weapon state machines, corridor clamping, upgrade math) must maintain passing tests in `tests/`.
-9. **Asset Integrity:** Always consult `.ai/ASSET_MANIFEST.md` before referencing `.glb` nodes, animation clips, or audio paths.
+Run `npm run verify` before every commit; it enforces most of this list.
+
+1. **File length:** no `src/**/*.{ts,tsx}` file over **250 lines** (blank lines and comments excluded), one statement per line. Split by responsibility (pure module + thin component); never compress code to fit. Enforced by ESLint.
+2. **Formatting and style:** Prettier (`npm run format`), single quotes, semicolons, LF line endings. Match the surrounding code's naming and comment density. Comments explain why, not what.
+3. **TypeScript strictness:** strict mode, `noUnusedLocals`/`noUnusedParameters` on, no `any` (justify any exception inline).
+4. **Error handling:** no empty `catch`. Expected failures (storage blocked, vibration unsupported) get a catch with a specific reason comment; unexpected ones log with `console.warn('[Module]', e)`.
+5. **Zero frame-loop allocations:** no `new THREE.*`, array literals, spreads, `.map/.filter/.reduce` or closures inside `useFrame` or per-shot code. Use module-scope scratch objects (`_name`), reused records and index loops (ADR 0002).
+6. **Pure logic first:** game rules live in `src/systems/` and the `*Sim`/`*AI` modules (no React imports) and are unit-tested; components adapt them to three.js, audio and UI.
+7. **Run lifecycle and freezing:** reset on `runId` changes, never on status edges. Gate simulation with `isSimulationFrozen(status)`.
+8. **Combat:** `CombatSystem.queryTarget` for side-effect-free probes, `resolveShot` for shots; target types implement `TargetProvider` (ADR 0005).
+9. **Frame-rate independence:** integrate movement and timers with `dt` and local state, never from throttled store values.
+10. **Light cap:** at most 4 dynamic lights; never mount/unmount lights at runtime (ADR 0001). Variable-cost effects honour `quality.tier` (ADR 0006).
+11. **Cross-platform input:** all player input goes through `InputManager` (desktop, touch, XR) or `vrControllers`; VR menus use `VRMenuNav` (edge-detected, armed after a delay).
+12. **Centralised data:** every game number lives in `src/data/balance.ts`; settings shape and validation live in `GameTypes.ts` and `Persistence.ts`.
+13. **Testing:** every logic change needs unit tests (coverage gate 80/75/65 on the logic layers); behaviour that spans the browser or XR gets a Playwright test. The IWER-based VR tests hold inputs for about a second because software rendering is slow.
+14. **Assets:** compress per ADR 0004, consult `.ai/ASSET_MANIFEST.md` for node/clip/audio names, and update `CREDITS.md` (a test checks models).
+15. **Docs:** keep `HANDOFF.md` and these files in step with the code; reference `balance.ts` instead of copying numbers.
