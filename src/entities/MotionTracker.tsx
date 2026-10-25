@@ -2,7 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { Haptics } from '../core/Haptics';
 import { trackerCanvasState } from '../core/TrackerState';
@@ -65,7 +65,7 @@ export function MotionTracker() {
       return;
     }
 
-    if (state.status === 'PAUSED') return;
+    if (isSimulationFrozen(state.status)) return;
 
     const cx = 128,
       cy = 176,

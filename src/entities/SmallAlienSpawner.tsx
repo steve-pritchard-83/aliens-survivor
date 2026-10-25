@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, HitResult } from '../core/CombatEvents';
 import {
@@ -28,7 +28,7 @@ export function SmallAlienSpawner() {
     cbGltf = useGLTF('/models/chestburster.glb');
   const rootRef = useRef<THREE.Group>(null),
     fxRef = useRef<ImpactFXHandle>(null);
-  const prevStatusRef = useRef(useGameStore.getState().status);
+  const lastRunIdRef = useRef(useGameStore.getState().runId);
 
   const entityRef = useRef({
     active: false,
@@ -150,8 +150,9 @@ export function SmallAlienSpawner() {
       now = clock.getElapsedTime(),
       e = entityRef.current,
       r = rootRef.current;
-    if (state.status === 'PAUSED' || !r) return;
-    if (state.status === 'PLAYING' && prevStatusRef.current !== 'PLAYING') {
+    if (!r) return;
+    if (state.status === 'PLAYING' && state.runId !== lastRunIdRef.current) {
+      lastRunIdRef.current = state.runId;
       e.active = false;
       e.state = 'DEAD';
       e.spawnCooldown = 7.0;
@@ -159,7 +160,7 @@ export function SmallAlienSpawner() {
       cbGroup.visible = false;
       state.setSmallThreat(null);
     }
-    prevStatusRef.current = state.status;
+    if (isSimulationFrozen(state.status)) return;
     if (state.status === 'MENU' || state.status === 'VICTORY') {
       e.active = false;
       fhGroup.visible = false;

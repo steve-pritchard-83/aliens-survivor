@@ -1,10 +1,19 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
 import { BALANCE, UPGRADE_CATALOG } from '../data/balance';
-import { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState, PHASE_NAMES, computePhase } from './GameTypes';
+import {
+  GameStatus,
+  WavePhase,
+  ActiveThreat,
+  GameSettings,
+  GameState,
+  PHASE_NAMES,
+  computePhase,
+  isSimulationFrozen
+} from './GameTypes';
 
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
-export { PHASE_NAMES, computePhase };
+export { PHASE_NAMES, computePhase, isSimulationFrozen };
 
 function loadRecordKills(): number {
   try {
@@ -16,6 +25,7 @@ function loadRecordKills(): number {
 
 export const useGameStore = create<GameState>((set, get) => ({
   status: 'MENU',
+  runId: 0,
   timeRemaining: BALANCE.MISSION_DURATION_SECONDS,
   phase: 1,
   hp: BALANCE.PLAYER.MAX_HP,
@@ -48,8 +58,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   recordKills: loadRecordKills(),
 
   startGame: () =>
-    set({
+    set((s) => ({
       status: 'PLAYING',
+      runId: s.runId + 1,
       timeRemaining: BALANCE.MISSION_DURATION_SECONDS,
       phase: 1,
       hp: BALANCE.PLAYER.MAX_HP,
@@ -76,7 +87,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       nextLevelXp: BALANCE.XP.LEVEL_THRESHOLDS[0],
       offeredUpgrades: [],
       activeUpgrades: []
-    }),
+    })),
 
   pauseGame: () => set((s) => (s.status === 'PLAYING' ? { status: 'PAUSED' } : s)),
   resumeGame: () => set((s) => (s.status === 'PAUSED' || s.status === 'LEVEL_UP' ? { status: 'PLAYING' } : s)),

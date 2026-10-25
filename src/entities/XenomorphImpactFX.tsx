@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { constrainToCorridor } from '../core/CorridorNav';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 
 const PARTICLE_COUNT = 64,
   GIB_POOL_SIZE = 12,
@@ -278,6 +279,7 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
   }));
 
   useFrame((_, dt) => {
+    if (isSimulationFrozen(useGameStore.getState().status)) return;
     if (impactTimerRef.current > 0) {
       impactTimerRef.current -= dt;
       if (acidPointsRef.current) {

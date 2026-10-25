@@ -19,6 +19,7 @@ export interface GameSettings {
 
 export interface GameState {
   status: GameStatus;
+  runId: number;
   timeRemaining: number;
   phase: WavePhase;
   hp: number;
@@ -75,6 +76,11 @@ export const PHASE_NAMES: Record<WavePhase, string> = {
   3: 'PHASE 3: HULL BREACH',
   4: 'PHASE 4: EXTRACTION'
 };
+
+/** True while gameplay simulation (AI, FX, timers) must not advance. */
+export function isSimulationFrozen(status: GameStatus): boolean {
+  return status === 'PAUSED' || status === 'LEVEL_UP';
+}
 
 export function computePhase(timeRemaining: number): WavePhase {
   if (timeRemaining > BALANCE.PHASES.PHASE_1_END) return 1;

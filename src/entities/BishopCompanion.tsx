@@ -2,7 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem } from '../core/CombatEvents';
 import { constrainToCorridor, getHallId, CORNERS, HALL_CORNERS, ADJ_CORNERS } from '../core/CorridorNav';
@@ -29,7 +29,7 @@ export function BishopCompanion() {
     muzzleTimer: 0,
     walkPhase: 0,
     move: 0,
-    prevStatus: 'MENU'
+    runId: useGameStore.getState().runId
   });
 
   // Skinned, posable Bishop (procedural skeleton) holding a recentred M41A: native rifle spans z -29..57, so shift by its centre
@@ -48,16 +48,17 @@ export function BishopCompanion() {
     const store = useGameStore.getState();
     const st = stateRef.current;
     const root = rootRef.current;
-    if (!root || store.status === 'PAUSED') return;
+    if (!root) return;
 
-    if (store.status === 'PLAYING' && st.prevStatus !== 'PLAYING') {
+    if (store.status === 'PLAYING' && store.runId !== st.runId) {
+      st.runId = store.runId;
       st.x = -0.32;
       st.z = 11.4;
       st.yaw = Math.PI;
       st.targetCorner = -1;
       root.position.set(st.x, 0, st.z);
     }
-    st.prevStatus = store.status;
+    if (isSimulationFrozen(store.status)) return;
 
     if (store.status === 'MENU') {
       root.visible = false;

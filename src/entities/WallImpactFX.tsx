@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CombatSystem } from '../core/CombatEvents';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 
 const MAX_DECAL_COUNT = 48;
 const MAX_SPARK_COUNT = 160;
@@ -186,6 +187,7 @@ export function WallImpactFX() {
   }, [decalStates, sparkStates]);
 
   useFrame((_, dt) => {
+    if (isSimulationFrozen(useGameStore.getState().status)) return;
     // Animate and fade bullet marks
     const dGroup = decalGroupRef.current;
     if (dGroup) {

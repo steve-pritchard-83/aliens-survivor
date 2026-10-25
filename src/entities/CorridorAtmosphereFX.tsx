@@ -2,7 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AudioManager } from '../core/AudioManager';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 
 // 12 Wall & Ceiling Electrical Junction Boxes across the Double-Size Figure-8 Sulaco Sector (Z = 8.30..35.90)
 const SPARK_EMITTERS: [number, number, number, number, number][] = [
@@ -36,7 +36,7 @@ export function CorridorAtmosphereFX() {
 
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState();
-    if (state.status === 'PAUSED') return;
+    if (isSimulationFrozen(state.status)) return;
 
     const phase = state.phase;
 

@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { CombatSystem } from '../core/CombatEvents';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { AlienEggs } from './AlienEggs';
@@ -159,7 +159,7 @@ export function CorridorLevel() {
   }, [c1, c2, c3, c4]);
 
   useFrame(({ clock }) => {
-    if (status === 'PAUSED') return;
+    if (isSimulationFrozen(status)) return;
     const t = clock.getElapsedTime();
     const rotSpeed = phase === 1 ? 3.2 : phase === 2 ? 4.8 : 6.8;
     if (beacon1Ref.current) beacon1Ref.current.rotation.y = t * rotSpeed;
