@@ -4,10 +4,11 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
-import { CombatSystem } from '../core/CombatEvents';
+import { CombatSystem, DamageSpec } from '../core/CombatEvents';
 import { constrainToCorridor, getHallId, CORNERS, HALL_CORNERS, ADJ_CORNERS } from '../core/CorridorNav';
 import { buildBishopRig, poseBishop } from './BishopRig';
 
+const _dmg: DamageSpec = { amount: 24, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
 
@@ -199,11 +200,8 @@ export function BishopCompanion() {
       if (muzzleMarkerRef.current) muzzleMarkerRef.current.getWorldPosition(_rayOrigin);
       else _rayOrigin.set(st.x, 0.92, st.z);
       _rayDir.set(bestTarget.x - _rayOrigin.x, targetHeight - _rayOrigin.y, bestTarget.z - _rayOrigin.z).normalize();
-      const hit = CombatSystem.fireRay(_rayOrigin, _rayDir);
-      const envHit = CombatSystem.fireEnvironmentRay(_rayOrigin, _rayDir);
-      if (envHit && (!hit.hitPoint || _rayOrigin.distanceTo(envHit.point) < _rayOrigin.distanceTo(hit.hitPoint))) {
-        CombatSystem.triggerWallImpact(envHit.point, envHit.normal, _rayDir);
-      }
+      // Walls occlude Bishop's shots exactly like the player's; he never gets the player's AP upgrade
+      CombatSystem.resolveShot(_rayOrigin, _rayDir, _dmg);
       AudioManager.play3D('pulse_shot', st.x, 0.95, st.z, 0.36, 1.04 + Math.random() * 0.04);
     }
 

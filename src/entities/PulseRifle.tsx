@@ -5,12 +5,14 @@ import * as THREE from 'three';
 import { useGameStore, ActiveThreat } from '../core/GameStore';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
-import { CombatSystem } from '../core/CombatEvents';
+import { CombatSystem, DamageSpec } from '../core/CombatEvents';
+import { BALANCE } from '../data/balance';
 import { Haptics } from '../core/Haptics';
 import { xrControllerState } from '../core/XRControllerState';
 import { getMuzzleStarTexture } from '../core/MuzzleTexture';
 
-const FIRE_INTERVAL = 0.085;
+const AP_DAMAGE_MULTIPLIER = 1.4;
+const _dmg: DamageSpec = { amount: 0, source: 'player' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3(),
   _camDir = new THREE.Vector3(),
@@ -40,10 +42,10 @@ function checkAutoTarget(
     hasCandidate = true;
   if (!hasCandidate) return false;
 
-  const probe = CombatSystem.fireRay(camPos, camDir);
+  // Side-effect free probe: never applies damage (see CombatSystem.queryTarget vs resolveShot)
+  if (CombatSystem.queryTarget(camPos, camDir).kind === 'target') return true;
   const envProbe = CombatSystem.fireEnvironmentRay(camPos, camDir);
   const wallDist = envProbe ? camPos.distanceTo(envProbe.point) : 55.0;
-  if (probe.hitXenoId !== null && probe.hitPoint && camPos.distanceTo(probe.hitPoint) < wallDist) return true;
 
   for (let i = 0; i < threats.length; i++) {
     const t = threats[i];
@@ -186,17 +188,11 @@ export function PulseRifle() {
           _rayDir.x += (Math.random() - 0.5) * spread;
           _rayDir.y += (Math.random() - 0.5) * spread;
           _rayDir.normalize();
-          const res = CombatSystem.fireRay(_rayOrigin, _rayDir);
-          const envRes = CombatSystem.fireEnvironmentRay(_rayOrigin, _rayDir);
-
-          if (res.hitXenoId !== null && res.hitPoint) {
-            const alienDist = _rayOrigin.distanceTo(res.hitPoint);
-            if (envRes && _rayOrigin.distanceTo(envRes.point) < alienDist) {
-              CombatSystem.triggerWallImpact(envRes.point, envRes.normal, _rayDir);
-              AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.45, 0.9 + Math.random() * 0.2);
-            } else state.registerHit();
-          } else if (envRes) {
-            CombatSystem.triggerWallImpact(envRes.point, envRes.normal, _rayDir);
+          const hasAp = state.activeUpgrades.includes('ap_ammo');
+          _dmg.amount = BALANCE.WEAPON.BASE_DAMAGE * (hasAp ? AP_DAMAGE_MULTIPLIER : 1);
+          const outcome = CombatSystem.resolveShot(_rayOrigin, _rayDir, _dmg);
+          if (outcome.kind === 'target') state.registerHit();
+          else if (outcome.kind === 'wall') {
             AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.45, 0.9 + Math.random() * 0.2);
           }
           if (state.ammo <= 0) {

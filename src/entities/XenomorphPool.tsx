@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
-import { CombatSystem, HitResult } from '../core/CombatEvents';
+import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import {
   CORRIDOR_SPAWN_NODES,
   constrainToCorridor,
@@ -122,32 +122,30 @@ export function XenomorphPool() {
     };
   }, [pool]);
   useEffect(() => {
-    CombatSystem.registerHandler((origin, dir): HitResult => {
-      _ray.set(origin, dir);
-      let closestId: number | null = null,
-        closestDist = Infinity,
-        closestPoint: THREE.Vector3 | null = null;
-      for (const x of pool) {
-        if (!x.active || x.state === 'DEAD') continue;
-        _sphere.center.set(x.x, x.y + 0.72, x.z);
-        _sphere.radius = x.state === 'SPAWNING' ? 0.54 : 0.84;
-        if (
-          _ray.intersectSphere(_sphere, _hitVec) &&
-          origin.distanceTo(_hitVec) < closestDist &&
-          origin.distanceTo(_hitVec) <= 32
-        ) {
-          closestDist = origin.distanceTo(_hitVec);
-          closestId = x.id;
-          _closestHitPoint.copy(_hitVec);
-          closestPoint = _closestHitPoint;
+    const xenoProvider: TargetProvider = {
+      query: (origin, dir, maxDist, out) => {
+        _ray.set(origin, dir);
+        let closestDist = Infinity;
+        for (let i = 0; i < pool.length; i++) {
+          const x = pool[i];
+          if (!x.active || x.state === 'DEAD') continue;
+          _sphere.center.set(x.x, x.y + 0.72, x.z);
+          _sphere.radius = x.state === 'SPAWNING' ? 0.54 : 0.84;
+          if (!_ray.intersectSphere(_sphere, _hitVec)) continue;
+          const d = origin.distanceTo(_hitVec);
+          if (d < closestDist && d <= maxDist) {
+            closestDist = d;
+            out.id = x.id;
+            out.point.copy(_hitVec);
+          }
         }
-      }
-      if (closestId !== null && closestPoint) {
-        const t = pool[closestId],
+        return closestDist;
+      },
+      applyHit: (id, closestPoint, origin, dir, dmg) => {
+        const t = pool[id],
           prevHp = t.hp,
           relY = closestPoint.y - t.y;
-        const ap = useGameStore.getState().activeUpgrades.includes('ap_ammo') ? 1.4 : 1.0;
-        const isKill = (t.hp -= (t.state === 'SPAWNING' ? 18 : 24) * ap * (t.isBoss ? 0.65 : 1.0)) <= 0;
+        const isKill = (t.hp -= dmg.amount * (t.state === 'SPAWNING' ? 0.75 : 1) * (t.isBoss ? 0.65 : 1)) <= 0;
         fxRef.current?.triggerImpact(closestPoint, origin, dir, isKill);
         const flashIntensity = useGameStore.getState().settings.reducedFlash ? 0.22 : 0.45;
         t.hitFlashTimer = 0.12;
@@ -209,9 +207,9 @@ export function XenomorphPool() {
           useGameStore.getState().registerKill(t.isBoss);
         } else AudioManager.play3D('xeno_hit', t.x, t.y + 0.8, t.z, 0.75, 0.95 + Math.random() * 0.15);
       }
-      return { hitXenoId: closestId, hitPoint: closestPoint };
-    });
-    return () => CombatSystem.unregisterHandler();
+    };
+    CombatSystem.registerProvider('xeno', xenoProvider);
+    return () => CombatSystem.unregisterProvider('xeno');
   }, [pool]);
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState(),

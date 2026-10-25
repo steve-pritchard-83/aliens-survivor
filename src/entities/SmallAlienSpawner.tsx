@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
-import { CombatSystem, HitResult } from '../core/CombatEvents';
+import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import {
   CORRIDOR_SPAWN_NODES,
   constrainToCorridor,
@@ -20,8 +20,9 @@ import { buildFaceRig, buildWormRig, animateFace, animateWorm, groundModel, Anim
 
 const _sphere = new THREE.Sphere(),
   _ray = new THREE.Ray(),
-  _hitVec = new THREE.Vector3(),
-  _closestHitPointSmall = new THREE.Vector3();
+  _hitVec = new THREE.Vector3();
+
+const SMALL_ALIEN_ID = 99;
 
 export function SmallAlienSpawner() {
   const fhGltf = useGLTF('/models/facehugger.glb'),
@@ -111,38 +112,46 @@ export function SmallAlienSpawner() {
   }, [fhGroup, cbGroup]);
 
   useEffect(() => {
-    CombatSystem.registerAuxHandler((origin, dir): HitResult => {
-      const e = entityRef.current;
-      if (!e.active || e.state === 'DEAD') return { hitXenoId: null, hitPoint: null };
-      _ray.set(origin, dir);
-      _sphere.center.set(e.x, e.y + 0.25, e.z);
-      _sphere.radius = 0.48;
-      if (!_ray.intersectSphere(_sphere, _hitVec) || origin.distanceTo(_hitVec) > 32)
-        return { hitXenoId: null, hitPoint: null };
-      _closestHitPointSmall.copy(_hitVec);
-      const pt = _closestHitPointSmall,
-        isKill = (e.hp -= 30) <= 0;
-      fxRef.current?.triggerImpact(pt, origin, dir, isKill);
-      e.hitFlashTimer = 0.12;
-      (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => {
-        m.emissive.setHex(0xffffff);
-        m.emissiveIntensity = 0.45;
-      });
-      [e.x, e.z] = constrainToCorridor(e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
-      AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
-      AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);
-      if (isKill) {
-        e.state = 'DEAD';
-        e.stateTimer = 2.4;
-        e.y = 0.0;
-        AudioManager.play3D('xeno_gib1', e.x, 0.2, e.z, 0.88, 1.2);
-        AudioManager.play3D('acid_burn', e.x, 0.1, e.z, 0.82, 1.1);
-        fxRef.current?.triggerAcidPool(e.x, e.z, 0.68);
-        useGameStore.getState().registerKill();
+    const smallProvider: TargetProvider = {
+      query: (origin, dir, maxDist, out) => {
+        const e = entityRef.current;
+        if (!e.active || e.state === 'DEAD') return Infinity;
+        _ray.set(origin, dir);
+        _sphere.center.set(e.x, e.y + 0.25, e.z);
+        _sphere.radius = 0.48;
+        if (!_ray.intersectSphere(_sphere, _hitVec)) return Infinity;
+        const d = origin.distanceTo(_hitVec);
+        if (d > maxDist) return Infinity;
+        out.id = SMALL_ALIEN_ID;
+        out.point.copy(_hitVec);
+        return d;
+      },
+      // Small aliens take a flat hit regardless of weapon damage (kept from original balance).
+      applyHit: (_id, pt, origin, dir) => {
+        const e = entityRef.current;
+        const isKill = (e.hp -= 30) <= 0;
+        fxRef.current?.triggerImpact(pt, origin, dir, isKill);
+        e.hitFlashTimer = 0.12;
+        (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => {
+          m.emissive.setHex(0xffffff);
+          m.emissiveIntensity = 0.45;
+        });
+        [e.x, e.z] = constrainToCorridor(e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
+        AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
+        AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);
+        if (isKill) {
+          e.state = 'DEAD';
+          e.stateTimer = 2.4;
+          e.y = 0.0;
+          AudioManager.play3D('xeno_gib1', e.x, 0.2, e.z, 0.88, 1.2);
+          AudioManager.play3D('acid_burn', e.x, 0.1, e.z, 0.82, 1.1);
+          fxRef.current?.triggerAcidPool(e.x, e.z, 0.68);
+          useGameStore.getState().registerKill();
+        }
       }
-      return { hitXenoId: 99, hitPoint: pt };
-    });
-    return () => CombatSystem.unregisterAuxHandler();
+    };
+    CombatSystem.registerProvider('small', smallProvider);
+    return () => CombatSystem.unregisterProvider('small');
   }, [fhMats, cbMats]);
 
   useFrame(({ clock }, dt) => {
