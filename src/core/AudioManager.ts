@@ -1,5 +1,6 @@
 import { AmbienceLoop } from './AmbienceLoop';
 import { SoundKey, SOUND_URLS, BGM_URL, CRITICAL_SOUNDS, HRTF_SOUNDS } from './AudioCatalog';
+import { connectLevelled } from './audioLeveller';
 
 export type { SoundKey };
 
@@ -9,8 +10,10 @@ export interface AudioVolumes {
   sfx: number;
 }
 
-// 0.4 x the default music level (0.8) reproduces the original fixed BGM volume of 0.32
-const BGM_BASE_VOLUME = 0.4;
+// The music is the hero of the mix: about 0.76 at the default music level (0.8), up from the original 0.32
+const BGM_BASE_VOLUME = 0.95;
+// Effects sit under the music; the compressor on their bus evens out loud shots against quiet details
+const SFX_BASE_VOLUME = 0.62;
 const MAX_VOICES = 24;
 const PULSE_VARIANTS: SoundKey[] = ['pulse_shot', 'pulse_shot2', 'pulse_shot3', 'pulse_shot4'];
 
@@ -41,7 +44,7 @@ class WebAudioController {
       this.ctx = new AudioCtx();
       this.masterGain = this.ctx.createGain();
       this.sfxGain = this.ctx.createGain();
-      this.sfxGain.connect(this.masterGain);
+      connectLevelled(this.ctx, this.sfxGain, this.masterGain);
       this.masterGain.connect(this.ctx.destination);
       this.applyVolumes();
     }
@@ -60,7 +63,7 @@ class WebAudioController {
 
   private applyVolumes(): void {
     if (this.masterGain) this.masterGain.gain.value = this.volumes.master;
-    if (this.sfxGain) this.sfxGain.gain.value = this.volumes.sfx;
+    if (this.sfxGain) this.sfxGain.gain.value = this.volumes.sfx * SFX_BASE_VOLUME;
     // BGM plays through an <audio> element, outside the Web Audio graph, so its level is applied directly
     if (this.bgmAudio) this.bgmAudio.volume = clamp01(BGM_BASE_VOLUME * this.volumes.music * this.volumes.master);
   }

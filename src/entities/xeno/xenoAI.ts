@@ -4,8 +4,6 @@ import { getActiveLevel } from '../../levels';
 import { advanceCorner } from '../../systems/corridorPathing';
 import { PooledXenomorph, playClip, CLIP_RUN, CLIP_WALK, CLIP_LEAP, ATK_CLIPS } from '../XenoTypes';
 
-const LEAP_SECONDS = 0.78;
-
 export interface XenoPose {
   pitch: number;
   roll: number;
@@ -24,6 +22,13 @@ function turnToward(x: PooledXenomorph, dx: number, dz: number, rate: number): v
   while (diff > Math.PI) diff -= Math.PI * 2;
   while (diff < -Math.PI) diff += Math.PI * 2;
   x.yaw += diff * rate;
+}
+
+/** Chance per second, once a drone is in range with its cooldown spent, that it chooses to leap (about 0.7 s average). */
+const LEAP_RATE_PER_SECOND = 1.4;
+
+function randomLeapClip(): string {
+  return Math.random() < 0.6 ? CLIP_LEAP : ATK_CLIPS[0];
 }
 
 function randomAttackClip(): string {
@@ -74,16 +79,24 @@ function stepPursuing(x: PooledXenomorph, px: number, pz: number, dt: number, di
     legsIntact(x) &&
     x.leapCooldown <= 0 &&
     dist >= BALANCE.XENO_POOL.LEAP_MIN_DIST &&
-    dist <= BALANCE.XENO_POOL.LEAP_MAX_DIST
+    dist <= BALANCE.XENO_POOL.LEAP_MAX_DIST &&
+    Math.random() < dt * LEAP_RATE_PER_SECOND
   ) {
     x.state = 'LEAPING';
-    x.stateTimer = LEAP_SECONDS;
-    x.leapCooldown = 3.2;
-    const inv = 1 / Math.max(0.1, dist);
-    x.leapVx = (px - x.x) * inv * (x.speed * 2.35);
-    x.leapVz = (pz - x.z) * inv * (x.speed * 2.35);
+    // Every leap is a little different: length, height, speed, a slight sideways curve, and which clip plays
+    x.leapDuration = 0.6 + Math.random() * 0.4;
+    x.leapArc = 0.5 + Math.random() * 0.8;
+    x.stateTimer = x.leapDuration;
+    x.leapCooldown = 2 + Math.random() * 4.5;
+    const inv = 1 / Math.max(0.1, dist),
+      speed = x.speed * (2 + Math.random() * 0.7),
+      curve = (Math.random() - 0.5) * 0.4,
+      dirX = (px - x.x) * inv,
+      dirZ = (pz - x.z) * inv;
+    x.leapVx = (dirX * Math.cos(curve) - dirZ * Math.sin(curve)) * speed;
+    x.leapVz = (dirX * Math.sin(curve) + dirZ * Math.cos(curve)) * speed;
     x.yaw = Math.atan2(x.leapVx, x.leapVz);
-    playClip(x, CLIP_LEAP, false, 1.45);
+    playClip(x, randomLeapClip(), false, 1.15 + Math.random() * 0.6, Math.random() * 0.12);
     ev.leapStarted = true;
   } else if (dist <= 1.75) {
     x.state = 'ATTACKING';
@@ -96,8 +109,8 @@ function stepPursuing(x: PooledXenomorph, px: number, pz: number, dt: number, di
 
 function stepLeaping(x: PooledXenomorph, dt: number, dist: number, pose: XenoPose, ev: XenoEvents): void {
   x.stateTimer -= dt;
-  const u = 1.0 - Math.max(0, x.stateTimer / LEAP_SECONDS);
-  x.y = Math.sin(u * Math.PI) * 0.96;
+  const u = 1.0 - Math.max(0, x.stateTimer / x.leapDuration);
+  x.y = Math.sin(u * Math.PI) * x.leapArc;
   pose.pitch = Math.cos(u * Math.PI) * -0.52;
   moveConstrained(x, x.x + x.leapVx * dt, x.z + x.leapVz * dt, 0.24);
   if (dist <= 1.65) {
@@ -107,12 +120,12 @@ function stepLeaping(x: PooledXenomorph, dt: number, dist: number, pose: XenoPos
     x.attackCooldown = 0.75;
     ev.playerDamage = BALANCE.XENO_POOL.LEAP_DAMAGE;
     ev.leapHit = true;
-    playClip(x, ATK_CLIPS[0], true, 1.1);
+    playClip(x, randomAttackClip(), true, 1.0 + Math.random() * 0.2);
   } else if (x.stateTimer <= 0) {
     x.y = 0.0;
     pose.pitch = 0;
     x.state = 'PURSUING';
-    playClip(x, CLIP_RUN, true, 1.0);
+    playClip(x, CLIP_RUN, true, 0.9 + Math.random() * 0.25);
   }
 }
 

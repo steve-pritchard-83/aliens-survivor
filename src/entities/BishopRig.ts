@@ -92,8 +92,12 @@ export function buildBishopRig(source: THREE.Object3D): BishopRig {
     geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
     const src = Array.isArray(m.material) ? m.material[0] : m.material,
       mat = (src as THREE.MeshStandardMaterial).clone();
-    mat.roughness = 0.5;
-    mat.metalness = 0.1;
+    // Matte cloth: no gloss, no metal, no authored roughness/metalness maps
+    mat.roughness = 0.95;
+    mat.metalness = 0;
+    mat.roughnessMap = null;
+    mat.metalnessMap = null;
+    mat.envMapIntensity = 0;
     mat.emissive.setHex(0x10161c);
     mat.emissiveIntensity = 0.1;
     mat.color.multiplyScalar(0.55); // his white suit otherwise glares against the dark corridor

@@ -55,6 +55,8 @@ export function buildXenoPool(scene: THREE.Group, clips: THREE.AnimationClip[]):
       leapCooldown: 1.0,
       leapVx: 0,
       leapVz: 0,
+      leapDuration: 0.78,
+      leapArc: 0.96,
       stateTimer: 0,
       attackCooldown: 0,
       gaitTimer: 0,

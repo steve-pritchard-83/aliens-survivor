@@ -40,6 +40,9 @@ export interface PooledXenomorph {
   leapCooldown: number;
   leapVx: number;
   leapVz: number;
+  /** Per-leap variation, rolled when the leap starts. */
+  leapDuration: number;
+  leapArc: number;
   stateTimer: number;
   attackCooldown: number;
   gaitTimer: number;

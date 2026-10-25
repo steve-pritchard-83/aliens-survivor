@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as THREE from 'three';
 import { PooledXenomorph } from '../src/entities/XenoTypes';
 import { stepXeno, XenoPose, XenoEvents } from '../src/entities/xeno/xenoAI';
@@ -32,6 +32,8 @@ function makeXeno(overrides: Partial<PooledXenomorph> = {}): PooledXenomorph {
     leapCooldown: 0,
     leapVx: 0,
     leapVz: 0,
+    leapDuration: 0.78,
+    leapArc: 0.96,
     stateTimer: 0,
     attackCooldown: 0,
     gaitTimer: 99,
@@ -52,7 +54,10 @@ const PX = -0.32;
 const PZ = 14;
 
 describe('xeno AI', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('leaps when in the same hall, inside the window, with legs intact', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // the leap trigger is a random roll per frame
     const x = makeXeno({ z: PZ + 6 });
     const ev = events();
     stepXeno(x, PX, PZ, 0.016, pose(), ev);
