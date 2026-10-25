@@ -22,6 +22,7 @@ export function PlayerController() {
   const xrYawRef = useRef(0);
   const headBobTimer = useRef(0);
   const prevStatusRef = useRef(useGameStore.getState().status);
+  const lastTransformSync = useRef(0);
 
   const status = useGameStore((s) => s.status);
 
@@ -193,7 +194,10 @@ export function PlayerController() {
       ripleyRef.current.rotation.set(0, yawRef.current + Math.PI, 0);
     }
 
-    state.updatePlayerTransform(nextX, 1.15 + bobOffset, nextZ, yawRef.current);
+    if (now - lastTransformSync.current > 0.05) {
+      lastTransformSync.current = now;
+      state.updatePlayerTransform(nextX, 1.15 + bobOffset, nextZ, yawRef.current);
+    }
     AudioManager.updateListener(nextX, eyeY, nextZ, yawRef.current);
   });
 

@@ -197,7 +197,6 @@ export function BishopCompanion() {
             <meshBasicMaterial color="#ffdd77" transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} />
           </mesh>
           <pointLight ref={muzzleLightRef} position={[0, 0.06, 0.45]} color="#ffaa33" intensity={0} distance={10} decay={1.4} />
-          <pointLight position={[0, 0.2, 0.1]} color="#99ccff" intensity={2.0} distance={5} decay={1.5} />
         </primitive>
       </group>
     </group>

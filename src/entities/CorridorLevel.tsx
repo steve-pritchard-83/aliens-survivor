@@ -77,6 +77,8 @@ export function CorridorLevel() {
   useEffect(() => {
     [c1, c2, c3, c4].forEach((root) => {
       root.traverse((child) => {
+        child.matrixAutoUpdate = false;
+        child.updateMatrix();
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -137,20 +139,14 @@ export function CorridorLevel() {
   const beaconPower = phase === 1 ? 9.0 : 12.0;
   const stripPower = phase === 1 ? 7.5 : 6.0;
 
-  const STRIP_LIGHTS: [number, number, number][] = [
-    [-0.32, 2.2, 22.1], [-13.48, 2.2, 22.1], [-6.9, 2.2, 22.1]
-  ];
-
   return (
     <group name="SulacoSector">
       <fog attach="fog" args={['#04070a', 22, 60]} />
       <ambientLight intensity={ambientIntensity} color={phase === 1 ? '#86a2be' : '#5e3232'} />
       <hemisphereLight args={['#6e94b8', '#1a2634', hemiIntensity]} />
 
-      {/* Optimized Sulaco Bulkhead Strip Lights */}
-      {STRIP_LIGHTS.map((pos, i) => (
-        <pointLight key={i} position={pos} color="#a6c8e4" intensity={stripPower} distance={28.0} decay={1.1} />
-      ))}
+      {/* Optimized Single Bulkhead Sector Key Light */}
+      <pointLight position={[-6.9, 2.3, 22.1]} color="#a6c8e4" intensity={stripPower * 1.5} distance={34.0} decay={1.1} />
 
       {/* South & North Sector Loops */}
       <group ref={sectorMeshGroupRef}>
@@ -162,12 +158,9 @@ export function CorridorLevel() {
       {/* Randomly positioned, subtly back-lit Ovomorph Eggs */}
       <AlienEggs />
 
-      {/* Balanced 2-Quadrant Emergency Beacons */}
+      {/* Single Synchronized Emergency Alarm Beacon */}
       <group position={[-0.32, 2.15, 14.0]} ref={beacon1Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={8} decay={1.8} />
-      </group>
-      <group position={[-13.48, 2.15, 30.0]} ref={beacon4Ref}>
-        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={8} decay={1.8} />
+        <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={9} decay={1.8} />
       </group>
 
       <CorridorAtmosphereFX />

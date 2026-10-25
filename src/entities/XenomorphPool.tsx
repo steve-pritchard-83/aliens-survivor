@@ -19,7 +19,7 @@ const ATK_CLIPS = ['alien_xenos_drone_SK_Xenos_Drone_skeleton|attack1', 'alien_x
 const LIMB_NAMES = ['XenosBiped_l_Arm_ShoulderSHJnt_028', 'XenosBiped_r_Arm_ShoulderSHJnt_046', 'XenosBiped_l_Leg_Knee1SHJnt_077', 'XenosBiped_r_Leg_Knee1SHJnt_087', 'XenosBiped_Neck_TopSHJnt_09'];
 
 interface PooledXenomorph {
-  id: number; active: boolean; state: 'SPAWNING' | 'PURSUING' | 'LEAPING' | 'ATTACKING' | 'DEAD';
+  id: number; active: boolean; isBoss: boolean; state: 'SPAWNING' | 'PURSUING' | 'LEAPING' | 'ATTACKING' | 'DEAD';
   hp: number; maxHp: number; x: number; y: number; z: number; yaw: number; speed: number;
   laneOffset: number; preferCW: boolean; animPhase: number; deathVariant: number;
   targetCorner: number; leapCooldown: number; leapVx: number; leapVz: number;
@@ -29,7 +29,7 @@ interface PooledXenomorph {
   materials: THREE.MeshStandardMaterial[]; limbBones: (THREE.Object3D | null)[]; severedLimbs: boolean[];
 }
 
-const _sphere = new THREE.Sphere(), _ray = new THREE.Ray(), _hitVec = new THREE.Vector3(), _jointPos = new THREE.Vector3();
+const _sphere = new THREE.Sphere(), _ray = new THREE.Ray(), _hitVec = new THREE.Vector3(), _jointPos = new THREE.Vector3(), _closestHitPoint = new THREE.Vector3();
 function sanitizeClips(clips: THREE.AnimationClip[]): THREE.AnimationClip[] {
   return clips.map((raw) => {
     const c = raw.clone();
@@ -57,7 +57,7 @@ function playClip(xeno: PooledXenomorph, clipName: string, loop = true, timeScal
 export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');
   const containerRef = useRef<THREE.Group>(null), fxRef = useRef<ImpactFXHandle>(null);
-  const spawnCooldownRef = useRef(5.0), hissTimerRef = useRef(3.5), lastSpawnIndexRef = useRef(-1), deathCounterRef = useRef(0);
+  const spawnCooldownRef = useRef(5.0), hissTimerRef = useRef(3.5), lastSpawnIndexRef = useRef(-1), deathCounterRef = useRef(0), threatsTimerRef = useRef(0);
   const prevStatusRef = useRef(useGameStore.getState().status);
   const cleanClips = useMemo(() => sanitizeClips(animations), [animations]);
 
@@ -70,12 +70,12 @@ export function XenomorphPool() {
       mat.roughness = 0.34; mat.metalness = 0.22; mat.color.setRGB(1.45, 1.52, 1.60);
       mat.emissive.setHex(0x101c22); mat.emissiveIntensity = 0.42; m.material = mat; materials.push(mat);
     });
-    const limbBones = LIMB_NAMES.map((name) => cloned.getObjectByName(name) ?? null);
-    const wrapper = new THREE.Group(); wrapper.visible = false; wrapper.add(cloned);
+    const limbBones = LIMB_NAMES.map((name) => cloned.getObjectByName(name) ?? null), wrapper = new THREE.Group();
+    wrapper.visible = false; wrapper.add(cloned);
     const mixer = new THREE.AnimationMixer(cloned), actions: Record<string, THREE.AnimationAction> = {};
     cleanClips.forEach((clip) => { actions[clip.name] = mixer.clipAction(clip); });
     return {
-      id: i, active: false, state: 'DEAD', hp: 320, maxHp: 320, x: 0, y: -50, z: 0, yaw: 0,
+      id: i, active: false, isBoss: false, state: 'DEAD', hp: 320, maxHp: 320, x: 0, y: -50, z: 0, yaw: 0,
       speed: 3.2, laneOffset: (i % 2 === 0 ? -1 : 1) * 0.14, preferCW: i % 2 === 0, animPhase: i * 0.41, deathVariant: 0,
       targetCorner: -1, leapCooldown: 1.0, leapVx: 0, leapVz: 0, stateTimer: 0, attackCooldown: 0, hitFlashTimer: 0, gaitTimer: 0,
       root: wrapper, clonedMeshGroup: cloned, mixer, actions, currentClip: '', materials, limbBones, severedLimbs: [false, false, false, false, false]
@@ -94,11 +94,13 @@ export function XenomorphPool() {
         if (!x.active || x.state === 'DEAD') continue;
         _sphere.center.set(x.x, x.y + 0.72, x.z); _sphere.radius = x.state === 'SPAWNING' ? 0.54 : 0.84;
         if (_ray.intersectSphere(_sphere, _hitVec) && origin.distanceTo(_hitVec) < closestDist && origin.distanceTo(_hitVec) <= 32) {
-          closestDist = origin.distanceTo(_hitVec); closestId = x.id; closestPoint = _hitVec.clone();
+          closestDist = origin.distanceTo(_hitVec); closestId = x.id; _closestHitPoint.copy(_hitVec); closestPoint = _closestHitPoint;
         }
       }
       if (closestId !== null && closestPoint) {
-        const t = pool[closestId], prevHp = t.hp, relY = closestPoint.y - t.y, isKill = (t.hp -= t.state === 'SPAWNING' ? 18 : 24) <= 0;
+        const t = pool[closestId], prevHp = t.hp, relY = closestPoint.y - t.y;
+        const ap = useGameStore.getState().activeUpgrades.includes('ap_ammo') ? 1.4 : 1.0;
+        const isKill = (t.hp -= (t.state === 'SPAWNING' ? 18 : 24) * ap * (t.isBoss ? 0.65 : 1.0)) <= 0;
         fxRef.current?.triggerImpact(closestPoint, origin, dir, isKill);
         t.hitFlashTimer = 0.14; t.materials.forEach((m) => { m.emissive.setHex(0x55ff00); m.emissiveIntensity = 1.6; });
         [t.x, t.z] = constrainToCorridor(t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
@@ -109,7 +111,7 @@ export function XenomorphPool() {
           AudioManager.play3D('xeno_gib1', _jointPos.x, _jointPos.y, _jointPos.z, 0.95, 0.95 + Math.random() * 0.15);
           AudioManager.play3D('xeno_explode1', _jointPos.x, _jointPos.y, _jointPos.z, 0.85, 1.0 + Math.random() * 0.2);
           AudioManager.play3D('acid_burn', _jointPos.x, _jointPos.y, _jointPos.z, 0.85, 0.95 + Math.random() * 0.2);
-          if (slot === 2 || slot === 3) { t.speed *= 0.68; if (t.state === 'PURSUING') playClip(t, CLIP_WALK, true, 1.35); }
+          if ((slot === 2 || slot === 3) && (t.speed *= 0.68) && t.state === 'PURSUING') playClip(t, CLIP_WALK, true, 1.35);
         };
         if (prevHp > t.maxHp * 0.45 && t.hp <= t.maxHp * 0.45 && relY < 0.40) severSlot(2);
         if (isKill) { if (relY > 0.85) severSlot(4); else if (Math.random() < 0.4) severSlot(Math.random() < 0.5 ? 0 : 1); }
@@ -120,9 +122,9 @@ export function XenomorphPool() {
           t.clonedMeshGroup.scale.set(dv === 1 ? -0.45 : 0.45, 0.45, 0.45); t.clonedMeshGroup.position.set(dv === 1 ? -0.09 : 0.09, -0.24, 0);
           playClip(t, CLIP_DIE, false, [1.15, 1.25, 1.10, 1.30][dv], 0.0);
           AudioManager.play3D(Math.random() > 0.4 ? 'xeno_death1' : 'xeno_death2', t.x, t.y + 0.8, t.z, 0.95);
-          AudioManager.play3D('xeno_explode1', t.x, t.y + 0.6, t.z, 0.88);
-          AudioManager.play3D('xeno_bodyfall', t.x, 0.1, t.z, 0.8); AudioManager.play3D('acid_burn', t.x, 0.1, t.z, 0.85);
-          fxRef.current?.triggerAcidPool(t.x, t.z, 1.15); fxRef.current?.startXenoMelt(t.id, 2.8); useGameStore.getState().registerKill();
+          AudioManager.play3D('xeno_explode1', t.x, t.y + 0.6, t.z, 0.88); AudioManager.play3D('xeno_bodyfall', t.x, 0.1, t.z, 0.8);
+          AudioManager.play3D('acid_burn', t.x, 0.1, t.z, 0.85); fxRef.current?.triggerAcidPool(t.x, t.z, 1.15);
+          fxRef.current?.startXenoMelt(t.id, 2.8); useGameStore.getState().registerKill(t.isBoss);
         } else AudioManager.play3D('xeno_hit', t.x, t.y + 0.8, t.z, 0.75, 0.95 + Math.random() * 0.15);
       }
       return { hitXenoId: closestId, hitPoint: closestPoint };
@@ -148,16 +150,21 @@ export function XenomorphPool() {
       const cands = hidden.length > 0 ? hidden : [0, 4, 5, 6]; let idx = cands[Math.floor(Math.random() * cands.length)];
       if (idx === lastSpawnIndexRef.current && cands.length > 1) idx = cands[(cands.indexOf(idx) + 1) % cands.length];
       lastSpawnIndexRef.current = idx; const node = CORRIDOR_SPAWN_NODES[idx];
+      const isBoss = phase >= 3 && !pool.some((x) => x.active && x.isBoss);
+      const droneHp = isBoss ? 1100 : maxHp, droneScale = isBoss ? 0.62 : 0.45;
+      freeXeno.isBoss = isBoss;
       Object.assign(freeXeno, {
-        active: true, state: 'SPAWNING', stateTimer: 0.7, hp: maxHp, maxHp, hitFlashTimer: 0, x: node.position[0], y: node.position[1], z: node.position[2],
-        speed: baseSpeed * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18), laneOffset: (Math.random() - 0.5) * 0.24, preferCW: Math.random() < 0.5,
+        active: true, state: 'SPAWNING', stateTimer: 0.7, hp: droneHp, maxHp: droneHp, hitFlashTimer: 0, x: node.position[0], y: node.position[1], z: node.position[2],
+        speed: (isBoss ? 3.1 : baseSpeed) * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18), laneOffset: (Math.random() - 0.5) * 0.24, preferCW: Math.random() < 0.5,
         targetCorner: -1, leapCooldown: 0.35, gaitTimer: 2.0 + Math.random() * 2.5, attackCooldown: 0
       });
       freeXeno.severedLimbs.fill(false); freeXeno.clonedMeshGroup.traverse((o) => { if ((o as THREE.Bone).isBone) o.scale.set(1, 1, 1); });
-      freeXeno.root.scale.set(1, 1, 1); freeXeno.clonedMeshGroup.scale.setScalar(0.45); freeXeno.clonedMeshGroup.position.set(0.09, -0.24, 0);
-      freeXeno.materials.forEach((m) => { m.emissive.setHex(0x101c22); m.emissiveIntensity = 0.42; });
+      freeXeno.root.scale.set(1, 1, 1); freeXeno.clonedMeshGroup.scale.setScalar(droneScale); freeXeno.clonedMeshGroup.position.set(0.09, -0.24, 0);
+      freeXeno.materials.forEach((m) => { m.emissive.setHex(isBoss ? 0x331010 : 0x101c22); m.emissiveIntensity = 0.42; });
       freeXeno.root.position.set(freeXeno.x, freeXeno.y, freeXeno.z); freeXeno.root.visible = true;
-      playClip(freeXeno, CLIP_IDLE, true, 1.0); AudioManager.play3D('vent_clang', freeXeno.x, freeXeno.y + 1.0, freeXeno.z, 0.85); spawnCooldownRef.current = spawnInterval;
+      playClip(freeXeno, CLIP_IDLE, true, 1.0); AudioManager.play3D('vent_clang', freeXeno.x, freeXeno.y + 1.0, freeXeno.z, 0.85);
+      if (isBoss) AudioManager.play3D('xeno_hiss1', freeXeno.x, freeXeno.y + 1.2, freeXeno.z, 1.0, 0.75);
+      spawnCooldownRef.current = spawnInterval;
     }
     if ((hissTimerRef.current -= dt) <= 0 && activeCount > 0) {
       hissTimerRef.current = 2.4 + Math.random() * 2.4; const pursuing = pool.filter((x) => x.active && x.state === 'PURSUING');
@@ -239,7 +246,7 @@ export function XenomorphPool() {
       x.root.position.set(x.x, x.y, x.z); x.root.rotation.set(pitchTilt, x.yaw, rollTilt, 'YXZ');
       if (x.state !== 'DEAD') threats.push({ id: x.id, x: x.x, z: x.z, state: x.state === 'LEAPING' ? 'PURSUING' : x.state });
     }
-    state.setActiveThreats(threats);
+    if ((threatsTimerRef.current += dt) >= 0.1) { threatsTimerRef.current = 0; state.setActiveThreats(threats); }
   });
   return <group ref={containerRef} name="XenomorphPoolContainer"><XenomorphImpactFX ref={fxRef} /></group>;
 }

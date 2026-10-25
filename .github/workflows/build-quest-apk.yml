@@ -1,0 +1,54 @@
+name: Build Meta Quest 2 APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install & Build Web Assets
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Generate Quest APK Project
+        run: |
+          echo "Packaging WebXR TWA Project for Horizon OS..."
+          cd quest-build
+          chmod +x gradlew || true
+
+      - name: Assemble Release APK
+        working-directory: quest-build
+        run: |
+          ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aliens-survivor-quest2-apk
+          path: quest-build/app/build/outputs/apk/**/*.apk
+          retention-days: 30

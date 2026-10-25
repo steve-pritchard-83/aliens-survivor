@@ -13,7 +13,7 @@ import {
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { buildFaceRig, buildWormRig, animateFace, animateWorm, groundModel, AnimMode } from './SmallAlienAnim';
 
-const _sphere = new THREE.Sphere(), _ray = new THREE.Ray(), _hitVec = new THREE.Vector3();
+const _sphere = new THREE.Sphere(), _ray = new THREE.Ray(), _hitVec = new THREE.Vector3(), _closestHitPointSmall = new THREE.Vector3();
 
 export function SmallAlienSpawner() {
   const fhGltf = useGLTF('/models/facehugger.glb'), cbGltf = useGLTF('/models/chestburster.glb');
@@ -63,7 +63,7 @@ export function SmallAlienSpawner() {
       if (!e.active || e.state === 'DEAD') return { hitXenoId: null, hitPoint: null };
       _ray.set(origin, dir); _sphere.center.set(e.x, e.y + 0.25, e.z); _sphere.radius = 0.48;
       if (!_ray.intersectSphere(_sphere, _hitVec) || origin.distanceTo(_hitVec) > 32) return { hitXenoId: null, hitPoint: null };
-      const pt = _hitVec.clone(), isKill = (e.hp -= 30) <= 0;
+      _closestHitPointSmall.copy(_hitVec); const pt = _closestHitPointSmall, isKill = (e.hp -= 30) <= 0;
       fxRef.current?.triggerImpact(pt, origin, dir, isKill);
       e.hitFlashTimer = 0.14; (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => { m.emissive.setHex(0x55ff00); m.emissiveIntensity = 1.7; });
       [e.x, e.z] = constrainToCorridor(e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);

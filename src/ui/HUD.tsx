@@ -3,6 +3,8 @@ import { useGameStore } from '../core/GameStore';
 import { InputManager, InputMode } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { xrStore } from '../core/XRStore';
+import { SettingsPanel } from './SettingsPanel';
+import { LevelUpModal } from './LevelUpModal';
 
 interface BeforeInstallEvent extends Event {
   prompt: () => Promise<void>;
@@ -202,16 +204,8 @@ export function HUD() {
           </div>
         </div>
       )}
-      {status === 'PAUSED' && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', inset: 0, background: 'rgba(3, 10, 7, 0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', cursor: 'default', padding: 24, textAlign: 'center' }}>
-          <h1 style={{ fontSize: 50, letterSpacing: 6, color: '#00ff88', marginBottom: 8 }}>TACTICAL PAUSE</h1>
-          <p style={{ color: '#99d6be', fontSize: 16, marginBottom: 24 }}>TIME REMAINING: {formatTimer(timeRemaining)} // HOSTILES ELIMINATED: {kills}</p>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={handleResume} style={{ padding: '14px 32px', fontSize: 20, fontFamily: 'inherit', letterSpacing: 2, background: '#00ff88', color: '#03120a', border: 'none', borderRadius: 4, fontWeight: 'bold', cursor: 'pointer' }}>RESUME MISSION</button>
-            <button onClick={() => handleLaunch('STANDARD')} style={{ padding: '14px 28px', fontSize: 18, fontFamily: 'inherit', letterSpacing: 2, background: 'transparent', color: '#ff6644', border: '2px solid #ff6644', borderRadius: 4, cursor: 'pointer' }}>RESTART DROP</button>
-          </div>
-        </div>
-      )}
+      <SettingsPanel onResume={handleResume} onRestart={() => handleLaunch('STANDARD')} />
+      <LevelUpModal />
       {status === 'VICTORY' && (
         <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 60, pointerEvents: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <video src="/movies/victory.mp4" autoPlay playsInline onEnded={() => setVictoryVideoEnded(true)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />

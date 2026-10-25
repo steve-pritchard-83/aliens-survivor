@@ -37,9 +37,29 @@ export function VRHud() {
     return { panelCanvas: canvas, panelTex: tex };
   }, []);
 
-  const drawPanel = (status: 'DEFEAT' | 'VICTORY', kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
+  const drawPanel = (status: 'DEFEAT' | 'VICTORY' | 'LEVEL_UP', kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
     const ctx = panelCanvas.getContext('2d');
     if (!ctx) return;
+    if (status === 'LEVEL_UP') {
+      const offered = useGameStore.getState().offeredUpgrades;
+      ctx.clearRect(0, 0, 1024, 512); ctx.fillStyle = 'rgba(2, 14, 8, 0.96)'; ctx.fillRect(20, 20, 984, 472);
+      ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 6; ctx.strokeRect(20, 20, 984, 472);
+      ctx.fillStyle = '#88ffaa'; ctx.font = 'bold 24px Courier New, monospace'; ctx.textAlign = 'center';
+      ctx.fillText('WEYLAND-YUTANI // USCM FIELD PROMOTION', 512, 70);
+      const btnLabels = ['[TRIGGER / SELECT 1]', '[BUTTON A / SELECT 2]', '[BUTTON B / SELECT 3]'];
+      for (let i = 0; i < Math.min(3, offered.length); i++) {
+        const c = offered[i], cx = 80 + i * 300, cw = 265;
+        ctx.fillStyle = 'rgba(0, 32, 16, 0.85)'; ctx.fillRect(cx, 100, cw, 350);
+        ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 3; ctx.strokeRect(cx, 100, cw, 350);
+        ctx.font = '40px monospace'; ctx.fillText(c.icon, cx + cw / 2, 165);
+        ctx.fillStyle = '#00ff88'; ctx.font = 'bold 18px Courier New, monospace'; ctx.fillText(c.title.slice(0, 18), cx + cw / 2, 215);
+        ctx.fillStyle = '#ffffff'; ctx.font = '13px Courier New, monospace'; ctx.fillText(c.desc.slice(0, 26), cx + cw / 2, 270);
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.25)'; ctx.fillRect(cx + 15, 360, cw - 30, 60);
+        ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 2; ctx.strokeRect(cx + 15, 360, cw - 30, 60);
+        ctx.fillStyle = '#aaffd4'; ctx.font = 'bold 15px Courier New, monospace'; ctx.fillText(btnLabels[i], cx + cw / 2, 396);
+      }
+      panelTex.needsUpdate = true; return;
+    }
     const isDefeat = status === 'DEFEAT';
     const mainColor = isDefeat ? '#ff3333' : '#00ff88';
     const bgColor = isDefeat ? 'rgba(22, 6, 6, 0.94)' : 'rgba(4, 22, 12, 0.94)';
@@ -127,10 +147,15 @@ export function VRHud() {
           firing = Boolean(buttons[0]?.pressed);
           if (buttons[4]?.pressed) useGameStore.getState().startReload();
           const turnAxis = axes.length >= 4 ? axes[2] : (axes.length >= 2 ? axes[0] : 0);
-          if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
-            snapTurnCoolRef.current = true;
-            InputManager.addSnapTurn(turnAxis > 0 ? -Math.PI / 2 : Math.PI / 2);
-          } else if (Math.abs(turnAxis) < 0.25) snapTurnCoolRef.current = false;
+          const snap = useGameStore.getState().settings.snapAngle;
+          if (snap > 0) {
+            if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
+              snapTurnCoolRef.current = true;
+              InputManager.addSnapTurn(turnAxis > 0 ? -snap : snap);
+            } else if (Math.abs(turnAxis) < 0.25) snapTurnCoolRef.current = false;
+          } else if (Math.abs(turnAxis) > 0.15) {
+            InputManager.addSnapTurn(-turnAxis * dt * 2.2);
+          }
         }
       }
     }
@@ -138,6 +163,20 @@ export function VRHud() {
     InputManager.setXRState(true, moveX, moveZ, firing);
 
     const st = useGameStore.getState();
+    if (st.status === 'LEVEL_UP') {
+      if (statusMeshRef.current) {
+        statusMeshRef.current.visible = true;
+        camera.getWorldDirection(_camFwd); camera.getWorldPosition(_camPos); camera.getWorldQuaternion(_camQuat);
+        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
+        statusMeshRef.current.quaternion.copy(_camQuat);
+        drawPanel('LEVEL_UP', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+      }
+      if (st.offeredUpgrades.length > 0) {
+        if (firing) st.chooseUpgrade(st.offeredUpgrades[0].id);
+        else if (anyButtonPressed && st.offeredUpgrades.length > 1) st.chooseUpgrade(st.offeredUpgrades[1].id);
+      }
+      return;
+    }
     if (st.status === 'DEFEAT' || st.status === 'VICTORY') {
       defeatTimerRef.current += dt;
       if (statusMeshRef.current) {
@@ -166,10 +205,11 @@ export function VRHud() {
 
     if (wristGroupRef.current) {
       wristGroupRef.current.visible = st.status === 'PLAYING';
-      if (xrControllerState.leftHand.active && camera.parent) {
-        _wristPos.copy(xrControllerState.leftHand.position).applyQuaternion(camera.parent.quaternion);
+      const trackerHand = st.settings.leftHanded ? xrControllerState.rightHand : xrControllerState.leftHand;
+      if (trackerHand.active && camera.parent) {
+        _wristPos.copy(trackerHand.position).applyQuaternion(camera.parent.quaternion);
         wristGroupRef.current.position.copy(camera.parent.position).add(_wristPos);
-        wristGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(xrControllerState.leftHand.quaternion);
+        wristGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(trackerHand.quaternion);
         wristGroupRef.current.translateY(0.06); wristGroupRef.current.translateZ(-0.04); wristGroupRef.current.rotateX(-Math.PI / 2);
       } else {
         wristGroupRef.current.position.copy(camera.position); wristGroupRef.current.quaternion.copy(camera.quaternion);

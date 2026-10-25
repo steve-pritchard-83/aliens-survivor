@@ -106,7 +106,7 @@ export function PulseRifle() {
         useGameStore.setState({ isJammed: true }); AudioManager.play2D('empty_click', 0.85); state.startReload();
       } else if (fireCooldown.current <= 0) {
         if (state.ammo > 0 && state.fireRound()) {
-          fireCooldown.current = FIRE_INTERVAL; wasFiringRef.current = true;
+          fireCooldown.current = state.fireInterval; wasFiringRef.current = true;
           recoilOffset.current = 0.058 + Math.random() * 0.015;
           recoilPitch.current = 0.038 + Math.random() * 0.018;
           recoilYaw.current = (Math.random() - 0.5) * 0.026;
@@ -118,7 +118,8 @@ export function PulseRifle() {
             muzzleGroupRef.current.rotation.z = Math.random() * Math.PI * 2;
             muzzleGroupRef.current.scale.setScalar(0.85 + Math.random() * 0.35);
           }
-          if (xrControllerState.rightHand.active && muzzleGroupRef.current && weaponGroupRef.current) {
+          const handActive = state.settings.leftHanded ? xrControllerState.leftHand.active : xrControllerState.rightHand.active;
+          if (handActive && muzzleGroupRef.current && weaponGroupRef.current) {
             muzzleGroupRef.current.getWorldPosition(_rayOrigin);
             weaponGroupRef.current.getWorldDirection(_rayDir).negate();
           } else {
@@ -169,10 +170,11 @@ export function PulseRifle() {
     if (tracerMeshRef.current) tracerMeshRef.current.visible = muzzleTimer.current > 0.02;
 
     if (weaponGroupRef.current) {
-      if (xrControllerState.rightHand.active && camera.parent) {
-        _handPos.copy(xrControllerState.rightHand.position).applyQuaternion(camera.parent.quaternion);
+      const hand = state.settings.leftHanded ? xrControllerState.leftHand : xrControllerState.rightHand;
+      if (hand.active && camera.parent) {
+        _handPos.copy(hand.position).applyQuaternion(camera.parent.quaternion);
         weaponGroupRef.current.position.copy(camera.parent.position).add(_handPos);
-        weaponGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(xrControllerState.rightHand.quaternion);
+        weaponGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(hand.quaternion);
         weaponGroupRef.current.translateY(-0.02);
         weaponGroupRef.current.translateZ(-0.05 + recoilOffset.current);
         weaponGroupRef.current.rotateX(-0.79 + recoilPitch.current);
@@ -216,8 +218,7 @@ export function PulseRifle() {
         <primitive object={clonedRifle} />
       </group>
       <pointLight ref={muzzleLightRef} position={[0, 0.06, -0.47]} color="#ffaa33" intensity={0} distance={18} decay={1.2} />
-      <spotLight ref={spotLightRef} position={[0, 0.02, -0.40]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={flashlightOn ? 78 : 0} distance={38} decay={1.0} color="#eef8ff" visible={flashlightOn} />
-      <pointLight position={[0, 0.05, -0.52]} color="#d6ebff" intensity={flashlightOn ? 12 : 0} distance={22} decay={1.2} visible={flashlightOn} />
+      <spotLight ref={spotLightRef} position={[0, 0.02, -0.40]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={flashlightOn ? 85 : 0} distance={38} decay={1.0} color="#eef8ff" visible={flashlightOn} />
       <group ref={muzzleGroupRef} position={[0, 0.06, -0.47]} visible={false}>
         <mesh><planeGeometry args={[0.38, 0.38]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
         <mesh position={[0, 0, -0.12]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.42, 0.24]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>

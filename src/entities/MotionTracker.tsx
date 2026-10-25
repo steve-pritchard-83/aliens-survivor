@@ -64,9 +64,10 @@ export function MotionTracker() {
     const [px, , pz] = state.playerPos;
     const yaw = state.playerYaw;
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+    const maxRange = state.activeUpgrades.includes('tracker_gain') ? 42.0 : MAX_RANGE;
     const worldToRadar = (wx: number, wz: number): [number, number] => {
       const dx = wx - px, dz = wz - pz;
-      return [cx + ((dx * rx + dz * rz) / MAX_RANGE) * maxRadiusPx, cy - ((dx * fx + dz * fz) / MAX_RANGE) * maxRadiusPx];
+      return [cx + ((dx * rx + dz * rz) / maxRange) * maxRadiusPx, cy - ((dx * fx + dz * fz) / maxRange) * maxRadiusPx];
     };
 
     // Draw rotating Sulaco Double-Size Figure-8 Corridor Sector so player sees all 5 hallways & 6 junctions
@@ -143,12 +144,12 @@ export function MotionTracker() {
     for (let i = 0; i < allThreats.length; i++) {
       const t = allThreats[i];
       const dist = Math.hypot(t.x - px, t.z - pz);
-      if (dist > MAX_RANGE) continue;
+      if (dist > maxRange) continue;
       if (dist < closestDist) closestDist = dist;
 
       const [rawBx, rawBy] = worldToRadar(t.x, t.z);
       const bx = Math.max(14, Math.min(242, rawBx)), by = Math.max(14, Math.min(212, rawBy));
-      const isIlluminated = Math.abs(sweepProgressRef.current - Math.min(1.0, dist / MAX_RANGE)) < 0.28;
+      const isIlluminated = Math.abs(sweepProgressRef.current - Math.min(1.0, dist / maxRange)) < 0.28;
 
       ctx.fillStyle = isIlluminated ? 'rgba(140, 255, 250, 0.5)' : 'rgba(0, 255, 180, 0.25)';
       ctx.beginPath(); ctx.arc(bx, by, isIlluminated ? 11 : 7, 0, Math.PI * 2); ctx.fill();
