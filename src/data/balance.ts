@@ -29,7 +29,13 @@ export const BALANCE = {
     FIRE_INTERVAL_JITTER: 0.12,
     ENGAGE_RANGE: 22,
     FOLLOW_SPEED: 4.15,
-    CATCHUP_SPEED: 5.2
+    CATCHUP_SPEED: 5.2,
+    /** Idle patrol: walking pace, how far from the player he may wander, and how close a waypoint may be to them. */
+    PATROL_SPEED: 1.7,
+    PATROL_LEASH: 12,
+    PATROL_PLAYER_GAP: 2.8,
+    /** Inside this distance a walking Bishop is bent away from the player so he slides past instead of through. */
+    PLAYER_AVOID_RADIUS: 2.4
   },
   PHASES: {
     PHASE_1_END: 225,

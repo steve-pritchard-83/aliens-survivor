@@ -10,12 +10,14 @@ import { constrainToCorridorInto, moveConstrained, getHallId, sharesLane } from 
 import { getActiveLevel } from '../levels';
 import { advanceCorner } from '../systems/corridorPathing';
 import { buildBishopRig, poseBishop } from './BishopRig';
+import { createPatrol, stepPatrol, steerAround } from './bishop/bishopPatrol';
 
 const _goal = { x: 0, z: 0 };
 const _dmg: DamageSpec = { amount: BALANCE.BISHOP.DAMAGE, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
 const _best = { id: -1, x: 0, z: 0, dist: 0 };
+const _steer = { x: 0, z: 0 };
 
 /** Updates `_best` in place if `t` is a closer, visible, live threat than whatever `_best` already holds. */
 function considerThreat(
@@ -57,6 +59,7 @@ export function BishopCompanion() {
     muzzleTimer: 0,
     walkPhase: 0,
     move: 0,
+    patrol: createPatrol(),
     runId: useGameStore.getState().runId
   });
 
@@ -84,6 +87,7 @@ export function BishopCompanion() {
       st.z = getActiveLevel().companionStart.z;
       st.yaw = Math.PI;
       st.targetCorner = -1;
+      st.patrol.active = false;
       root.position.set(st.x, 0, st.z);
     }
     if (isSimulationFrozen(store.status)) return;
@@ -104,8 +108,24 @@ export function BishopCompanion() {
       rx = Math.cos(pyaw),
       rz = -Math.sin(pyaw);
     constrainToCorridorInto(px - fx * 2.1 + rx * 0.28, pz - fz * 2.1 + rz * 0.28, 0.22, _goal);
-    const goalX = _goal.x,
+    let goalX = _goal.x,
       goalZ = _goal.z;
+
+    // Acquire nearest visible hostile (Xenomorph, Facehugger, or Chestburster) in the same hallway or within line-of-sight.
+    // Walks activeThreats then smallThreat directly into the shared `_best` scratch object, rather than spreading
+    // them into a new array every frame.
+    const curHall = getHallId(st.x, st.z);
+    let bestId = -1;
+    for (const t of store.activeThreats) bestId = considerThreat(t, st, curHall, bestId);
+    if (store.smallThreat) bestId = considerThreat(store.smallThreat, st, curHall, bestId);
+    const bestTarget = bestId === -1 ? null : _best;
+
+    // Nothing in sight: patrol around the player (pausing to scan); in a fight, or if the player is far, hold formation
+    const patrol = bestTarget ? 'FOLLOW' : stepPatrol(st.patrol, st.x, st.z, st.yaw, px, pz, dt);
+    if (patrol === 'MOVE') {
+      goalX = st.patrol.x;
+      goalZ = st.patrol.z;
+    }
 
     const bH = getHallId(st.x, st.z),
       pH = getHallId(goalX, goalZ);
@@ -138,7 +158,17 @@ export function BishopCompanion() {
 
     // Avoid walking through the player: only advance if not encroaching on player's personal radius (1.8m)
     const movingCloserToPlayer = dx * (px - st.x) + dz * (pz - st.z) > 0;
-    if (distToGoal > 0.45 && store.status === 'PLAYING' && (!movingCloserToPlayer || distToPlayer > 1.85)) {
+    if (patrol === 'MOVE' && distToGoal > 0.1 && store.status === 'PLAYING') {
+      // Patrol walk: a slow pace, bent around the player so he never walks through them
+      steerAround(dx / distToGoal, dz / distToGoal, st.x, st.z, px, pz, _steer);
+      const stride = BALANCE.BISHOP.PATROL_SPEED * dt;
+      moveConstrained(st, st.x + _steer.x * stride, st.z + _steer.z * stride, 0.22);
+    } else if (
+      patrol !== 'PAUSE' &&
+      distToGoal > 0.45 &&
+      store.status === 'PLAYING' &&
+      (!movingCloserToPlayer || distToPlayer > 1.85)
+    ) {
       const moveSpeed = distToPlayer > 5.0 ? BALANCE.BISHOP.CATCHUP_SPEED : BALANCE.BISHOP.FOLLOW_SPEED;
       moveConstrained(st, st.x + (dx / distToGoal) * moveSpeed * dt, st.z + (dz / distToGoal) * moveSpeed * dt, 0.22);
     }
@@ -162,21 +192,14 @@ export function BishopCompanion() {
     const frameDisplacement = Math.hypot(st.x - prevX, st.z - prevZ);
     const isMoving = frameDisplacement > 0.001;
 
-    // Acquire nearest visible hostile (Xenomorph, Facehugger, or Chestburster) in the same hallway or within line-of-sight.
-    // Walks activeThreats then smallThreat directly into the shared `_best` scratch object, rather than spreading
-    // them into a new array every frame.
-    const curHall = getHallId(st.x, st.z);
-    let bestId = -1;
-    for (const t of store.activeThreats) bestId = considerThreat(t, st, curHall, bestId);
-    if (store.smallThreat) bestId = considerThreat(store.smallThreat, st, curHall, bestId);
-    const bestTarget = bestId === -1 ? null : _best;
-
     // Rotate Bishop toward his target if engaging, otherwise toward movement direction or player's look direction
     const desiredYaw = bestTarget
       ? Math.atan2(bestTarget.x - st.x, bestTarget.z - st.z)
-      : isMoving
-        ? Math.atan2(dx, dz)
-        : pyaw + Math.PI;
+      : patrol === 'PAUSE'
+        ? st.patrol.look
+        : isMoving
+          ? Math.atan2(patrol === 'MOVE' ? _steer.x : dx, patrol === 'MOVE' ? _steer.z : dz)
+          : pyaw + Math.PI;
     let yawDiff = desiredYaw - st.yaw;
     while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
     while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
