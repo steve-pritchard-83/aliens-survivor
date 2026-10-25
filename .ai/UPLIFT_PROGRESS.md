@@ -20,7 +20,7 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P1.4 (cbe78b8) Restore 250-line limit
 - [ ] P1.5 BVH environment raycast
 - [x] P1.6 (cf0e928) Audio rework
-- [x] P1.7 (aec7ccc) Canvas texture throttling — tracker 20 Hz + wrist texture version gate; status panel redraw left per frame while paused (see below)
+- [x] P1.7 (600d404) Canvas texture throttling — tracker 20 Hz + wrist texture version gate; status panel redraw left per frame while paused (see below)
 - [ ] P1.8 Code splitting
 - [ ] P1.9 Phase close
 
