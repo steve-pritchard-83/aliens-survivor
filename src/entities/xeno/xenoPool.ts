@@ -56,7 +56,6 @@ export function buildXenoPool(scene: THREE.Group, clips: THREE.AnimationClip[]):
       leapVz: 0,
       stateTimer: 0,
       attackCooldown: 0,
-      hitFlashTimer: 0,
       gaitTimer: 0,
       root: wrapper,
       clonedMeshGroup: cloned,
@@ -99,7 +98,6 @@ export function spawnXeno(x: PooledXenomorph, p: SpawnParams): void {
   x.stateTimer = 0.7;
   x.hp = p.hp;
   x.maxHp = p.hp;
-  x.hitFlashTimer = 0;
   x.x = p.nodeX;
   x.y = p.nodeY;
   x.z = p.nodeZ;

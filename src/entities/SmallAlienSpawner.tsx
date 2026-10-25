@@ -94,12 +94,6 @@ export function SmallAlienSpawner() {
         const e = entityRef.current;
         const isKill = (e.hp -= BALANCE.SMALL_ALIEN.DAMAGE_PER_HIT) <= 0;
         fxRef.current?.triggerImpact(pt, origin, dir, isKill);
-        e.hitFlashTimer = 0.12;
-        const mats = e.kind === 'FACEHUGGER' ? fhMats : cbMats;
-        for (let i = 0; i < mats.length; i++) {
-          mats[i].emissive.setHex(0xffffff);
-          mats[i].emissiveIntensity = 0.45;
-        }
         moveConstrained(e, e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
         AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
         AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);
@@ -165,10 +159,6 @@ export function SmallAlienSpawner() {
     }
 
     e.animTime += dt;
-    if (e.hitFlashTimer > 0 && (e.hitFlashTimer -= dt) <= 0) {
-      if (e.kind === 'FACEHUGGER') resetMaterials(fhMats, FH_EMISSIVE);
-      else resetMaterials(cbMats, CB_EMISSIVE);
-    }
 
     stepSmall(e, px, pz, now, dt, _pose, _events);
 

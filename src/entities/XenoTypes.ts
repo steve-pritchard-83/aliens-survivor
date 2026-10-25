@@ -42,7 +42,6 @@ export interface PooledXenomorph {
   leapVz: number;
   stateTimer: number;
   attackCooldown: number;
-  hitFlashTimer: number;
   gaitTimer: number;
   root: THREE.Group;
   clonedMeshGroup: THREE.Group;

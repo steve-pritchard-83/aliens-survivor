@@ -27,7 +27,6 @@ export interface SmallAlienSim {
   leapVz: number;
   stateTimer: number;
   attackCooldown: number;
-  hitFlashTimer: number;
   vocalTimer: number;
   spawnCooldown: number;
   animTime: number;
@@ -66,7 +65,6 @@ export function createSmallSim(): SmallAlienSim {
     leapVz: 0,
     stateTimer: 0,
     attackCooldown: 0,
-    hitFlashTimer: 0,
     vocalTimer: 1.5,
     spawnCooldown: BALANCE.SMALL_ALIEN.FIRST_SPAWN_DELAY,
     animTime: 0
@@ -99,7 +97,6 @@ export function spawnSmall(
   e.targetCorner = -1;
   e.leapCooldown = 0.4;
   e.attackCooldown = 0;
-  e.hitFlashTimer = 0;
   e.vocalTimer = 1.1;
 }
 

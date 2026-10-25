@@ -34,7 +34,6 @@ function makeXeno(overrides: Partial<PooledXenomorph> = {}): PooledXenomorph {
     leapVz: 0,
     stateTimer: 0,
     attackCooldown: 0,
-    hitFlashTimer: 0,
     gaitTimer: 99,
     root: new THREE.Group(),
     clonedMeshGroup: cloned,

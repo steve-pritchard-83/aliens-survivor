@@ -75,12 +75,6 @@ export function applyXenoHit(
     relY = point.y - t.y;
   const isKill = (t.hp -= damageAgainstXeno(dmg.amount, t.state === 'SPAWNING', t.isBoss)) <= 0;
   fx?.triggerImpact(point, origin, dir, isKill);
-  const flashIntensity = useGameStore.getState().settings.reducedFlash ? 0.22 : 0.45;
-  t.hitFlashTimer = 0.12;
-  for (let i = 0; i < t.materials.length; i++) {
-    t.materials[i].emissive.setHex(0xffffff);
-    t.materials[i].emissiveIntensity = flashIntensity;
-  }
   moveConstrained(t, t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
   if (prevHp > t.maxHp * 0.45 && t.hp <= t.maxHp * 0.45 && relY < 0.4) severLimb(t, SLOT_LEFT_LEG, origin, dir, fx);
   if (isKill) {

@@ -18,7 +18,7 @@ import {
 import type { GameRules } from '../data/difficulty';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { POOL_SIZE, PooledXenomorph, sanitizeClips } from './XenoTypes';
-import { buildXenoPool, resetXenoPool, spawnXeno, XENO_BASE_EMISSIVE } from './xeno/xenoPool';
+import { buildXenoPool, resetXenoPool, spawnXeno } from './xeno/xenoPool';
 import { applyXenoHit, DeathCounter } from './xeno/xenoDamage';
 import { stepXeno, XenoPose, XenoEvents } from './xeno/xenoAI';
 import { stepXenoDeath } from './xeno/xenoDeath';
@@ -179,12 +179,6 @@ export function XenomorphPool() {
       if (!x.active) continue;
       x.mixer.update(dt);
       for (let b = 0; b < 5; b++) if (x.limbBones[b]) x.limbBones[b]!.scale.setScalar(x.severedLimbs[b] ? 0.0001 : 1.0);
-      if (x.hitFlashTimer > 0 && (x.hitFlashTimer -= dt) <= 0) {
-        for (let m = 0; m < x.materials.length; m++) {
-          x.materials[m].emissive.setHex(XENO_BASE_EMISSIVE.hex);
-          x.materials[m].emissiveIntensity = XENO_BASE_EMISSIVE.intensity;
-        }
-      }
       if (x.state === 'DEAD') {
         if (stepXenoDeath(x, dt, _pose)) continue;
       } else {

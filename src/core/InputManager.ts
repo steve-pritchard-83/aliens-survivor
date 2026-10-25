@@ -116,9 +116,9 @@ export class InputManagerController {
     if (this.mode !== 'XR') this.setMode('DESKTOP');
     if (!this.pointerLocked || performance.now() < this.ignoreMouseUntil) return;
     // Guard against browser pointer-lock re-center warp anomalies (> 80px spike)
-    if (Math.abs(e.movementX) > 80 || Math.abs(e.movementY) > 80) return;
-    const mx = Math.max(-45, Math.min(45, e.movementX));
-    const my = Math.max(-45, Math.min(45, e.movementY));
+    if (Math.abs(e.movementX) > 250 || Math.abs(e.movementY) > 250) return;
+    const mx = Math.max(-90, Math.min(90, e.movementX));
+    const my = Math.max(-90, Math.min(90, e.movementY));
     const k = 0.0022 * this.mouseSensitivity;
     this.lookDX += mx * k;
     this.lookDY += my * k * (this.invertY ? -1 : 1);

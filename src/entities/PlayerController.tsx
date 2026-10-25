@@ -98,8 +98,12 @@ export function PlayerController() {
       }
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
-    } else if (status === 'DEFEAT' || status === 'VICTORY' || status === 'PAUSED') {
+    } else if (status === 'DEFEAT' || status === 'VICTORY' || status === 'PAUSED' || status === 'LEVEL_UP') {
+      // The cursor must be free to click an upgrade card on the level-up screen
       InputManager.releasePointerLock();
+    } else if (status === 'PLAYING' && prev === 'LEVEL_UP') {
+      // Choosing a card is a user gesture, so the lock can be retaken straight away
+      InputManager.requestPointerLock();
     }
   }, [status, camera]);
 
