@@ -25,7 +25,12 @@ export function App() {
     <div
       style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#030507' }}
       onClick={() => {
-        if (status === 'PLAYING' && InputManager.mode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
+        if (
+          status === 'PLAYING' &&
+          InputManager.mode === 'DESKTOP' &&
+          !('ontouchstart' in window) &&
+          navigator.maxTouchPoints === 0
+        ) {
           InputManager.requestPointerLock();
         }
       }}

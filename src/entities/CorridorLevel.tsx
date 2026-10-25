@@ -7,12 +7,20 @@ import { CombatSystem } from '../core/CombatEvents';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { AlienEggs } from './AlienEggs';
 
-
-
 // Trim interior join walls & end-caps so all 4 L-corridor sections form a seamless Double-Size Figure-8 Sector
-function trimSectorWalls(root: THREE.Object3D, isRotatedCopy: boolean, zShift: number, openNorthEnd: boolean, openSouthEnd: boolean) {
-  const v0 = new THREE.Vector3(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
-  const loc0 = new THREE.Vector3(), loc1 = new THREE.Vector3(), loc2 = new THREE.Vector3();
+function trimSectorWalls(
+  root: THREE.Object3D,
+  isRotatedCopy: boolean,
+  zShift: number,
+  openNorthEnd: boolean,
+  openSouthEnd: boolean
+) {
+  const v0 = new THREE.Vector3(),
+    v1 = new THREE.Vector3(),
+    v2 = new THREE.Vector3();
+  const loc0 = new THREE.Vector3(),
+    loc1 = new THREE.Vector3(),
+    loc2 = new THREE.Vector3();
   root.updateMatrixWorld(true);
   root.traverse((child) => {
     const mesh = child as THREE.Mesh;
@@ -25,16 +33,26 @@ function trimSectorWalls(root: THREE.Object3D, isRotatedCopy: boolean, zShift: n
     const toWorld = (idx: number, target: THREE.Vector3, locTarget: THREE.Vector3) => {
       locTarget.fromBufferAttribute(pos, idx).applyMatrix4(mesh.matrixWorld);
       if (isRotatedCopy) target.set(-13.8 - locTarget.x, locTarget.y, 30.4 + zShift - locTarget.z);
-      else { target.copy(locTarget); target.z += zShift; }
+      else {
+        target.copy(locTarget);
+        target.z += zShift;
+      }
     };
 
     const newIndices: number[] = [];
     for (let i = 0; i < index.count; i += 3) {
-      const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
-      toWorld(a, v0, loc0); toWorld(b, v1, loc1); toWorld(c, v2, loc2);
-      const minY = Math.min(v0.y, v1.y, v2.y), maxY = Math.max(v0.y, v1.y, v2.y);
-      const cx = (v0.x + v1.x + v2.x) / 3, cz = (v0.z + v1.z + v2.z) / 3;
-      const locCx = (loc0.x + loc1.x + loc2.x) / 3, locCz = (loc0.z + loc1.z + loc2.z) / 3;
+      const a = index.getX(i),
+        b = index.getX(i + 1),
+        c = index.getX(i + 2);
+      toWorld(a, v0, loc0);
+      toWorld(b, v1, loc1);
+      toWorld(c, v2, loc2);
+      const minY = Math.min(v0.y, v1.y, v2.y),
+        maxY = Math.max(v0.y, v1.y, v2.y);
+      const cx = (v0.x + v1.x + v2.x) / 3,
+        cz = (v0.z + v1.z + v2.z) / 3;
+      const locCx = (loc0.x + loc1.x + loc2.x) / 3,
+        locCz = (loc0.z + loc1.z + loc2.z) / 3;
       const inWallBand = maxY > 0.18 && minY < 1.85;
 
       // 1. Remove interior end-caps and perpendicular turn-blocking wall panels at section joins
@@ -42,10 +60,18 @@ function trimSectorWalls(root: THREE.Object3D, isRotatedCopy: boolean, zShift: n
       const isTurnBlocker = inWallBand && ((locCx < -12.6 && locCz < 21.05) || (locCx < -0.5 && locCz < 9.6));
 
       // 2. Open doorways between North and South sectors at the center junction (Z = 22.1)
-      const inNorthJunction = openNorthEnd && inWallBand &&
-        ((cx > -1.1 && cx < 0.0) || (cx > -13.7 && cx < -12.6)) && cz > 22.6 + zShift && cz < 24.1 + zShift;
-      const inSouthJunction = openSouthEnd && inWallBand &&
-        ((cx > -1.1 && cx < 0.0) || (cx > -13.7 && cx < -12.6)) && cz > 6.3 + zShift && cz < 7.7 + zShift;
+      const inNorthJunction =
+        openNorthEnd &&
+        inWallBand &&
+        ((cx > -1.1 && cx < 0.0) || (cx > -13.7 && cx < -12.6)) &&
+        cz > 22.6 + zShift &&
+        cz < 24.1 + zShift;
+      const inSouthJunction =
+        openSouthEnd &&
+        inWallBand &&
+        ((cx > -1.1 && cx < 0.0) || (cx > -13.7 && cx < -12.6)) &&
+        cz > 6.3 + zShift &&
+        cz < 7.7 + zShift;
 
       if (!isEndCap && !isTurnBlocker && !inNorthJunction && !inSouthJunction) newIndices.push(a, b, c);
     }
@@ -65,14 +91,17 @@ export function CorridorLevel() {
   const sectorMeshGroupRef = useRef<THREE.Group>(null);
 
   const { c1, c2, c3, c4 } = useMemo(() => {
-    const s1 = scene.clone(true), s2 = scene.clone(true), s3 = scene.clone(true), s4 = scene.clone(true);
+    const s1 = scene.clone(true),
+      s2 = scene.clone(true),
+      s3 = scene.clone(true),
+      s4 = scene.clone(true);
     [s1, s2, s3, s4].forEach((s) => s.scale.setScalar(3.5));
-    trimSectorWalls(s1, false, 0, true, false); trimSectorWalls(s2, true, 0, true, false);
-    trimSectorWalls(s3, false, 13.8, false, true); trimSectorWalls(s4, true, 13.8, false, true);
+    trimSectorWalls(s1, false, 0, true, false);
+    trimSectorWalls(s2, true, 0, true, false);
+    trimSectorWalls(s3, false, 13.8, false, true);
+    trimSectorWalls(s4, true, 13.8, false, true);
     return { c1: s1, c2: s2, c3: s3, c4: s4 };
   }, [scene]);
-
-
 
   useEffect(() => {
     [c1, c2, c3, c4].forEach((root) => {
@@ -99,11 +128,15 @@ export function CorridorLevel() {
     const raycaster = new THREE.Raycaster();
     const _normMatrix = new THREE.Matrix3();
     const corridorMeshes: THREE.Mesh[] = [];
-    sectorMeshGroupRef.current?.traverse((c) => { if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh); });
+    sectorMeshGroupRef.current?.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh);
+    });
 
     CombatSystem.registerEnvRaycaster((origin, dir) => {
       if (corridorMeshes.length === 0 && sectorMeshGroupRef.current) {
-        sectorMeshGroupRef.current.traverse((c) => { if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh); });
+        sectorMeshGroupRef.current.traverse((c) => {
+          if ((c as THREE.Mesh).isMesh) corridorMeshes.push(c as THREE.Mesh);
+        });
       }
       if (corridorMeshes.length === 0) return null;
       raycaster.set(origin, dir);
@@ -120,7 +153,9 @@ export function CorridorLevel() {
       return null;
     });
 
-    return () => { CombatSystem.unregisterEnvRaycaster(); };
+    return () => {
+      CombatSystem.unregisterEnvRaycaster();
+    };
   }, [c1, c2, c3, c4]);
 
   useFrame(({ clock }) => {
@@ -146,7 +181,13 @@ export function CorridorLevel() {
       <hemisphereLight args={['#6e94b8', '#1a2634', hemiIntensity]} />
 
       {/* Optimized Single Bulkhead Sector Key Light */}
-      <pointLight position={[-6.9, 2.3, 22.1]} color="#a6c8e4" intensity={stripPower * 1.5} distance={34.0} decay={1.1} />
+      <pointLight
+        position={[-6.9, 2.3, 22.1]}
+        color="#a6c8e4"
+        intensity={stripPower * 1.5}
+        distance={34.0}
+        decay={1.1}
+      />
 
       {/* South & North Sector Loops */}
       <group ref={sectorMeshGroupRef}>

@@ -11,8 +11,12 @@ export function AdaptiveQuality() {
 
   useEffect(() => {
     if (session) {
-      try { gl.xr.setFoveation(1.0); } catch {}
-      try { gl.xr.setFramebufferScaleFactor(0.72); } catch {}
+      try {
+        gl.xr.setFoveation(1.0);
+      } catch {}
+      try {
+        gl.xr.setFramebufferScaleFactor(0.72);
+      } catch {}
     }
   }, [session, gl]);
 
@@ -28,10 +32,14 @@ export function AdaptiveQuality() {
 
       if (fps < 66 && currentScaleRef.current > 0.58) {
         currentScaleRef.current = Math.max(0.58, Number((currentScaleRef.current - 0.05).toFixed(2)));
-        try { gl.xr.setFramebufferScaleFactor(currentScaleRef.current); } catch {}
-      } else if (fps >= 71.5 && currentScaleRef.current < 0.80) {
-        currentScaleRef.current = Math.min(0.80, Number((currentScaleRef.current + 0.05).toFixed(2)));
-        try { gl.xr.setFramebufferScaleFactor(currentScaleRef.current); } catch {}
+        try {
+          gl.xr.setFramebufferScaleFactor(currentScaleRef.current);
+        } catch {}
+      } else if (fps >= 71.5 && currentScaleRef.current < 0.8) {
+        currentScaleRef.current = Math.min(0.8, Number((currentScaleRef.current + 0.05).toFixed(2)));
+        try {
+          gl.xr.setFramebufferScaleFactor(currentScaleRef.current);
+        } catch {}
       }
     }
   });

@@ -50,9 +50,24 @@ export interface UpgradeCard {
 
 export const UPGRADE_CATALOG: UpgradeCard[] = [
   { id: 'fire_rate', title: 'OVERCLOCKED ACTUATOR', desc: '+25% Pulse Rifle Rate of Fire', icon: '⚡' },
-  { id: 'extended_mag', title: '150-ROUND DRUM', desc: 'Extended 150-Round Ammo Capacity & Instant Reload', icon: '📦' },
+  {
+    id: 'extended_mag',
+    title: '150-ROUND DRUM',
+    desc: 'Extended 150-Round Ammo Capacity & Instant Reload',
+    icon: '📦'
+  },
   { id: 'armor_boost', title: 'REINFORCED CHITIN ARMOR', desc: '+50 Max HP & Immediate Full Medical Heal', icon: '🛡️' },
   { id: 'ap_ammo', title: 'M309 ARMOR PIERCING', desc: '+40% Pulse Rifle Kinetic Impact & Dismemberment', icon: '💥' },
-  { id: 'tracker_gain', title: '360° SCANNER ARRAY', desc: 'Upgrades Motion Tracker to Full 360° Corridor Coverage', icon: '📡' },
-  { id: 'acid_proofing', title: 'HAZMAT ACID RESIST', desc: '50% Damage Reduction From Xenomorph Acid Pools', icon: '🧪' }
+  {
+    id: 'tracker_gain',
+    title: '360° SCANNER ARRAY',
+    desc: 'Upgrades Motion Tracker to Full 360° Corridor Coverage',
+    icon: '📡'
+  },
+  {
+    id: 'acid_proofing',
+    title: 'HAZMAT ACID RESIST',
+    desc: '50% Damage Reduction From Xenomorph Acid Pools',
+    icon: '🧪'
+  }
 ];

@@ -4,7 +4,8 @@ import { GameSettings } from '../core/GameTypes';
 export type VRPanelStatus = 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
 function fmtTime(sec: number): string {
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  const m = Math.floor(sec / 60),
+    s = Math.floor(sec % 60);
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
@@ -23,7 +24,10 @@ export function drawVRStatusPanel(
   if (!ctx) return;
 
   if (status === 'PAUSED') {
-    const snapLabel = !settings || settings.snapAngle === 0 ? 'SMOOTH CONTINUOUS' : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
+    const snapLabel =
+      !settings || settings.snapAngle === 0
+        ? 'SMOOTH CONTINUOUS'
+        : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
     const flashLabel = settings?.reducedFlash ? 'REDUCED (SAFE)' : 'FULL STROBE';
     const handLabel = settings?.leftHanded ? 'LEFT-HANDED (WRIST RIGHT)' : 'RIGHT-HANDED (WRIST LEFT)';
 
@@ -79,7 +83,9 @@ export function drawVRStatusPanel(
     ctx.fillText('WEYLAND-YUTANI // USCM FIELD PROMOTION', 512, 70);
     const btnLabels = ['[TRIGGER / SELECT 1]', '[BUTTON A / SELECT 2]', '[BUTTON B / SELECT 3]'];
     for (let i = 0; i < Math.min(3, offered.length); i++) {
-      const c = offered[i], cx = 80 + i * 300, cw = 265;
+      const c = offered[i],
+        cx = 80 + i * 300,
+        cw = 265;
       ctx.fillStyle = 'rgba(0, 32, 16, 0.85)';
       ctx.fillRect(cx, 100, cw, 350);
       ctx.strokeStyle = '#00ff88';

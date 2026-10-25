@@ -38,7 +38,9 @@ class InputManagerController {
 
   public onModeChange(fn: (m: InputMode) => void) {
     this.modeListeners.add(fn);
-    return () => { this.modeListeners.delete(fn); };
+    return () => {
+      this.modeListeners.delete(fn);
+    };
   }
 
   private setMode(m: InputMode) {
@@ -51,7 +53,8 @@ class InputManagerController {
     if (this.initialized || typeof window === 'undefined') return;
     this.initialized = true;
 
-    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia?.('(pointer: coarse)').matches;
+    const isTouch =
+      'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia?.('(pointer: coarse)').matches;
     if (isTouch) {
       this.setMode('TOUCH');
     }
@@ -142,13 +145,13 @@ class InputManagerController {
     if (!this.gyroEnabled || this.mode !== 'TOUCH') return;
     if (e.gamma !== null && e.beta !== null) {
       // Subtle gyro assist when enabled on mobile
-      this.lookDX += (e.gamma * 0.00015);
+      this.lookDX += e.gamma * 0.00015;
     }
   };
 
   public requestPointerLock(): void {
     if (typeof window === 'undefined') return;
-    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || this.mode === 'TOUCH';
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || this.mode === 'TOUCH';
     if (isTouch) return;
     const canvas = document.querySelector('canvas');
     if (canvas && !this.pointerLocked && this.mode === 'DESKTOP') {
@@ -211,8 +214,8 @@ class InputManagerController {
       kbZ *= inv;
     }
 
-    const moveX = this.mode === 'XR' ? this.xrMoveX : (kbX !== 0 ? kbX : this.touchMoveX);
-    const moveZ = this.mode === 'XR' ? this.xrMoveZ : (kbZ !== 0 ? kbZ : this.touchMoveZ);
+    const moveX = this.mode === 'XR' ? this.xrMoveX : kbX !== 0 ? kbX : this.touchMoveX;
+    const moveZ = this.mode === 'XR' ? this.xrMoveZ : kbZ !== 0 ? kbZ : this.touchMoveZ;
     const isFiring = this.mouseDown || this.touchFiring || this.xrFiring;
     const reloadRequested = this.reloadFlag;
     const snapTurn = this.snapTurnAngle;

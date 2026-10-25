@@ -57,9 +57,7 @@ export interface PooledXenomorph {
 export function sanitizeClips(clips: THREE.AnimationClip[]): THREE.AnimationClip[] {
   return clips.map((raw) => {
     const c = raw.clone();
-    c.tracks = c.tracks.filter(
-      (t) => !t.name.includes('TrajectorySHJnt_02.position') && !t.name.endsWith('.scale')
-    );
+    c.tracks = c.tracks.filter((t) => !t.name.includes('TrajectorySHJnt_02.position') && !t.name.endsWith('.scale'));
     if (c.name === CLIP_DIE) {
       c.tracks.forEach((t) => {
         if (t.name.includes('ROOTSHJnt_03.position')) {
@@ -74,13 +72,7 @@ export function sanitizeClips(clips: THREE.AnimationClip[]): THREE.AnimationClip
   });
 }
 
-export function playClip(
-  xeno: PooledXenomorph,
-  clipName: string,
-  loop = true,
-  timeScale = 1.0,
-  startTime = -1
-): void {
+export function playClip(xeno: PooledXenomorph, clipName: string, loop = true, timeScale = 1.0, startTime = -1): void {
   if (xeno.currentClip === clipName && loop) {
     if (xeno.actions[clipName]) xeno.actions[clipName].timeScale = timeScale;
     return;
@@ -89,18 +81,15 @@ export function playClip(
   const next = xeno.actions[clipName];
   if (!next) return;
 
-  next.reset()
+  next
+    .reset()
     .setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, loop ? Infinity : 1)
     .fadeIn(0.15)
     .play();
 
   next.clampWhenFinished = !loop;
   next.timeScale = timeScale;
-  next.time = startTime >= 0
-    ? startTime
-    : loop
-    ? (xeno.animPhase % 1.0) * (next.getClip().duration || 1.0)
-    : 0;
+  next.time = startTime >= 0 ? startTime : loop ? (xeno.animPhase % 1.0) * (next.getClip().duration || 1.0) : 0;
 
   xeno.currentClip = clipName;
 }

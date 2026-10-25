@@ -1,0 +1,7 @@
+dist
+node_modules
+public
+assets
+quest-build
+package-lock.json
+*.md

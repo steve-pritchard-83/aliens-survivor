@@ -3,13 +3,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 
-const _vPos = new THREE.Vector3(), _vFwd = new THREE.Vector3(), _vQuat = new THREE.Quaternion();
+const _vPos = new THREE.Vector3(),
+  _vFwd = new THREE.Vector3(),
+  _vQuat = new THREE.Quaternion();
 
 export function DebugTelemetry() {
   const isDebug = useMemo(() => {
     if (typeof window === 'undefined') return false;
-    return new URLSearchParams(window.location.search).has('debug') ||
-      sessionStorage.getItem('uscm_debug') === '1';
+    return new URLSearchParams(window.location.search).has('debug') || sessionStorage.getItem('uscm_debug') === '1';
   }, []);
 
   const { session } = useXR();

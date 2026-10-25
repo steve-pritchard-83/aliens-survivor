@@ -2,7 +2,9 @@ import { useGameStore } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 
 function formatTimer(sec: number): string {
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60), ms = Math.floor((sec % 1) * 10);
+  const m = Math.floor(sec / 60),
+    s = Math.floor(sec % 60),
+    ms = Math.floor((sec % 1) * 10);
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
 }
 

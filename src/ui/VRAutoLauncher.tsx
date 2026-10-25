@@ -9,8 +9,7 @@ export function VRAutoLauncher() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const isVrApp =
-      new URLSearchParams(window.location.search).get('vr') === '1' ||
-      /OculusBrowser|Quest/i.test(navigator.userAgent);
+      new URLSearchParams(window.location.search).get('vr') === '1' || /OculusBrowser|Quest/i.test(navigator.userAgent);
     if (!isVrApp || launchedRef.current) return;
 
     const startMission = () => {
@@ -36,7 +35,11 @@ export function VRAutoLauncher() {
             session.addEventListener('visibilitychange', () => {
               const info = `visibilitychange:${session.visibilityState}@${new Date().toISOString()}`;
               console.log('[WebXR]', info);
-              try { sessionStorage.setItem('uscm_last_xr_vis', info); } catch { /* ignore */ }
+              try {
+                sessionStorage.setItem('uscm_last_xr_vis', info);
+              } catch {
+                /* ignore */
+              }
               const st = useGameStore.getState();
               if (session.visibilityState !== 'visible' && st.status === 'PLAYING') {
                 st.pauseGame();
@@ -47,7 +50,11 @@ export function VRAutoLauncher() {
             session.addEventListener('end', (e) => {
               const info = `sessionend@${new Date().toISOString()}`;
               console.warn('[WebXR Session Ended]', info, e);
-              try { localStorage.setItem('uscm_last_xr_session_end', info); } catch { /* ignore */ }
+              try {
+                localStorage.setItem('uscm_last_xr_session_end', info);
+              } catch {
+                /* ignore */
+              }
             });
           }
         })

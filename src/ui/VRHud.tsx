@@ -10,7 +10,10 @@ import { xrControllerState } from '../core/XRControllerState';
 
 import { drawVRStatusPanel, VRPanelStatus } from './VRStatusCanvas';
 
-const _camFwd = new THREE.Vector3(), _wristPos = new THREE.Vector3(), _camPos = new THREE.Vector3(), _camQuat = new THREE.Quaternion();
+const _camFwd = new THREE.Vector3(),
+  _wristPos = new THREE.Vector3(),
+  _camPos = new THREE.Vector3(),
+  _camQuat = new THREE.Quaternion();
 
 export function VRHud() {
   const { session } = useXR();
@@ -19,7 +22,8 @@ export function VRHud() {
   const statusMeshRef = useRef<THREE.Mesh>(null);
   const snapTurnCoolRef = useRef(false);
   const defeatTimerRef = useRef(0);
-  const pauseCoolRef = useRef(0), lightCoolRef = useRef(0);
+  const pauseCoolRef = useRef(0),
+    lightCoolRef = useRef(0);
 
   const wristTexture = useMemo(() => {
     if (!trackerCanvasState.canvas) return null;
@@ -30,15 +34,33 @@ export function VRHud() {
 
   const { panelCanvas, panelTex } = useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024; canvas.height = 512;
+    canvas.width = 1024;
+    canvas.height = 512;
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     return { panelCanvas: canvas, panelTex: tex };
   }, []);
 
-  const renderPanel = (status: VRPanelStatus, kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
+  const renderPanel = (
+    status: VRPanelStatus,
+    kills: number,
+    shotsFired: number,
+    shotsHit: number,
+    timeRem: number,
+    pulse: number
+  ) => {
     const st = useGameStore.getState();
-    drawVRStatusPanel(panelCanvas, status, kills, shotsFired, shotsHit, timeRem, pulse, st.offeredUpgrades, st.settings);
+    drawVRStatusPanel(
+      panelCanvas,
+      status,
+      kills,
+      shotsFired,
+      shotsHit,
+      timeRem,
+      pulse,
+      st.offeredUpgrades,
+      st.settings
+    );
     panelTex.needsUpdate = true;
   };
 
@@ -53,46 +75,78 @@ export function VRHud() {
       return;
     }
 
-    let moveX = 0, moveZ = 0, firing = false, anyButtonPressed = false;
-    const xrSession = gl.xr.getSession(), refSpace = gl.xr.getReferenceSpace();
+    let moveX = 0,
+      moveZ = 0,
+      firing = false,
+      anyButtonPressed = false;
+    const xrSession = gl.xr.getSession(),
+      refSpace = gl.xr.getReferenceSpace();
 
     if (xrSession) {
       for (const source of xrSession.inputSources) {
         if (!source.gamepad) continue;
-        const axes = source.gamepad.axes, buttons = source.gamepad.buttons;
-        if (buttons[0]?.pressed || buttons[1]?.pressed || buttons[4]?.pressed || buttons[5]?.pressed) anyButtonPressed = true;
+        const axes = source.gamepad.axes,
+          buttons = source.gamepad.buttons;
+        if (buttons[0]?.pressed || buttons[1]?.pressed || buttons[4]?.pressed || buttons[5]?.pressed)
+          anyButtonPressed = true;
         let pauseTriggered = false;
 
         if (source.handedness === 'left') {
-          xrControllerState.leftHand.hapticActuator = (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
+          xrControllerState.leftHand.hapticActuator =
+            (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
           if (frame && refSpace && (source.gripSpace || source.targetRaySpace)) {
             const pose = frame.getPose(source.gripSpace || source.targetRaySpace!, refSpace);
             if (pose) {
               xrControllerState.leftHand.active = true;
-              xrControllerState.leftHand.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-              xrControllerState.leftHand.quaternion.set(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
+              xrControllerState.leftHand.position.set(
+                pose.transform.position.x,
+                pose.transform.position.y,
+                pose.transform.position.z
+              );
+              xrControllerState.leftHand.quaternion.set(
+                pose.transform.orientation.x,
+                pose.transform.orientation.y,
+                pose.transform.orientation.z,
+                pose.transform.orientation.w
+              );
             }
           }
-          if (axes.length >= 4) { moveX = axes[2] || 0; moveZ = -(axes[3] || 0); }
-          else if (axes.length >= 2) { moveX = axes[0] || 0; moveZ = -(axes[1] || 0); }
+          if (axes.length >= 4) {
+            moveX = axes[2] || 0;
+            moveZ = -(axes[3] || 0);
+          } else if (axes.length >= 2) {
+            moveX = axes[0] || 0;
+            moveZ = -(axes[1] || 0);
+          }
           if (buttons[4]?.pressed && lightCoolRef.current <= 0) {
-            lightCoolRef.current = 0.35; useGameStore.getState().toggleFlashlight();
+            lightCoolRef.current = 0.35;
+            useGameStore.getState().toggleFlashlight();
           }
           if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
         } else if (source.handedness === 'right') {
-          xrControllerState.rightHand.hapticActuator = (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
+          xrControllerState.rightHand.hapticActuator =
+            (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
           if (frame && refSpace && (source.gripSpace || source.targetRaySpace)) {
             const pose = frame.getPose(source.gripSpace || source.targetRaySpace!, refSpace);
             if (pose) {
               xrControllerState.rightHand.active = true;
-              xrControllerState.rightHand.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-              xrControllerState.rightHand.quaternion.set(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
+              xrControllerState.rightHand.position.set(
+                pose.transform.position.x,
+                pose.transform.position.y,
+                pose.transform.position.z
+              );
+              xrControllerState.rightHand.quaternion.set(
+                pose.transform.orientation.x,
+                pose.transform.orientation.y,
+                pose.transform.orientation.z,
+                pose.transform.orientation.w
+              );
             }
           }
           firing = Boolean(buttons[0]?.pressed);
           if (buttons[4]?.pressed) useGameStore.getState().startReload();
           if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
-          const turnAxis = axes.length >= 4 ? axes[2] : (axes.length >= 2 ? axes[0] : 0);
+          const turnAxis = axes.length >= 4 ? axes[2] : axes.length >= 2 ? axes[0] : 0;
           const snap = useGameStore.getState().settings.snapAngle;
           if (snap > 0) {
             if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
@@ -104,9 +158,15 @@ export function VRHud() {
           }
         }
         if (pauseTriggered && pauseCoolRef.current <= 0) {
-          pauseCoolRef.current = 0.45; const s = useGameStore.getState();
-          if (s.status === 'PLAYING') { AudioManager.play2D('ui_beep', 0.8); s.pauseGame(); }
-          else if (s.status === 'PAUSED') { AudioManager.play2D('ui_beep', 0.8); s.resumeGame(); }
+          pauseCoolRef.current = 0.45;
+          const s = useGameStore.getState();
+          if (s.status === 'PLAYING') {
+            AudioManager.play2D('ui_beep', 0.8);
+            s.pauseGame();
+          } else if (s.status === 'PAUSED') {
+            AudioManager.play2D('ui_beep', 0.8);
+            s.resumeGame();
+          }
         }
       }
     }
@@ -117,7 +177,9 @@ export function VRHud() {
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
         statusMeshRef.current.visible = true;
-        camera.getWorldDirection(_camFwd); camera.getWorldPosition(_camPos); camera.getWorldQuaternion(_camQuat);
+        camera.getWorldDirection(_camFwd);
+        camera.getWorldPosition(_camPos);
+        camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
         renderPanel('PAUSED', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
@@ -127,33 +189,40 @@ export function VRHud() {
           const btns = src.gamepad?.buttons;
           if (!btns) continue;
           if (src.handedness === 'right' && btns[4]?.pressed) {
-            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            pauseCoolRef.current = 0.35;
+            AudioManager.play2D('ui_beep', 0.7);
             const angles = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0];
             const cur = angles.findIndex((a) => Math.abs(a - st.settings.snapAngle) < 0.05);
             st.updateSettings({ snapAngle: angles[(cur + 1) % angles.length] });
             return;
           }
           if (src.handedness === 'left' && btns[4]?.pressed) {
-            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            pauseCoolRef.current = 0.35;
+            AudioManager.play2D('ui_beep', 0.7);
             st.updateSettings({ reducedFlash: !st.settings.reducedFlash });
             return;
           }
           if (btns[1]?.pressed) {
-            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            pauseCoolRef.current = 0.35;
+            AudioManager.play2D('ui_beep', 0.7);
             st.updateSettings({ leftHanded: !st.settings.leftHanded });
             return;
           }
         }
       }
       if (pauseCoolRef.current <= 0 && firing) {
-        pauseCoolRef.current = 0.45; AudioManager.play2D('ui_beep', 0.8); st.resumeGame();
+        pauseCoolRef.current = 0.45;
+        AudioManager.play2D('ui_beep', 0.8);
+        st.resumeGame();
       }
       return;
     }
     if (st.status === 'LEVEL_UP') {
       if (statusMeshRef.current) {
         statusMeshRef.current.visible = true;
-        camera.getWorldDirection(_camFwd); camera.getWorldPosition(_camPos); camera.getWorldQuaternion(_camQuat);
+        camera.getWorldDirection(_camFwd);
+        camera.getWorldPosition(_camPos);
+        camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
         renderPanel('LEVEL_UP', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
@@ -178,11 +247,13 @@ export function VRHud() {
       if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
         defeatTimerRef.current = 0;
         AudioManager.resetAudio();
-        AudioManager.unlock().then(() => {
-          AudioManager.play2D('ui_beep', 0.8);
-          AudioManager.startBGM();
-          AudioManager.setKlaxonActive(true);
-        }).catch(() => {});
+        AudioManager.unlock()
+          .then(() => {
+            AudioManager.play2D('ui_beep', 0.8);
+            AudioManager.startBGM();
+            AudioManager.setKlaxonActive(true);
+          })
+          .catch(() => {});
         st.startGame();
       }
     } else {
@@ -197,11 +268,17 @@ export function VRHud() {
         _wristPos.copy(trackerHand.position).applyQuaternion(camera.parent.quaternion);
         wristGroupRef.current.position.copy(camera.parent.position).add(_wristPos);
         wristGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(trackerHand.quaternion);
-        wristGroupRef.current.translateY(0.06); wristGroupRef.current.translateZ(-0.04); wristGroupRef.current.rotateX(-Math.PI / 2);
+        wristGroupRef.current.translateY(0.06);
+        wristGroupRef.current.translateZ(-0.04);
+        wristGroupRef.current.rotateX(-Math.PI / 2);
       } else {
-        wristGroupRef.current.position.copy(camera.position); wristGroupRef.current.quaternion.copy(camera.quaternion);
-        wristGroupRef.current.translateX(-0.26); wristGroupRef.current.translateY(-0.18); wristGroupRef.current.translateZ(-0.36);
-        wristGroupRef.current.rotateY(0.45); wristGroupRef.current.rotateX(-0.35);
+        wristGroupRef.current.position.copy(camera.position);
+        wristGroupRef.current.quaternion.copy(camera.quaternion);
+        wristGroupRef.current.translateX(-0.26);
+        wristGroupRef.current.translateY(-0.18);
+        wristGroupRef.current.translateZ(-0.36);
+        wristGroupRef.current.rotateY(0.45);
+        wristGroupRef.current.rotateX(-0.35);
       }
     }
     if (wristTexture) wristTexture.needsUpdate = true;
@@ -212,8 +289,16 @@ export function VRHud() {
   return (
     <>
       <group ref={wristGroupRef}>
-        <mesh position={[0, 0, -0.01]}><boxGeometry args={[0.14, 0.14, 0.015]} /><meshStandardMaterial color="#15221a" /></mesh>
-        {wristTexture && <mesh><planeGeometry args={[0.125, 0.125]} /><meshBasicMaterial map={wristTexture} /></mesh>}
+        <mesh position={[0, 0, -0.01]}>
+          <boxGeometry args={[0.14, 0.14, 0.015]} />
+          <meshStandardMaterial color="#15221a" />
+        </mesh>
+        {wristTexture && (
+          <mesh>
+            <planeGeometry args={[0.125, 0.125]} />
+            <meshBasicMaterial map={wristTexture} />
+          </mesh>
+        )}
       </group>
       <mesh ref={statusMeshRef} visible={false}>
         <planeGeometry args={[1.5, 0.75]} />

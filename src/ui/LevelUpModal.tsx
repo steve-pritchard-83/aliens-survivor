@@ -59,9 +59,7 @@ export function LevelUpModal() {
             }}
           >
             <div style={{ fontSize: 44, marginBottom: 12 }}>{card.icon}</div>
-            <h3 style={{ color: '#00ff88', fontSize: 18, letterSpacing: 2, margin: '0 0 10px 0' }}>
-              {card.title}
-            </h3>
+            <h3 style={{ color: '#00ff88', fontSize: 18, letterSpacing: 2, margin: '0 0 10px 0' }}>{card.title}</h3>
             <p style={{ color: '#aaffd4', fontSize: 14, lineHeight: 1.5, flex: 1, margin: '0 0 16px 0' }}>
               {card.desc}
             </p>

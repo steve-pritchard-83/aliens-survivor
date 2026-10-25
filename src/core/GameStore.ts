@@ -1,21 +1,17 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
 import { BALANCE, UPGRADE_CATALOG } from '../data/balance';
-import {
-  GameStatus,
-  WavePhase,
-  ActiveThreat,
-  GameSettings,
-  GameState,
-  PHASE_NAMES,
-  computePhase
-} from './GameTypes';
+import { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState, PHASE_NAMES, computePhase } from './GameTypes';
 
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase };
 
 function loadRecordKills(): number {
-  try { return parseInt(localStorage.getItem('uscm_record_kills') || '0', 10); } catch { return 0; }
+  try {
+    return parseInt(localStorage.getItem('uscm_record_kills') || '0', 10);
+  } catch {
+    return 0;
+  }
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -98,14 +94,29 @@ export const useGameStore = create<GameState>((set, get) => ({
       nextHp = Math.min(s.maxHp, nextHp + BALANCE.PLAYER.REGEN_RATE * dt);
     }
 
-    let isReloading = s.isReloading, reloadProgress = s.reloadProgress, ammo = s.ammo, isJammed = s.isJammed, continuousFireTime = s.continuousFireTime;
+    let isReloading = s.isReloading,
+      reloadProgress = s.reloadProgress,
+      ammo = s.ammo,
+      isJammed = s.isJammed,
+      continuousFireTime = s.continuousFireTime;
     if (isReloading && (reloadProgress += dt / BALANCE.WEAPON.RELOAD_TIME) >= 1.0) {
-      isReloading = false; reloadProgress = 0; ammo = s.maxAmmo; isJammed = false; continuousFireTime = 0;
+      isReloading = false;
+      reloadProgress = 0;
+      ammo = s.maxAmmo;
+      isJammed = false;
+      continuousFireTime = 0;
     }
 
     set({
-      timeRemaining: nextTime, phase: nextPhase, status: nextStatus, hp: nextHp,
-      isReloading, reloadProgress, ammo, isJammed, continuousFireTime,
+      timeRemaining: nextTime,
+      phase: nextPhase,
+      status: nextStatus,
+      hp: nextHp,
+      isReloading,
+      reloadProgress,
+      ammo,
+      isJammed,
+      continuousFireTime,
       damageFlash: Math.max(0, s.damageFlash - dt * 2.5),
       screenShake: Math.max(0, s.screenShake - dt * 4.2)
     });
@@ -136,7 +147,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       try {
         const curBest = Math.max(s.kills, s.recordKills);
         localStorage.setItem('uscm_record_kills', curBest.toString());
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     set({
       hp: nextHp,
@@ -155,7 +168,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     const earnedXp = isBoss ? BALANCE.XP.PRAETORIAN_KILL : BALANCE.XP.DRONE_KILL;
     const nextXp = s.xp + earnedXp;
     const nextKills = s.kills + 1;
-    let nextLevel = s.level, nextTargetXp = s.nextLevelXp, triggerLevelUp = false;
+    let nextLevel = s.level,
+      nextTargetXp = s.nextLevelXp,
+      triggerLevelUp = false;
 
     if (nextXp >= s.nextLevelXp && s.level <= BALANCE.XP.LEVEL_THRESHOLDS.length) {
       nextLevel = s.level + 1;
@@ -166,7 +181,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (triggerLevelUp) {
       const pool = UPGRADE_CATALOG.filter((u) => !s.activeUpgrades.includes(u.id));
       const choices = pool.sort(() => Math.random() - 0.5).slice(0, 3);
-      set({ kills: nextKills, xp: nextXp, level: nextLevel, nextLevelXp: nextTargetXp, offeredUpgrades: choices, status: choices.length > 0 ? 'LEVEL_UP' : 'PLAYING' });
+      set({
+        kills: nextKills,
+        xp: nextXp,
+        level: nextLevel,
+        nextLevelXp: nextTargetXp,
+        offeredUpgrades: choices,
+        status: choices.length > 0 ? 'LEVEL_UP' : 'PLAYING'
+      });
     } else {
       set({ kills: nextKills, xp: nextXp });
     }
@@ -175,17 +197,32 @@ export const useGameStore = create<GameState>((set, get) => ({
   chooseUpgrade: (id) => {
     const s = get();
     const active = [...s.activeUpgrades, id];
-    let maxAmmo = s.maxAmmo, ammo = s.ammo, maxHp = s.maxHp, hp = s.hp, fireInterval = s.fireInterval;
+    let maxAmmo = s.maxAmmo,
+      ammo = s.ammo,
+      maxHp = s.maxHp,
+      hp = s.hp,
+      fireInterval = s.fireInterval;
 
-    if (id === 'extended_mag') { maxAmmo = BALANCE.WEAPON.MAGAZINE_EXTENDED; ammo = maxAmmo; }
-    if (id === 'armor_boost') { maxHp += 50; hp = maxHp; }
-    if (id === 'fire_rate') { fireInterval = BALANCE.WEAPON.FIRE_INTERVAL_OVERCLOCKED; }
+    if (id === 'extended_mag') {
+      maxAmmo = BALANCE.WEAPON.MAGAZINE_EXTENDED;
+      ammo = maxAmmo;
+    }
+    if (id === 'armor_boost') {
+      maxHp += 50;
+      hp = maxHp;
+    }
+    if (id === 'fire_rate') {
+      fireInterval = BALANCE.WEAPON.FIRE_INTERVAL_OVERCLOCKED;
+    }
 
     set({ activeUpgrades: active, maxAmmo, ammo, maxHp, hp, fireInterval, status: 'PLAYING', offeredUpgrades: [] });
   },
 
   updateSettings: (partial) => set((s) => ({ settings: { ...s.settings, ...partial } })),
-  registerHit: () => { Haptics.hit(); set((s) => ({ shotsHit: s.shotsHit + 1 })); },
+  registerHit: () => {
+    Haptics.hit();
+    set((s) => ({ shotsHit: s.shotsHit + 1 }));
+  },
   toggleTracker: () => set((s) => ({ trackerRaised: !s.trackerRaised })),
   toggleFlashlight: () => set((s) => ({ flashlightOn: !s.flashlightOn })),
   updatePlayerTransform: (x, y, z, yaw) => set({ playerPos: [x, y, z], playerYaw: yaw }),

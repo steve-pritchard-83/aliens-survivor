@@ -140,10 +140,7 @@ export function PlayerController() {
       yawRef.current -= snap.lookDeltaX;
       while (yawRef.current > Math.PI * 2) yawRef.current -= Math.PI * 2;
       while (yawRef.current < 0) yawRef.current += Math.PI * 2;
-      pitchRef.current = Math.max(
-        -Math.PI * 0.42,
-        Math.min(Math.PI * 0.42, pitchRef.current - snap.lookDeltaY)
-      );
+      pitchRef.current = Math.max(-Math.PI * 0.42, Math.min(Math.PI * 0.42, pitchRef.current - snap.lookDeltaY));
       _euler.set(pitchRef.current + shakePitch, yawRef.current + shakeYaw, shakeRoll, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
     } else {
