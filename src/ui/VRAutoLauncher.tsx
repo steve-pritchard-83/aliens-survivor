@@ -1,62 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { xrStore } from '../core/XRStore';
-import { useGameStore } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
+import { Platform } from '../core/Platform';
 
+/**
+ * On Quest (and ?vr=1) enters immersive VR as soon as the page loads. The mission itself starts from the
+ * in-headset menu, so the player is never dropped into combat before they are ready.
+ */
 export function VRAutoLauncher() {
   const launchedRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const isVrApp =
-      new URLSearchParams(window.location.search).get('vr') === '1' || /OculusBrowser|Quest/i.test(navigator.userAgent);
-    if (!isVrApp || launchedRef.current) return;
-
-    const startMission = () => {
-      if (launchedRef.current) return;
-      launchedRef.current = true;
-      AudioManager.resetAudio();
-      AudioManager.unlock()
-        .then(() => {
-          AudioManager.play2D('ui_beep', 0.8);
-          AudioManager.startBGM();
-          AudioManager.setKlaxonActive(true);
-        })
-        .catch((e) => console.warn('[VRAutoLauncher] audio unlock failed', e));
-      useGameStore.getState().startGame();
-    };
+    if (!Platform.isVrApp || launchedRef.current) return;
 
     const attemptEnterVR = () => {
       xrStore
         .enterVR()
-        .then((session) => {
-          startMission();
-          if (session) {
-            session.addEventListener('visibilitychange', () => {
-              const info = `visibilitychange:${session.visibilityState}@${new Date().toISOString()}`;
-              console.log('[WebXR]', info);
-              try {
-                sessionStorage.setItem('uscm_last_xr_vis', info);
-              } catch {
-                /* storage unavailable: diagnostics only */
-              }
-              const st = useGameStore.getState();
-              if (session.visibilityState !== 'visible' && st.status === 'PLAYING') {
-                st.pauseGame();
-              } else if (session.visibilityState === 'visible' && st.status === 'PAUSED') {
-                st.resumeGame();
-              }
-            });
-            session.addEventListener('end', (e) => {
-              const info = `sessionend@${new Date().toISOString()}`;
-              console.warn('[WebXR Session Ended]', info, e);
-              try {
-                localStorage.setItem('uscm_last_xr_session_end', info);
-              } catch {
-                /* storage unavailable: diagnostics only */
-              }
-            });
-          }
+        .then(() => {
+          launchedRef.current = true;
+          AudioManager.resetAudio();
+          // Load and decode sounds while the player reads the menu
+          AudioManager.unlock().catch((e) => console.warn('[VRAutoLauncher] audio unlock failed', e));
         })
         .catch((err) => {
           console.warn('[VRAutoLauncher] Direct enterVR pending user activation:', err);

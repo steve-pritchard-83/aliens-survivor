@@ -1,33 +1,77 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-// Drives the real WebXR path with an emulated Quest 3 (IWER): session entry, controller polling, VR level-up menu.
+// These tests drive the real WebXR path with an emulated Quest 3 (IWER): session entry, controller polling,
+// the in-headset menus and the VR rig. Software-rendered XR runs at a few frames per second, so inputs are held
+// long enough to be sampled and waits are condition-based wherever the game exposes the outcome.
+const HOLD = 1200;
+
+const status = (page: Page) => page.evaluate(() => window.__game!.getState().status);
+const headXZ = (page: Page) => page.evaluate(() => window.__headPosition!());
+const trigger = (page: Page, value: number) =>
+  page.evaluate((v) => window.__xrDevice!.controllers.right!.updateButtonValue('trigger', v), value);
+const rightStick = (page: Page, x: number, y: number) =>
+  page.evaluate(([px, py]) => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', px, py), [x, y]);
+const leftStick = (page: Page, x: number, y: number) =>
+  page.evaluate(([px, py]) => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', px, py), [x, y]);
+
+/** Loads the app as a Quest, waits for the VR session and the in-headset start menu. */
+async function openVrMenu(page: Page): Promise<void> {
+  await page.goto('/?e2e=1&iwer=1');
+  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
+  await page.waitForTimeout(HOLD); // the menu ignores input while arming
+}
+
+/** Presses and releases the trigger (a fresh press) and waits for the given status. */
+async function pressTrigger(page: Page, expected: string): Promise<void> {
+  await trigger(page, 0);
+  await page.waitForTimeout(HOLD);
+  await trigger(page, 1);
+  await page.waitForFunction((s) => window.__game?.getState().status === s, expected, { timeout: 30_000 });
+  await trigger(page, 0);
+}
+
+/** Opens the menu, deploys with the trigger, and waits until the mission clock is running. */
+async function enterVrMission(page: Page): Promise<void> {
+  await openVrMenu(page);
+  await pressTrigger(page, 'PLAYING');
+  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
+    timeout: 45_000
+  });
+}
+
+test('VR start: the mission waits in the menu and a trigger press deploys', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await openVrMenu(page);
+  await page.waitForTimeout(3000);
+  expect(await status(page)).toBe('MENU');
+  await pressTrigger(page, 'PLAYING');
+  expect(errors).toEqual([]);
+});
+
 test('VR level-up: a held trigger never picks a card; stick selects and a fresh trigger confirms', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('/?e2e=1&iwer=1');
-  await page.waitForFunction(() => !!window.__xrDevice);
-  // The emulator reports a Quest user agent, so the app auto-enters VR and starts the mission like on a headset
-  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
-  await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING', undefined, { timeout: 30_000 });
+  await enterVrMission(page);
 
   // The player is holding the trigger (firing) when the level-up happens
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateButtonValue('trigger', 1));
+  await trigger(page, 1);
   await page.waitForTimeout(300);
   await page.evaluate(() => window.__game!.getState().registerKill('boss'));
   await page.waitForFunction(() => window.__game?.getState().status === 'LEVEL_UP');
   await page.waitForTimeout(1500); // longer than the menu's arm delay, trigger still held
-  expect(await page.evaluate(() => window.__game!.getState().status)).toBe('LEVEL_UP');
+  expect(await status(page)).toBe('LEVEL_UP');
 
   const second = await page.evaluate(() => window.__game!.getState().offeredUpgrades[1].id);
 
   // Release, push the right stick to the right, then press the trigger again
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateButtonValue('trigger', 0));
-  await page.waitForTimeout(250);
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', 0.9, 0));
-  await page.waitForTimeout(250);
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', 0, 0));
-  await page.waitForTimeout(250);
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateButtonValue('trigger', 1));
+  await trigger(page, 0);
+  await page.waitForTimeout(HOLD);
+  await rightStick(page, 0.9, 0);
+  await page.waitForTimeout(HOLD);
+  await rightStick(page, 0, 0);
+  await page.waitForTimeout(HOLD);
+  await trigger(page, 1);
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
 
   expect(await page.evaluate(() => window.__game!.getState().activeUpgrades)).toEqual([second]);
@@ -37,21 +81,12 @@ test('VR level-up: a held trigger never picks a card; stick selects and a fresh 
 test('VR pause menu: B opens it, the stick moves rows and adjusts, the trigger resumes', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('/?e2e=1&iwer=1');
-  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
-  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
-    timeout: 45_000
-  });
-  // Software-rendered XR runs at a few frames per second, so inputs are held long enough to be sampled
-  const HOLD = 1200;
+  await enterVrMission(page);
   const button = (id: string, value: number) =>
     page.evaluate(
       ([i, v]) => window.__xrDevice!.controllers.right!.updateButtonValue(i as string, v as number),
       [id, value]
     );
-  const stick = (x: number, y: number) =>
-    page.evaluate(([px, py]) => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', px, py), [x, y]);
-  const status = () => page.evaluate(() => window.__game!.getState().status);
 
   await button('b-button', 1);
   await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED', undefined, { timeout: 30_000 });
@@ -59,24 +94,42 @@ test('VR pause menu: B opens it, the stick moves rows and adjusts, the trigger r
   await page.waitForTimeout(HOLD); // menu arm delay
 
   // Stick down: Resume -> Snap turn; stick right: next snap option (90 degrees -> smooth)
-  await stick(0, 0.9);
+  await rightStick(page, 0, 0.9);
   await page.waitForTimeout(HOLD);
-  await stick(0, 0);
+  await rightStick(page, 0, 0);
   await page.waitForTimeout(HOLD);
-  await stick(0.9, 0);
+  await rightStick(page, 0.9, 0);
   await page.waitForFunction(() => window.__game?.getState().settings.snapAngle === 0, undefined, { timeout: 30_000 });
-  await stick(0, 0);
+  await rightStick(page, 0, 0);
   await page.waitForTimeout(HOLD);
 
   // Back up to Resume and confirm with a fresh trigger press
-  await stick(0, -0.9);
+  await rightStick(page, 0, -0.9);
   await page.waitForTimeout(HOLD);
-  await stick(0, 0);
+  await rightStick(page, 0, 0);
   await page.waitForTimeout(HOLD);
-  expect(await status()).toBe('PAUSED');
-  await button('trigger', 1);
+  expect(await status(page)).toBe('PAUSED');
+  await trigger(page, 1);
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING', undefined, { timeout: 30_000 });
   expect(errors).toEqual([]);
+});
+
+test('VR end screen never auto-restarts; a fresh trigger press redeploys', async ({ page }) => {
+  await enterVrMission(page);
+  await page.evaluate(() => window.__game!.getState().takeDamage(1000, 0));
+  await page.waitForFunction(() => window.__game?.getState().status === 'DEFEAT');
+  await trigger(page, 0);
+  await page.waitForTimeout(11_000); // the old build restarted by itself after 9 s
+  expect(await status(page)).toBe('DEFEAT');
+  const run = await page.evaluate(() => window.__game!.getState().runId);
+  await pressTrigger(page, 'PLAYING');
+  expect(await page.evaluate(() => window.__game!.getState().runId)).toBe(run + 1);
+});
+
+test('VR session end pauses the mission', async ({ page }) => {
+  await enterVrMission(page);
+  await page.evaluate(() => void window.__xr!.getState().session!.end());
+  await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED', undefined, { timeout: 30_000 });
 });
 
 test('VR locomotion brings up the comfort vignette without shader errors', async ({ page }) => {
@@ -85,42 +138,28 @@ test('VR locomotion brings up the comfort vignette without shader errors', async
   page.on('console', (m) => {
     if (m.type() === 'error' && /shader|WebGLProgram|GLSL/i.test(m.text())) problems.push(m.text());
   });
-  await page.goto('/?e2e=1&iwer=1');
-  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
-  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
-    timeout: 45_000
-  });
+  await enterVrMission(page);
   const z0 = await page.evaluate(() => window.__game!.getState().playerPos[2]);
-  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, -0.9));
+  await leftStick(page, 0, -0.9);
   await page.waitForFunction((start) => Math.abs(window.__game!.getState().playerPos[2] - start) > 0.3, z0, {
     timeout: 30_000
   });
   await page.waitForTimeout(1500); // frames rendered with the vignette visible
-  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, 0));
+  await leftStick(page, 0, 0);
   expect(problems).toEqual([]);
 });
 
-async function enterVrMission(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto('/?e2e=1&iwer=1');
-  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
-  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
-    timeout: 45_000
-  });
-}
-
-const headXZ = (page: import('@playwright/test').Page) => page.evaluate(() => window.__headPosition!());
-
 test('VR snap turn pivots about the head, not the play-space centre', async ({ page }) => {
   await enterVrMission(page);
-  await page.evaluate(() => window.__xrDevice!.position.set(0.5, 1.6, 0)); // head half a metre off-centre
+  await page.evaluate(() => window.__xrDevice!.position.set(0.1, 1.6, 0.5)); // head off-centre, away from walls
   await page.waitForTimeout(2000);
   const before = await headXZ(page);
   const yawBefore = await page.evaluate(() => window.__game!.getState().playerYaw);
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', 0.9, 0));
+  await rightStick(page, 0.9, 0);
   await page.waitForFunction((y0) => Math.abs(window.__game!.getState().playerYaw - y0) > 0.5, yawBefore, {
     timeout: 30_000
   });
-  await page.evaluate(() => window.__xrDevice!.controllers.right!.updateAxes('thumbstick', 0, 0));
+  await rightStick(page, 0, 0);
   await page.waitForTimeout(1500);
   const after = await headXZ(page);
   expect(Math.hypot(after.x - before.x, after.z - before.z)).toBeLessThan(0.03);
@@ -140,32 +179,27 @@ test('VR seated mode raises the origin so a lower headset keeps a standing eye h
   await enterVrMission(page);
   const standing = (await headXZ(page)).y;
   await page.evaluate(() => window.__game!.getState().updateSettings({ seatedMode: true }));
-  await page.waitForFunction((y0) => window.__headPosition!().y > y0 + 0.4, standing, {
-    timeout: 30_000
-  });
+  await page.waitForFunction((y0) => window.__headPosition!().y > y0 + 0.4, standing, { timeout: 30_000 });
   const seated = (await headXZ(page)).y;
   expect(seated - standing).toBeCloseTo(0.45, 1);
   await page.evaluate(() => window.__game!.getState().updateSettings({ seatedMode: false }));
 });
 
-test('VR mission starts with the head on the start position and movement speed is the configured walking speed', async ({
-  page
-}) => {
+test('VR mission starts with the head on the start position and walks at the configured speed', async ({ page }) => {
   await enterVrMission(page);
   await page.waitForTimeout(1500);
   const start = await headXZ(page);
   expect(start.x).toBeCloseTo(-0.32, 1);
   expect(start.z).toBeCloseTo(13.0, 1);
 
-  // Walk forward for a measured period; software-rendered XR frame times vary wildly, so speed is measured
-  // from the game's own clock, which is what the movement integrates against
+  // Speed is measured against the game's own clock, which is what movement integrates against
   const t0 = await page.evaluate(() => window.__game!.getState().timeRemaining);
   const z0 = (await headXZ(page)).z;
-  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, -1));
+  await leftStick(page, 0, -1);
   await page.waitForFunction((t) => t - window.__game!.getState().timeRemaining > 4, t0, { timeout: 60_000 });
   const t1 = await page.evaluate(() => window.__game!.getState().timeRemaining);
   const z1 = (await headXZ(page)).z;
-  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, 0));
+  await leftStick(page, 0, 0);
   const speed = Math.abs(z1 - z0) / (t0 - t1);
   expect(speed).toBeGreaterThan(1.0);
   expect(speed).toBeLessThan(1.3);

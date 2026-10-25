@@ -2,7 +2,7 @@ import { UpgradeCard } from '../data/balance';
 import { GameSettings } from '../core/GameTypes';
 import { VR_MENU_ROWS, valueText } from './vrMenuModel';
 
-export type VRPanelStatus = 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
+export type VRPanelStatus = 'MENU' | 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60),
@@ -21,6 +21,52 @@ export interface VRPanelData {
   settings?: GameSettings;
   selectedIndex: number;
   recordKills: number;
+}
+
+/** In-headset start screen shown before the mission begins. */
+function drawMenuPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
+  const { settings, pulse, recordKills } = d;
+  ctx.clearRect(0, 0, 1024, 512);
+  ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
+  ctx.fillRect(20, 20, 984, 472);
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(20, 20, 984, 472);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#88ffaa';
+  ctx.font = 'bold 22px Courier New, monospace';
+  ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK', 512, 75);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 62px Courier New, monospace';
+  ctx.fillText('ALIENS SURVIVOR', 512, 160);
+  ctx.fillStyle = '#cceecc';
+  ctx.font = '22px Courier New, monospace';
+  ctx.fillText('USS SULACO // SECTOR 4 — HOLD THE CORRIDOR FOR 5 MINUTES', 512, 210);
+
+  if (recordKills > 0) {
+    ctx.fillStyle = '#ffcc66';
+    ctx.font = 'bold 22px Courier New, monospace';
+    ctx.fillText(`BEST: ${recordKills} KILLS`, 512, 262);
+  }
+  if (settings) {
+    ctx.fillStyle = '#88ffaa';
+    ctx.font = '17px Courier New, monospace';
+    const turn = settings.snapAngle === 0 ? 'SMOOTH' : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
+    const hand = settings.leftHanded ? 'LEFT-HANDED' : 'RIGHT-HANDED';
+    ctx.fillText(`TURN: ${turn}   |   ${hand}   |   VIGNETTE: ${settings.vignette.toUpperCase()}`, 512, 305);
+    ctx.fillText('SETTINGS: PRESS [B] / [Y] DURING THE MISSION', 512, 333);
+  }
+
+  const a = 0.75 + Math.sin(pulse * 6.0) * 0.25;
+  ctx.fillStyle = `rgba(0, 255, 136, ${a * 0.25})`;
+  ctx.fillRect(162, 365, 700, 85);
+  ctx.strokeStyle = `rgba(0, 255, 136, ${a})`;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(162, 365, 700, 85);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 32px Courier New, monospace';
+  ctx.fillText('▶ PULL TRIGGER TO DEPLOY ◀', 512, 420);
 }
 
 const MENU_TOP = 128;
@@ -76,6 +122,11 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
   const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, selectedIndex, recordKills } = d;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+
+  if (status === 'MENU') {
+    drawMenuPanel(ctx, d);
+    return;
+  }
 
   if (status === 'PAUSED') {
     drawPausedPanel(ctx, d);

@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
@@ -12,12 +12,17 @@ import { xrControllerState } from '../core/XRControllerState';
 import { VRStatusPanel } from './VRStatusPanel';
 import { VRMenuNav } from './VRMenuNav';
 import { openPauseMenu, stepPauseMenu } from './vrPauseMenu';
+import { attachSessionHandlers } from './vrSessionEvents';
+import { launchMission } from '../core/MissionLauncher';
 import {
   pollControllers,
   createVRControllerInput,
   createVRControllerLatches,
   VRControllerInput
 } from './vrControllers';
+
+const END_SCREEN_ARM_SECONDS = 1.5;
+const MENU_ARM_SECONDS = 0.6;
 
 function resetInput(i: VRControllerInput): void {
   i.moveX = i.moveZ = i.rightStickX = i.rightStickY = 0;
@@ -30,7 +35,6 @@ export function VRHud() {
   const { gl, camera } = useThree();
   const wristGroupRef = useRef<THREE.Group>(null);
   const statusMeshRef = useRef<THREE.Mesh>(null);
-  const defeatTimerRef = useRef(0);
   const trackerVersionRef = useRef(-1);
   const navRef = useRef(new VRMenuNav()),
     selectedRef = useRef(0),
@@ -46,6 +50,13 @@ export function VRHud() {
   }, []);
 
   const panel = useMemo(() => new VRStatusPanel(), []);
+
+  // Pause on headset removal / system menu / session end, whichever way VR was entered
+  useEffect(() => {
+    if (!session) return;
+    navRef.current.arm(MENU_ARM_SECONDS);
+    return attachSessionHandlers(session);
+  }, [session]);
 
   useFrame(({ clock }, dt, frame) => {
     const latches = latchesRef.current;
@@ -65,7 +76,6 @@ export function VRHud() {
     if (xrSession) pollControllers(xrSession, gl.xr.getReferenceSpace(), frame, dt, latches, input);
     else resetInput(input);
     const { moveX, moveZ, firing, rightStickX, rightStickY } = input;
-    const anyButtonPressed = input.anyButton;
 
     InputManager.setXRState(true, moveX, moveZ, firing);
 
@@ -76,6 +86,7 @@ export function VRHud() {
         navRef.current.arm(0.6);
         selectedRef.current = 0;
       } else if (st.status === 'PAUSED') openPauseMenu(navRef.current, selectedRef);
+      else if (st.status === 'DEFEAT' || st.status === 'VICTORY') navRef.current.arm(END_SCREEN_ARM_SECONDS);
     }
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
@@ -103,28 +114,15 @@ export function VRHud() {
       }
       return;
     }
-    if (st.status === 'DEFEAT' || st.status === 'VICTORY') {
-      defeatTimerRef.current += dt;
+    if (st.status === 'MENU' || st.status === 'DEFEAT' || st.status === 'VICTORY') {
       if (statusMeshRef.current) {
         VRStatusPanel.place(statusMeshRef.current, camera);
         panel.render(st.status, clock.getElapsedTime(), dt, selectedRef.current, st);
       }
-      if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
-        defeatTimerRef.current = 0;
-        AudioManager.resetAudio();
-        AudioManager.unlock()
-          .then(() => {
-            AudioManager.play2D('ui_beep', 0.8);
-            AudioManager.startBGM();
-            AudioManager.setKlaxonActive(true);
-          })
-          .catch((e) => console.warn('[VRHud] audio unlock failed', e));
-        st.startGame();
-      }
-    } else {
-      defeatTimerRef.current = 0;
-      if (statusMeshRef.current) statusMeshRef.current.visible = false;
-    }
+      // A fresh trigger press (armed after a short delay) starts or restarts the mission; nothing auto-restarts
+      navRef.current.update(dt, 0, 0, firing);
+      if (navRef.current.consumeConfirm()) launchMission();
+    } else if (statusMeshRef.current) statusMeshRef.current.visible = false;
 
     if (wristGroupRef.current) {
       wristGroupRef.current.visible = st.status === 'PLAYING';

@@ -3,6 +3,7 @@ import { useGameStore } from '../core/GameStore';
 import { InputManager, InputMode } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { Platform } from '../core/Platform';
+import { launchMission } from '../core/MissionLauncher';
 import { xrStore } from '../core/XRStore';
 import { SettingsPanel } from './SettingsPanel';
 import { LevelUpModal } from './LevelUpModal';
@@ -42,8 +43,7 @@ export function HUD() {
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
     damageFlash = useGameStore((s) => s.damageFlash);
-  const startGame = useGameStore((s) => s.startGame),
-    pauseGame = useGameStore((s) => s.pauseGame),
+  const pauseGame = useGameStore((s) => s.pauseGame),
     resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
@@ -86,16 +86,8 @@ export function HUD() {
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
     writePwaAck();
     setPwaDismissed(true);
-    startGame();
+    launchMission();
     if (mode === 'VR') xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e));
-    AudioManager.resetAudio();
-    AudioManager.unlock()
-      .then(() => {
-        AudioManager.play2D('ui_beep', 0.8);
-        AudioManager.startBGM();
-        AudioManager.setKlaxonActive(true);
-      })
-      .catch((e) => console.warn('[HUD] audio unlock failed', e));
     try {
       await navigator.wakeLock?.request('screen');
     } catch {
