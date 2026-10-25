@@ -1,27 +1,27 @@
-import { CORNERS, HALL_CORNERS, ADJ_CORNERS } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
+import type { LevelDefinition } from '../levels/LevelDefinition';
 
 /** Distance at which a corner counts as reached. */
 export const CORNER_REACHED_DIST = 0.48;
 
-/** Centreline of each hall (0 east, 1 west spines run along Z; 2 north, 3 mid, 4 south run along X). */
-export const HALL_LANE: readonly { axis: 'x' | 'z'; value: number }[] = [
-  { axis: 'x', value: -0.32 },
-  { axis: 'x', value: -13.48 },
-  { axis: 'z', value: 35.9 },
-  { axis: 'z', value: 22.1 },
-  { axis: 'z', value: 8.3 }
-];
-
 /** Corner of `hall` giving the shortest route from (fromX, fromZ) to the goal. */
-export function chooseEntryCorner(hall: number, fromX: number, fromZ: number, goalX: number, goalZ: number): number {
-  const options = HALL_CORNERS[hall];
+export function chooseEntryCorner(
+  hall: number,
+  fromX: number,
+  fromZ: number,
+  goalX: number,
+  goalZ: number,
+  level: LevelDefinition = getActiveLevel()
+): number {
+  const options = level.halls[hall].corners;
+  const corners = level.corners;
   let best = options[0];
   let bestCost = Infinity;
   for (let i = 0; i < options.length; i++) {
     const c = options[i];
     const cost =
-      Math.hypot(CORNERS[c][0] - fromX, CORNERS[c][1] - fromZ) +
-      Math.hypot(goalX - CORNERS[c][0], goalZ - CORNERS[c][1]);
+      Math.hypot(corners[c][0] - fromX, corners[c][1] - fromZ) +
+      Math.hypot(goalX - corners[c][0], goalZ - corners[c][1]);
     if (cost < bestCost) {
       bestCost = cost;
       best = c;
@@ -31,13 +31,19 @@ export function chooseEntryCorner(hall: number, fromX: number, fromZ: number, go
 }
 
 /** Adjacent corner of `corner` that is nearest the goal. */
-export function nearestAdjacentCorner(corner: number, goalX: number, goalZ: number): number {
-  const options = ADJ_CORNERS[corner];
+export function nearestAdjacentCorner(
+  corner: number,
+  goalX: number,
+  goalZ: number,
+  level: LevelDefinition = getActiveLevel()
+): number {
+  const options = level.adjacency[corner];
+  const corners = level.corners;
   let best = options[0];
   let bestDist = Infinity;
   for (let i = 0; i < options.length; i++) {
     const c = options[i];
-    const d = Math.hypot(goalX - CORNERS[c][0], goalZ - CORNERS[c][1]);
+    const d = Math.hypot(goalX - corners[c][0], goalZ - corners[c][1]);
     if (d < bestDist) {
       bestDist = d;
       best = c;
@@ -57,12 +63,14 @@ export function advanceCorner(
   posX: number,
   posZ: number,
   goalX: number,
-  goalZ: number
+  goalZ: number,
+  level: LevelDefinition = getActiveLevel()
 ): number {
   if (fromHall === goalHall) return -1;
-  let corner = current < 0 ? chooseEntryCorner(fromHall, posX, posZ, goalX, goalZ) : current;
-  if (Math.hypot(CORNERS[corner][0] - posX, CORNERS[corner][1] - posZ) < CORNER_REACHED_DIST) {
-    corner = HALL_CORNERS[goalHall].includes(corner) ? -1 : nearestAdjacentCorner(corner, goalX, goalZ);
+  const corners = level.corners;
+  let corner = current < 0 ? chooseEntryCorner(fromHall, posX, posZ, goalX, goalZ, level) : current;
+  if (Math.hypot(corners[corner][0] - posX, corners[corner][1] - posZ) < CORNER_REACHED_DIST) {
+    corner = level.halls[goalHall].corners.includes(corner) ? -1 : nearestAdjacentCorner(corner, goalX, goalZ, level);
   }
   return corner;
 }

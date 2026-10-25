@@ -6,7 +6,8 @@ import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, DamageSpec } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
-import { constrainToCorridorInto, moveConstrained, getHallId, CORNERS } from '../core/CorridorNav';
+import { constrainToCorridorInto, moveConstrained, getHallId, sharesLane } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
 import { advanceCorner } from '../systems/corridorPathing';
 import { buildBishopRig, poseBishop } from './BishopRig';
 
@@ -25,8 +26,8 @@ export function BishopCompanion() {
   const muzzleMarkerRef = useRef<THREE.Object3D>(null);
 
   const stateRef = useRef({
-    x: -0.32,
-    z: 11.4,
+    x: getActiveLevel().companionStart.x,
+    z: getActiveLevel().companionStart.z,
     yaw: Math.PI,
     targetCorner: -1,
     fireCooldown: 0.35,
@@ -56,8 +57,8 @@ export function BishopCompanion() {
 
     if (store.status === 'PLAYING' && store.runId !== st.runId) {
       st.runId = store.runId;
-      st.x = -0.32;
-      st.z = 11.4;
+      st.x = getActiveLevel().companionStart.x;
+      st.z = getActiveLevel().companionStart.z;
       st.yaw = Math.PI;
       st.targetCorner = -1;
       root.position.set(st.x, 0, st.z);
@@ -100,7 +101,10 @@ export function BishopCompanion() {
       st.targetCorner = -1;
     } else {
       st.targetCorner = advanceCorner(st.targetCorner, bH, pH, st.x, st.z, goalX, goalZ);
-      if (st.targetCorner >= 0) [tx, tz] = CORNERS[st.targetCorner];
+      if (st.targetCorner >= 0) {
+        tx = getActiveLevel().corners[st.targetCorner][0];
+        tz = getActiveLevel().corners[st.targetCorner][1];
+      }
     }
 
     const prevX = st.x,
@@ -145,12 +149,7 @@ export function BishopCompanion() {
       const d = Math.hypot(t.x - st.x, t.z - st.z);
       if (d > BALANCE.BISHOP.ENGAGE_RANGE) continue;
       const tHall = getHallId(t.x, t.z);
-      const hasLOS =
-        tHall === curHall ||
-        d < 5.2 ||
-        (Math.abs(t.x - st.x) < 1.05 && (Math.abs(st.x - -0.32) < 1.1 || Math.abs(st.x - -13.48) < 1.1)) ||
-        (Math.abs(t.z - st.z) < 1.05 &&
-          (Math.abs(st.z - 35.9) < 1.1 || Math.abs(st.z - 22.1) < 1.1 || Math.abs(st.z - 8.3) < 1.1));
+      const hasLOS = tHall === curHall || d < 5.2 || sharesLane(st.x, st.z, t.x, t.z);
       if (hasLOS && (!bestTarget || d < bestTarget.dist)) {
         bestTarget = { id: t.id, x: t.x, z: t.z, dist: d };
       }

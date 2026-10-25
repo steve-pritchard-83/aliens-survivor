@@ -1,6 +1,7 @@
 import { BALANCE } from '../../data/balance';
-import { getHallId, moveConstrained, CORNERS } from '../../core/CorridorNav';
-import { advanceCorner, HALL_LANE } from '../../systems/corridorPathing';
+import { getHallId, moveConstrained } from '../../core/CorridorNav';
+import { getActiveLevel } from '../../levels';
+import { advanceCorner } from '../../systems/corridorPathing';
 
 export type SmallKind = 'FACEHUGGER' | 'CHESTBURSTER';
 export type SmallState = 'SPAWNING' | 'PURSUING' | 'LEAPING' | 'ATTACKING' | 'DEAD';
@@ -118,15 +119,15 @@ function pursue(e: SmallAlienSim, px: number, pz: number, now: number, dt: numbe
     e.targetCorner = -1;
     const slither = Math.sin(now * (e.kind === 'CHESTBURSTER' ? 9.5 : 6.5)) * 0.22;
     if (dist > 1.8) {
-      const lane = HALL_LANE[xH];
+      const lane = getActiveLevel().halls[xH].lane;
       if (lane.axis === 'x') tx = lane.value + slither;
       else tz = lane.value + slither;
     }
   } else {
     e.targetCorner = advanceCorner(e.targetCorner, xH, pH, e.x, e.z, px, pz);
     if (e.targetCorner >= 0) {
-      tx = CORNERS[e.targetCorner][0];
-      tz = CORNERS[e.targetCorner][1];
+      tx = getActiveLevel().corners[e.targetCorner][0];
+      tz = getActiveLevel().corners[e.targetCorner][1];
     }
   }
   const dx = tx - e.x,

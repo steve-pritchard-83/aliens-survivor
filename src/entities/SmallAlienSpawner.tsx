@@ -6,7 +6,8 @@ import { useGameStore, isSimulationFrozen, ActiveThreat, GameState } from '../co
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
-import { CORRIDOR_SPAWN_NODES, moveConstrained } from '../core/CorridorNav';
+import { moveConstrained } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
 import { pickSpawnNode } from '../systems/waveDirector';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { animateFace, animateWorm, AnimMode } from './SmallAlienAnim';
@@ -26,7 +27,6 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 
 const SMALL_ALIEN_ID = 99;
-const SMALL_FALLBACK_NODES = [0, 4, 5, 10];
 const FH_EMISSIVE = { hex: 0x221808, intensity: 0.38 };
 const CB_EMISSIVE = { hex: 0x28100c, intensity: 0.42 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
@@ -148,7 +148,8 @@ export function SmallAlienSpawner() {
 
     // Spawn at most ONE Facehugger or Chestburster at a time randomly from off-screen vents
     if (!e.active && state.status === 'PLAYING' && (e.spawnCooldown -= dt) <= 0) {
-      const node = CORRIDOR_SPAWN_NODES[pickSpawnNode(px, pz, state.playerYaw, -1, SMALL_FALLBACK_NODES)],
+      const level = getActiveLevel();
+      const node = level.spawnNodes[pickSpawnNode(px, pz, state.playerYaw, -1, level.spawnFallback.small)],
         isFH = Math.random() < 0.5;
       spawnSmall(e, node.position[0], node.position[1], node.position[2], px, pz, isFH, state.rules.enemyHpMult);
       r.scale.set(1, 1, 1);

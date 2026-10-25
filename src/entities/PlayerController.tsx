@@ -8,11 +8,10 @@ import { isE2E } from '../core/e2e';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { constrainToCorridorInto, XZ } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
 import { velocityDelta } from './player/playerMotion';
 import { readHeadLocal, turnAboutHead, moveHeadClamped, placeHeadAt } from './player/xrRig';
 
-const START_X = -0.32;
-const START_Z = 13.0;
 const EYE_HEIGHT = 1.15;
 const TRANSFORM_SYNC_SECONDS = 0.05;
 
@@ -32,7 +31,7 @@ export function PlayerController() {
   const prevStatusRef = useRef(useGameStore.getState().status);
   const lastTransformSync = useRef(0);
   // Player position (the head in VR), integrated locally every frame; the store copy is throttled for other systems
-  const posRef = useRef<XZ>({ x: START_X, z: START_Z });
+  const posRef = useRef<XZ>({ x: getActiveLevel().playerStart.x, z: getActiveLevel().playerStart.z });
   const wasXrRef = useRef(false);
 
   const status = useGameStore((s) => s.status);
@@ -60,8 +59,9 @@ export function PlayerController() {
       };
     }
     InputManager.init();
-    camera.position.set(START_X, EYE_HEIGHT, START_Z);
-    yawRef.current = Math.PI;
+    const start = getActiveLevel().playerStart;
+    camera.position.set(start.x, EYE_HEIGHT, start.z);
+    yawRef.current = start.yaw;
     pitchRef.current = 0;
 
     InputManager.onPointerUnlockCallback = () => {
@@ -83,17 +83,18 @@ export function PlayerController() {
     prevStatusRef.current = status;
 
     if (status === 'PLAYING' && (prev === 'MENU' || prev === 'DEFEAT' || prev === 'VICTORY')) {
-      posRef.current.x = START_X;
-      posRef.current.z = START_Z;
-      camera.position.set(START_X, EYE_HEIGHT, START_Z);
+      const start = getActiveLevel().playerStart;
+      posRef.current.x = start.x;
+      posRef.current.z = start.z;
+      camera.position.set(start.x, EYE_HEIGHT, start.z);
       camera.rotation.z = 0;
-      yawRef.current = Math.PI;
+      yawRef.current = start.yaw;
       pitchRef.current = 0;
       xrYawRef.current = 0;
       wasXrRef.current = false;
       if (camera.parent) {
         camera.parent.rotation.y = 0;
-        camera.parent.position.set(START_X, 0, START_Z);
+        camera.parent.position.set(start.x, 0, start.z);
       }
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);

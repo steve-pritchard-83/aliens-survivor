@@ -1,6 +1,7 @@
 import { BALANCE } from '../../data/balance';
-import { getHallId, moveConstrained, CORNERS } from '../../core/CorridorNav';
-import { advanceCorner, HALL_LANE } from '../../systems/corridorPathing';
+import { getHallId, moveConstrained } from '../../core/CorridorNav';
+import { getActiveLevel } from '../../levels';
+import { advanceCorner } from '../../systems/corridorPathing';
 import { PooledXenomorph, playClip, CLIP_RUN, CLIP_WALK, CLIP_LEAP, ATK_CLIPS } from '../XenoTypes';
 
 const LEAP_SECONDS = 0.78;
@@ -39,15 +40,15 @@ function pursue(x: PooledXenomorph, px: number, pz: number, dt: number, dist: nu
   if (xH === pH) {
     x.targetCorner = -1;
     if (dist > 2.2) {
-      const lane = HALL_LANE[xH];
+      const lane = getActiveLevel().halls[xH].lane;
       if (lane.axis === 'x') tx = lane.value + x.laneOffset;
       else tz = lane.value + x.laneOffset;
     }
   } else {
     x.targetCorner = advanceCorner(x.targetCorner, xH, pH, x.x, x.z, px, pz);
     if (x.targetCorner >= 0) {
-      tx = CORNERS[x.targetCorner][0];
-      tz = CORNERS[x.targetCorner][1];
+      tx = getActiveLevel().corners[x.targetCorner][0];
+      tz = getActiveLevel().corners[x.targetCorner][1];
     }
   }
   const dx = tx - x.x,

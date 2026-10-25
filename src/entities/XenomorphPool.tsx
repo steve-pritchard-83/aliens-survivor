@@ -6,7 +6,7 @@ import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStor
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
-import { CORRIDOR_SPAWN_NODES } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
 import {
   shouldSpawnBoss,
   scaledSpawnInterval,
@@ -28,7 +28,6 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 const _pose: XenoPose = { pitch: 0, roll: 0 };
 const _events: XenoEvents = { playerDamage: 0, leapHit: false, slash: false, leapStarted: false };
-const XENO_FALLBACK_NODES = [0, 4, 5, 6];
 const THREAT_PUBLISH_SECONDS = 0.1;
 
 // Threat records published to the store at 10 Hz; objects are reused so publishing allocates nothing
@@ -209,9 +208,10 @@ export function XenomorphPool() {
     pyaw: number,
     rules: GameRules
   ): void {
-    const idx = pickSpawnNode(px, pz, pyaw, lastSpawnIndexRef.current, XENO_FALLBACK_NODES);
+    const level = getActiveLevel();
+    const idx = pickSpawnNode(px, pz, pyaw, lastSpawnIndexRef.current, level.spawnFallback.xeno);
     lastSpawnIndexRef.current = idx;
-    const node = CORRIDOR_SPAWN_NODES[idx];
+    const node = level.spawnNodes[idx];
     const isBoss = shouldSpawnBoss(phase, bossPhasesRef.current, anyActiveBoss(pool));
     if (isBoss) bossPhasesRef.current.add(phase);
     spawnXeno(free, {

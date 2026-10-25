@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { advanceCorner, chooseEntryCorner, nearestAdjacentCorner, HALL_LANE } from '../src/systems/corridorPathing';
-import { CORNERS, HALL_CORNERS, getHallId } from '../src/core/CorridorNav';
+import { advanceCorner, chooseEntryCorner, nearestAdjacentCorner } from '../src/systems/corridorPathing';
+import { getHallId } from '../src/core/CorridorNav';
+import { SULACO } from '../src/levels/sulaco';
+
+const CORNERS = SULACO.corners;
+const HALL_CORNERS = SULACO.halls.map((h) => h.corners);
+const HALL_LANE = SULACO.halls.map((h) => h.lane);
 
 describe('corridor pathing', () => {
   it('lane table matches the hall each lane point resolves to', () => {

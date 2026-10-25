@@ -1,6 +1,7 @@
 import type { WavePhase } from '../core/GameTypes';
 import { BALANCE } from '../data/balance';
-import { CORRIDOR_SPAWN_NODES, isSpawnVisibleToPlayer } from '../core/CorridorNav';
+import { isSpawnVisibleToPlayer } from '../core/CorridorNav';
+import { getActiveLevel } from '../levels';
 
 /** First phase in which a Praetorian boss may appear. */
 export const BOSS_FIRST_PHASE = 3;
@@ -32,7 +33,8 @@ export function droneMaxHp(phase: WavePhase): number {
   return BALANCE.XENO_POOL.MAX_HPS[phase - 1];
 }
 
-const _hidden = new Int16Array(CORRIDOR_SPAWN_NODES.length);
+// Reused index buffer; grown only if a level defines more spawn nodes than any before it
+let _hidden = new Int16Array(32);
 
 /**
  * Picks a spawn node out of the player's sight (never repeating `lastIndex` when avoidable).
@@ -47,9 +49,11 @@ export function pickSpawnNode(
   fallback: readonly number[],
   random: () => number = Math.random
 ): number {
+  const nodes = getActiveLevel().spawnNodes;
+  if (_hidden.length < nodes.length) _hidden = new Int16Array(nodes.length);
   let count = 0;
-  for (let i = 0; i < CORRIDOR_SPAWN_NODES.length; i++) {
-    const p = CORRIDOR_SPAWN_NODES[i].position;
+  for (let i = 0; i < nodes.length; i++) {
+    const p = nodes[i].position;
     if (!isSpawnVisibleToPlayer(p[0], p[2], px, pz, pyaw)) _hidden[count++] = i;
   }
   const useHidden = count > 0;

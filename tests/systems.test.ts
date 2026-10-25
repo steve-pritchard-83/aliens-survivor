@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { weaponDamage, damageAgainstXeno, incomingDamage } from '../src/systems/combatMath';
 import { spawnInterval, droneBaseSpeed, droneMaxHp, pickSpawnNode } from '../src/systems/waveDirector';
-import { CORRIDOR_SPAWN_NODES, isSpawnVisibleToPlayer } from '../src/core/CorridorNav';
+import { isSpawnVisibleToPlayer } from '../src/core/CorridorNav';
+import { SULACO } from '../src/levels/sulaco';
 import { BALANCE } from '../src/data/balance';
 import { WEAPONS } from '../src/data/weapons';
 
@@ -41,7 +42,7 @@ describe('pickSpawnNode', () => {
       yaw = Math.PI;
     for (let r = 0; r < 20; r++) {
       const idx = pickSpawnNode(px, pz, yaw, -1, [0], () => r / 20);
-      const p = CORRIDOR_SPAWN_NODES[idx].position;
+      const p = SULACO.spawnNodes[idx].position;
       expect(isSpawnVisibleToPlayer(p[0], p[2], px, pz, yaw)).toBe(false);
     }
   });

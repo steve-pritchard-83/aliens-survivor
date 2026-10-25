@@ -1,6 +1,7 @@
 import { BALANCE } from '../data/balance';
 import { resolveRules, GameRules } from '../data/difficulty';
 import { WEAPONS, DEFAULT_WEAPON, WeaponId } from '../data/weapons';
+import { getActiveLevel } from '../levels';
 import type { GameSettings } from './GameTypes';
 
 /**
@@ -8,6 +9,7 @@ import type { GameSettings } from './GameTypes';
  * `rules` is resolved here once so difficulty cannot change mid-run.
  */
 export function freshRunState(settings: GameSettings) {
+  const start = getActiveLevel().playerStart;
   return {
     timeRemaining: BALANCE.MISSION_DURATION_SECONDS as number,
     phase: 1 as 1 | 2 | 3 | 4,
@@ -29,8 +31,8 @@ export function freshRunState(settings: GameSettings) {
     shotsHit: 0,
     damageFlash: 0,
     screenShake: 0,
-    playerPos: [-0.32, 1.15, 13.0] as [number, number, number],
-    playerYaw: Math.PI,
+    playerPos: [start.x, 1.15, start.z] as [number, number, number],
+    playerYaw: start.yaw,
     activeThreats: [],
     smallThreat: null,
     xp: 0,

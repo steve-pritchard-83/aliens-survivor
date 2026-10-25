@@ -1,4 +1,5 @@
 // 2D drawing for the M314 motion tracker screen (256x256 canvas). Pure canvas code, no React or three.js.
+import { getActiveLevel } from '../../levels';
 const CX = 128;
 const CY = 176;
 export const RADIUS_PX = 142;
@@ -40,27 +41,6 @@ export function toRadar(wx: number, wz: number, out: RadarPoint): void {
   out.y = CY - ((dx * v.fx + dz * v.fz) / v.maxRange) * RADIUS_PX;
 }
 
-// Sulaco figure-8 outline: outer loop plus the two inner courtyards (drawn with the even-odd rule)
-const OUTLINE: readonly (readonly (readonly [number, number])[])[] = [
-  [
-    [0.42, 7.58],
-    [0.42, 36.62],
-    [-14.22, 36.62],
-    [-14.22, 7.58]
-  ],
-  [
-    [-1.05, 9.02],
-    [-12.75, 9.02],
-    [-12.75, 21.38],
-    [-1.05, 21.38]
-  ],
-  [
-    [-1.05, 22.82],
-    [-12.75, 22.82],
-    [-12.75, 35.18],
-    [-1.05, 35.18]
-  ]
-];
 const RING_FRACTIONS = [0.33, 0.66, 1.0] as const;
 const SPOKE_DEGREES = [-60, -30, 0, 30, 60] as const;
 const FONT = '"AlienLeague", monospace';
@@ -90,8 +70,9 @@ function drawMap(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = 'rgba(0, 120, 75, 0.16)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  for (let i = 0; i < OUTLINE.length; i++) {
-    const poly = OUTLINE[i];
+  const outline = getActiveLevel().radarOutline;
+  for (let i = 0; i < outline.length; i++) {
+    const poly = outline[i];
     for (let j = 0; j < poly.length; j++) {
       toRadar(poly[j][0], poly[j][1], _p);
       if (j === 0) ctx.moveTo(_p.x, _p.y);
