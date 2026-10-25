@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -17,11 +17,10 @@ const _reloadPose: ReloadPose = { x: 0, y: 0, z: 0, pitch: 0, yaw: 0, roll: 0 };
 
 export function PulseRifle() {
   const { scene } = useGLTF('/models/pulse_rifle.glb');
-  const { camera, scene: worldScene } = useThree();
+  const { camera } = useThree();
   const weaponGroupRef = useRef<THREE.Group>(null),
     muzzleGroupRef = useRef<THREE.Group>(null);
-  const muzzleLightRef = useRef<THREE.PointLight>(null),
-    spotLightRef = useRef<THREE.SpotLight>(null);
+  const muzzleLightRef = useRef<THREE.PointLight>(null);
   const tracerMeshRef = useRef<THREE.Mesh>(null);
   const rifleState = useRef(createRifleState());
   const fireCtx = useMemo<FireContext>(() => ({ camera, weapon: null, muzzle: null }), [camera]);
@@ -34,17 +33,7 @@ export function PulseRifle() {
       triggerNode: r.getObjectByName('trigger_a_low')
     };
   }, [scene]);
-  const flashLightTarget = useMemo(() => new THREE.Object3D(), []);
   const muzzleTexture = useMemo(() => getMuzzleStarTexture(), []);
-
-  useEffect(() => {
-    worldScene.add(flashLightTarget);
-    return () => {
-      worldScene.remove(flashLightTarget);
-    };
-  }, [worldScene, flashLightTarget]);
-
-  const flashlightOn = useGameStore((s) => s.flashlightOn);
 
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState();
@@ -80,13 +69,12 @@ export function PulseRifle() {
     if (weapon) {
       const hand = state.settings.leftHanded ? xrControllerState.leftHand : xrControllerState.rightHand;
       if (hand.active && camera.parent) {
-        poseWeaponXR(weapon, camera.parent, hand, rs, flashLightTarget);
+        poseWeaponXR(weapon, camera.parent, hand, rs);
       } else {
         if (state.isReloading) computeReloadPose(state.reloadProgress, _reloadPose);
         else _reloadPose.x = _reloadPose.y = _reloadPose.z = _reloadPose.pitch = _reloadPose.yaw = _reloadPose.roll = 0;
-        poseWeaponFPS(weapon, camera, rs, clock.getElapsedTime(), _reloadPose, flashLightTarget);
+        poseWeaponFPS(weapon, camera, rs, clock.getElapsedTime(), _reloadPose);
       }
-      flashLightTarget.updateMatrixWorld();
     }
   });
 
@@ -102,18 +90,6 @@ export function PulseRifle() {
         intensity={0}
         distance={18}
         decay={1.2}
-      />
-      <spotLight
-        ref={spotLightRef}
-        position={[0, 0.02, -0.4]}
-        target={flashLightTarget}
-        angle={0.68}
-        penumbra={0.35}
-        intensity={flashlightOn ? 85 : 0}
-        distance={38}
-        decay={1.0}
-        color="#eef8ff"
-        visible={flashlightOn}
       />
       <group ref={muzzleGroupRef} position={[0, 0.06, -0.47]} visible={false}>
         <mesh>

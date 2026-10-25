@@ -60,7 +60,6 @@ export interface GameState {
   shotsFired: number;
   shotsHit: number;
   trackerRaised: boolean;
-  flashlightOn: boolean;
   damageFlash: number;
   screenShake: number;
   playerPos: [number, number, number];
@@ -92,7 +91,6 @@ export interface GameState {
   chooseUpgrade: (upgradeId: string) => void;
   updateSettings: (partial: Partial<GameSettings>) => void;
   toggleTracker: () => void;
-  toggleFlashlight: () => void;
   updatePlayerTransform: (x: number, y: number, z: number, yaw: number) => void;
   setActiveThreats: (threats: ActiveThreat[]) => void;
   setSmallThreat: (threat: ActiveThreat | null) => void;

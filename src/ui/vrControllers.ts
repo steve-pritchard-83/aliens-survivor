@@ -20,7 +20,6 @@ export interface VRControllerLatches {
   weaponCooldown: number;
   snapTurnLatched: boolean;
   pauseCooldown: number;
-  lightCooldown: number;
 }
 
 export function createVRControllerInput(): VRControllerInput {
@@ -28,7 +27,7 @@ export function createVRControllerInput(): VRControllerInput {
 }
 
 export function createVRControllerLatches(): VRControllerLatches {
-  return { weaponCooldown: 0, snapTurnLatched: false, pauseCooldown: 0, lightCooldown: 0 };
+  return { weaponCooldown: 0, snapTurnLatched: false, pauseCooldown: 0 };
 }
 
 const SNAP_PRESS = 0.65;
@@ -93,7 +92,7 @@ function togglePause(latches: VRControllerLatches): void {
   }
 }
 
-/** Reads both controllers: poses, locomotion, fire, reload, flashlight, turning and the pause buttons. */
+/** Reads both controllers: poses, locomotion, fire, reload, turning and the pause buttons. */
 export function pollControllers(
   xrSession: XRSession,
   refSpace: XRSpace | null,
@@ -130,10 +129,6 @@ export function pollControllers(
       if (buttons[BTN_GRIP]?.pressed && latches.weaponCooldown <= 0) {
         latches.weaponCooldown = 0.5;
         InputManager.weaponCycleFlag = true;
-      }
-      if (buttons[BTN_PRIMARY]?.pressed && latches.lightCooldown <= 0) {
-        latches.lightCooldown = 0.35;
-        useGameStore.getState().toggleFlashlight();
       }
     } else if (source.handedness === 'right') {
       xrControllerState.rightHand.hapticActuator = actuator;

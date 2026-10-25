@@ -27,7 +27,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   status: 'MENU',
   runId: 0,
   trackerRaised: false,
-  flashlightOn: true,
   settings: initialSettings,
   recordKills: loadRecordKills(),
   leaderboard: loadLeaderboard(),
@@ -208,7 +207,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((s) => ({ shotsHit: s.shotsHit + 1 }));
   },
   toggleTracker: () => set((s) => ({ trackerRaised: !s.trackerRaised })),
-  toggleFlashlight: () => set((s) => ({ flashlightOn: !s.flashlightOn })),
   updatePlayerTransform: (x, y, z, yaw) => set({ playerPos: [x, y, z], playerYaw: yaw }),
   setActiveThreats: (threats) => set({ activeThreats: threats }),
   setSmallThreat: (threat) => set({ smallThreat: threat })

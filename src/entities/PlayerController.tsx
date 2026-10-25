@@ -154,12 +154,6 @@ export function PlayerController() {
       InputManager.weaponCycleFlag = false;
       state.cycleWeapon();
     }
-    if (InputManager.flashlightToggleFlag) {
-      InputManager.flashlightToggleFlag = false;
-      const nextState = !state.flashlightOn;
-      state.toggleFlashlight();
-      AudioManager.play2D(nextState ? 'torch_on' : 'torch_off', 0.65);
-    }
 
     const shake = state.screenShake;
     const shakePitch = shake > 0 ? Math.sin(now * 58) * shake * 0.032 : 0;

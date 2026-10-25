@@ -3,7 +3,6 @@ import type { XRHandPose } from '../../core/XRControllerState';
 import { RifleState } from './RifleState';
 
 const _handPos = new THREE.Vector3();
-const _aim = new THREE.Vector3();
 
 /** Eases all recoil channels back to rest and counts down the muzzle flash. */
 export function stepRecoil(rs: RifleState, dt: number): void {
@@ -55,22 +54,14 @@ export function computeReloadPose(p: number, out: ReloadPose): void {
   }
 }
 
-/** Weapon follows the tracked controller (XR). Also aims the flashlight target down the barrel. */
-export function poseWeaponXR(
-  group: THREE.Group,
-  parent: THREE.Object3D,
-  hand: XRHandPose,
-  rs: RifleState,
-  flashTarget: THREE.Object3D
-): void {
+/** Weapon follows the tracked controller (XR). */
+export function poseWeaponXR(group: THREE.Group, parent: THREE.Object3D, hand: XRHandPose, rs: RifleState): void {
   _handPos.copy(hand.position).applyQuaternion(parent.quaternion);
   group.position.copy(parent.position).add(_handPos);
   group.quaternion.copy(parent.quaternion).multiply(hand.quaternion);
   group.translateY(-0.02);
   group.translateZ(-0.05 + rs.recoilOffset);
   group.rotateX(-0.79 + rs.recoilPitch);
-  group.getWorldDirection(_aim).negate();
-  flashTarget.position.copy(group.position).addScaledVector(_aim, 28.0);
 }
 
 /** Weapon held at the hip in first person (desktop / touch), with sway, recoil and reload animation. */
@@ -79,8 +70,7 @@ export function poseWeaponFPS(
   camera: THREE.Camera,
   rs: RifleState,
   time: number,
-  reload: ReloadPose,
-  flashTarget: THREE.Object3D
+  reload: ReloadPose
 ): void {
   const swayX = Math.sin(time * 2.2) * 0.0025,
     swayY = Math.cos(time * 4.4) * 0.0025;
@@ -92,6 +82,4 @@ export function poseWeaponFPS(
   group.rotateY(0.065 + rs.recoilYaw + reload.yaw);
   group.rotateX(0.02 + rs.recoilPitch + reload.pitch);
   group.rotateZ(rs.recoilRoll + reload.roll);
-  camera.getWorldDirection(_aim);
-  flashTarget.position.copy(camera.position).addScaledVector(_aim, 28.0);
 }

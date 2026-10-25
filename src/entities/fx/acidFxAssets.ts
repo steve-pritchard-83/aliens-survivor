@@ -27,11 +27,12 @@ export function createAcidTextures(): { dropletTex: THREE.CanvasTexture; puddleT
   c2.height = 256;
   const ctx2 = c2.getContext('2d')!,
     g2 = ctx2.createRadialGradient(128, 128, 8, 128, 128, 120);
-  g2.addColorStop(0.0, 'rgba(18, 68, 14, 0.96)');
-  g2.addColorStop(0.45, 'rgba(28, 92, 18, 0.90)');
-  g2.addColorStop(0.75, 'rgba(48, 135, 15, 0.65)');
-  g2.addColorStop(0.92, 'rgba(85, 190, 20, 0.25)');
-  g2.addColorStop(1.0, 'rgba(20, 60, 10, 0.0)');
+  // Very dark green: the pool is unlit, so anything brighter glows against the dark deck
+  g2.addColorStop(0.0, 'rgba(2, 9, 4, 0.96)');
+  g2.addColorStop(0.45, 'rgba(3, 13, 6, 0.9)');
+  g2.addColorStop(0.75, 'rgba(5, 20, 8, 0.65)');
+  g2.addColorStop(0.92, 'rgba(8, 28, 11, 0.25)');
+  g2.addColorStop(1.0, 'rgba(4, 14, 6, 0.0)');
   ctx2.fillStyle = g2;
   ctx2.fillRect(0, 0, 256, 256);
   return { dropletTex: new THREE.CanvasTexture(c1), puddleTex: new THREE.CanvasTexture(c2) };

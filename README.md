@@ -12,7 +12,7 @@ A 5-minute (300-second) first-person survival wave shooter set aboard the *USS S
   - **Meta Quest 2/3:** 6DoF controller aiming, an in-headset start/pause/level-up menu, snap or smooth turning, comfort vignette, seated mode, left-handed mode, haptics and a wrist-mounted M314 motion tracker.
   - **Desktop:** WASD, mouse look with adjustable sensitivity and invert-Y, status bar.
   - **Mobile:** left-half move stick, right-half look with auto-fire on targets; installable PWA (optional).
-- **Arsenal and gear:** M41A pulse rifle (digital ammo counter, 2.5 s reload, overheat jams), underslung flashlight, muzzle strobe, M314 motion tracker (sweep radar with pitch-modulated pings).
+- **Arsenal and gear:** M41A pulse rifle (digital ammo counter, 2.5 s reload, overheat jams), muzzle strobe, M314 motion tracker (sweep radar with pitch-modulated pings).
 - **Enemies:** pooled Xenomorph drones with five-zone dismemberment, facehuggers and chestbursters, and a Praetorian boss once in each of the last two phases.
 - **Progression and scoring:** XP from kills, Field Promotion level-ups with six upgrade cards, three difficulty levels (Recruit, Marine, Ultimate Badass) and a local top-10 leaderboard per difficulty (score from kills, accuracy and survival time).
 - **Comfort and accessibility:** snap-turn angles (30°, 45°, 90°) or smooth turning, comfort vignette (off/low/high), reduced-flash mode, seated mode, left-handed mode, master/music/effects volumes, keyboard-focusable settings with labels, zoomable menus on mobile.

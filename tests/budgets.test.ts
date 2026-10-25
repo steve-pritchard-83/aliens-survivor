@@ -8,8 +8,8 @@ describe('light budget', () => {
   it('the real source tree stays within the Quest 2 dynamic light cap', () => {
     const lights = countLights('src');
     expect(lights.length).toBeLessThanOrEqual(LIMITS.dynamicLights);
-    // Documented lights: key + beacon in the level, flashlight + muzzle on the rifle
-    expect(lights.map((l) => l.light).sort()).toEqual(['pointLight', 'pointLight', 'pointLight', 'spotLight']);
+    // Documented lights: key + beacon in the level, muzzle flash on the rifle
+    expect(lights.map((l) => l.light).sort()).toEqual(['pointLight', 'pointLight', 'pointLight']);
   });
 
   it('counts both JSX and constructor forms but ignores ambient and hemisphere lights', () => {

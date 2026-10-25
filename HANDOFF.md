@@ -21,7 +21,7 @@
 | Rule | Enforced by |
 |---|---|
 | No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
-| At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, flashlight + muzzle in the rifle). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
+| At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, muzzle flash in the rifle; the torch was removed, so one slot is free). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
 | Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 48 MB | `scripts/check-budgets.mjs` |
 | Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
 | `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |
@@ -100,9 +100,9 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 
 | Platform | Controls |
 |---|---|
-| Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, F flashlight, Q cycle weapon, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
+| Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, Q cycle weapon, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
 | Touch | Left half: move stick. Right half: look; the rifle auto-fires when a threat is in the crosshair. PAUSE button |
-| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · X flashlight · left grip cycle weapon · B/Y or stick click pause · look at the left wrist for the tracker |
+| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · left grip cycle weapon · B/Y or stick click pause · look at the left wrist for the tracker |
 
 **VR menus.** On entering VR the mission waits in a start menu: stick left/right picks the difficulty and a fresh trigger press deploys. **Pause (B/Y):** right or left stick up/down selects a row, left/right adjusts (snap turn, comfort vignette, reduced flash, handedness, seated mode, master/music/effects volume), trigger on *Resume* resumes. **Level-up:** stick left/right selects a card, trigger confirms (input is ignored for 0.6 s and until the trigger has been released). **Defeat/victory:** a fresh trigger press redeploys; nothing restarts automatically.
 

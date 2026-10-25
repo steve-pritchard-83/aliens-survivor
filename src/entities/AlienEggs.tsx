@@ -26,7 +26,7 @@ export function AlienEggs() {
         if (!(ch as THREE.Mesh).isMesh) return;
         const m = ch as THREE.Mesh,
           mat = (m.material as THREE.MeshStandardMaterial).clone();
-        // Authentic dark, wet, glistening Giger Ovomorph chitin; lit by corridor lights and flashlight only
+        // Authentic dark, wet, glistening Giger Ovomorph chitin; lit by the corridor lights only
         mat.color.multiplyScalar(0.4);
         mat.roughness = 0.22;
         mat.metalness = 0.08;

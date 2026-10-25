@@ -12,7 +12,11 @@
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
 - Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
+### Removed
+- **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
+
 ### Fixed
+- Acid pools left on the deck by dying enemies are now very dark green instead of bright lime.
 - **Models:** restored the original GLB files. The compressed set (flattened, merged and simplified by `gltf-transform optimize`) made the xenomorph invisible and Bishop show only his lower half.
 - Touch auto-aim no longer damages aliens just by looking at them, and bullets from the player and Bishop no longer pass through walls.
 - Level-ups no longer wipe live aliens or teleport Bishop; AI and effects freeze while you choose an upgrade.

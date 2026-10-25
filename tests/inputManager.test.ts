@@ -76,12 +76,10 @@ describe('InputManager', () => {
     expect(snap.snapTurn).toBe(0);
   });
 
-  it('latches tracker, flashlight and pause toggles', () => {
+  it('latches tracker and pause toggles', () => {
     press(input, 'Tab');
-    press(input, 'KeyF');
     press(input, 'Escape');
     expect(input.trackerToggleFlag).toBe(true);
-    expect(input.flashlightToggleFlag).toBe(true);
     expect(input.pauseToggleFlag).toBe(true);
   });
 
