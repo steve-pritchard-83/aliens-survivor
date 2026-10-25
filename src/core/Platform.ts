@@ -3,6 +3,10 @@ export const Platform = {
     return typeof navigator !== 'undefined' && /OculusBrowser|Quest/i.test(navigator.userAgent);
   },
 
+  get isQuest3(): boolean {
+    return typeof navigator !== 'undefined' && /Quest 3/i.test(navigator.userAgent);
+  },
+
   get isVrApp(): boolean {
     if (typeof window === 'undefined') return false;
     return new URLSearchParams(window.location.search).get('vr') === '1' || this.isQuest;

@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { quality } from '../core/QualityState';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -39,8 +41,14 @@ export function AlienEggs() {
     });
   }, [gltf.scene]);
 
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const g = groupRef.current;
+    if (g) g.visible = quality.tier > 0;
+  });
+
   return (
-    <group name="AlienEggs">
+    <group ref={groupRef} name="AlienEggs">
       {eggs.map((eggObj, i) => (
         <primitive key={i} object={eggObj} />
       ))}

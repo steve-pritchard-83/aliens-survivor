@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { constrainToCorridor } from '../core/CorridorNav';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
+import { quality } from '../core/QualityState';
 
 const PARTICLE_COUNT = 64,
   GIB_POOL_SIZE = 12,
@@ -231,6 +232,7 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
           particleVel[i * 3 + 2] = (Math.random() - 0.5) * speedMult - dir.z * 1.4;
         }
         posAttr.needsUpdate = true;
+        acidPointsRef.current.geometry.setDrawRange(0, quality.tier === 0 ? PARTICLE_COUNT >> 1 : PARTICLE_COUNT);
         acidPointsRef.current.visible = true;
       }
       impactTimerRef.current = 0.34;

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AudioManager } from '../core/AudioManager';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
+import { quality } from '../core/QualityState';
 
 // 12 Wall & Ceiling Electrical Junction Boxes across the Double-Size Figure-8 Sulaco Sector (Z = 8.30..35.90)
 const SPARK_EMITTERS: [number, number, number, number, number][] = [
@@ -43,7 +44,7 @@ export function CorridorAtmosphereFX() {
     // Wall & Ceiling Electrical Spark Showers
     if (burstTimerRef.current <= 0) {
       nextBurstDelayRef.current -= dt;
-      if (nextBurstDelayRef.current <= 0) {
+      if (nextBurstDelayRef.current <= 0 && quality.tier > 0) {
         const idx = Math.floor(Math.random() * SPARK_EMITTERS.length);
         const [ex, ey, ez, nx, nz] = SPARK_EMITTERS[idx];
 

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CombatSystem } from '../core/CombatEvents';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
+import { quality } from '../core/QualityState';
 
 const MAX_DECAL_COUNT = 48;
 const MAX_SPARK_COUNT = 160;
@@ -141,7 +142,7 @@ export function WallImpactFX() {
     CombatSystem.registerWallImpactHandler((point, normal, dir) => {
       // 1. Spawn Decal mark on wall
       const dGroup = decalGroupRef.current;
-      if (dGroup) {
+      if (dGroup && quality.tier > 0) {
         const idx = nextDecalIdx.current++ % MAX_DECAL_COUNT;
         const mesh = dGroup.children[idx] as THREE.Mesh;
         if (mesh) {
@@ -163,7 +164,8 @@ export function WallImpactFX() {
         .addScaledVector(normal, -2 * dot)
         .normalize();
 
-      const sparkCount = 14 + Math.floor(Math.random() * 5);
+      const fullCount = 14 + Math.floor(Math.random() * 5),
+        sparkCount = quality.tier >= 2 ? fullCount : fullCount >> 1;
       for (let i = 0; i < sparkCount; i++) {
         const sIdx = nextSparkIdx.current++ % MAX_SPARK_COUNT;
         const s = sparkStates[sIdx];

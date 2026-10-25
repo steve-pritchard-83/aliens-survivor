@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
+import { quality } from '../core/QualityState';
 
 const _vPos = new THREE.Vector3(),
   _vFwd = new THREE.Vector3(),
@@ -70,7 +71,7 @@ export function DebugTelemetry() {
       const memTex = gl.info.memory.textures;
       const isXR = Boolean(session);
 
-      fpsTextRef.current = `FPS: ${fps} | ${frameMs}ms | CALLS: ${calls} | TRIS: ${tris} | GEO: ${memGeos} | TEX: ${memTex} | XR: ${isXR ? 'ON' : 'OFF'}`;
+      fpsTextRef.current = `FPS: ${fps} | ${frameMs}ms | CALLS: ${calls} | TRIS: ${tris} | GEO: ${memGeos} | TEX: ${memTex} | XR: ${isXR ? 'ON' : 'OFF'} | Q: ${quality.tier}`;
       framesRef.current = 0;
       lastTimeRef.current = now;
 
@@ -96,7 +97,7 @@ export function DebugTelemetry() {
           ctx.font = '20px monospace';
           ctx.fillText(`DRAWS: ${calls}  TRIS: ${tris}`, 24, 105);
           ctx.fillText(`GEOS: ${memGeos}  TEXS: ${memTex}`, 24, 150);
-          ctx.fillText(`MODE: IMMERSIVE-VR`, 24, 195);
+          ctx.fillText(`MODE: IMMERSIVE-VR  QUALITY TIER: ${quality.tier}`, 24, 195);
           debugTex.needsUpdate = true;
         }
       }
