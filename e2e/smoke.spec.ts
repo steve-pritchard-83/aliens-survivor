@@ -5,6 +5,10 @@ async function startMission(page: Page, errors: string[]): Promise<void> {
   await page.goto('/?e2e=1');
   await page.getByRole('button', { name: /INITIATE COMBAT DROP/ }).click();
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
+  // The scene loads its models behind Suspense; the clock only runs once the player controller is mounted
+  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
+    timeout: 45_000
+  });
 }
 
 test('boots, starts a mission, runs, pauses and resumes without page errors', async ({ page }) => {
@@ -47,5 +51,27 @@ test('choosing a level-up upgrade keeps live aliens in play and resumes the miss
 
   const after = await page.evaluate(() => window.__game!.getState().activeThreats.map((t) => t.id));
   expect(after.some((id) => before.includes(id))).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('settings changes apply immediately and persist across a reload', async ({ page }) => {
+  const errors: string[] = [];
+  await startMission(page, errors);
+  await page.keyboard.press('KeyP');
+  await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED');
+
+  await page.getByLabel('Master volume').fill('0.5');
+  await page.getByRole('switch', { name: 'Invert Y axis' }).click();
+  await page.getByRole('button', { name: '45°' }).click();
+  const s = await page.evaluate(() => window.__game!.getState().settings);
+  expect(s.masterVolume).toBeCloseTo(0.5);
+  expect(s.invertY).toBe(true);
+  expect(s.snapAngle).toBeCloseTo(Math.PI / 4);
+
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  const after = await page.evaluate(() => window.__game!.getState().settings);
+  expect(after.masterVolume).toBeCloseTo(0.5);
+  expect(after.invertY).toBe(true);
   expect(errors).toEqual([]);
 });
