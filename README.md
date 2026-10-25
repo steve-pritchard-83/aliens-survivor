@@ -29,6 +29,7 @@ npm run dev        # http://localhost:5173
 | Script | Purpose |
 |---|---|
 | `npm run dev` | Vite dev server |
+| `npm run check` | Quick loop: type-check and lint only |
 | `npm run verify` | The full gate: lint, format check, type-check, tests with coverage, production build, budgets |
 | `npm test` | Unit tests (`npm run test:coverage` adds the coverage gate) |
 | `npm run e2e` | Playwright browser tests: desktop, mobile emulation and an emulated Quest 3 |

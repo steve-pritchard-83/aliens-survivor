@@ -13,6 +13,7 @@
     "format:check": "prettier --check src tests scripts e2e vite.config.ts vitest.config.ts playwright.config.ts eslint.config.js",
     "lint": "eslint .",
     "typecheck": "tsc -b",
+    "check": "npm run typecheck && eslint src",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run test:coverage && npm run build && node scripts/check-budgets.mjs",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test"

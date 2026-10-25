@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test-and-build:
@@ -26,7 +27,9 @@ jobs:
       - name: Verify (lint, format, types, tests, build, budgets)
         run: npm run verify
 
+  # Slow and timing-sensitive on software-rendered runners, so it runs only when started by hand
   e2e:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: test-and-build
 

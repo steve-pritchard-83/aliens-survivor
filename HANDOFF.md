@@ -121,7 +121,7 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 
 ## 7. Release and deployment
 
-- **Web:** Vercel builds `main`. Run `npm run verify` and `npm run e2e` before merging.
+- **Web:** Vercel builds `main`. Iterate with `npm run check` (types and lint, seconds); run `npm run verify` before pushing. `npm run e2e` is optional and CI runs it only when started by hand (Actions, "Run workflow").
 - **Quest APK:** `.github/workflows/build-quest-apk.yml` (tag `v*` or manual run) builds the signed TWA wrapper in `quest-build/`. It needs four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The signing certificate fingerprint must match `public/.well-known/assetlinks.json`. Back up the keystore and passwords somewhere safe: if they are lost the installed app can never be updated.
 - **Local APK builds** read the same environment variables (see `quest-build/app/build.gradle`).
 
