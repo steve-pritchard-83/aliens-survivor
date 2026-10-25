@@ -8,7 +8,7 @@ import { AudioManager } from '../core/AudioManager';
 import { trackerCanvasState } from '../core/TrackerState';
 import { xrControllerState } from '../core/XRControllerState';
 
-import { drawVRStatusPanel, VRPanelData, VRPanelStatus } from './VRStatusCanvas';
+import { VRStatusPanel } from './VRStatusPanel';
 import { VRMenuNav } from './VRMenuNav';
 import {
   pollControllers,
@@ -17,25 +17,11 @@ import {
   VRControllerInput
 } from './vrControllers';
 
-const _panel: VRPanelData = {
-  status: 'PAUSED',
-  kills: 0,
-  shotsFired: 0,
-  shotsHit: 0,
-  timeRem: 0,
-  pulse: 0,
-  offered: [],
-  selectedIndex: 0,
-  recordKills: 0
-};
 function resetInput(i: VRControllerInput): void {
   i.moveX = i.moveZ = i.rightStickX = i.rightStickY = 0;
   i.firing = i.anyButton = false;
 }
-const _camFwd = new THREE.Vector3(),
-  _wristPos = new THREE.Vector3(),
-  _camPos = new THREE.Vector3(),
-  _camQuat = new THREE.Quaternion();
+const _wristPos = new THREE.Vector3();
 
 export function VRHud() {
   const { session } = useXR();
@@ -57,30 +43,7 @@ export function VRHud() {
     return tex;
   }, []);
 
-  const { panelCanvas, panelTex } = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 512;
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return { panelCanvas: canvas, panelTex: tex };
-  }, []);
-
-  const renderPanel = (status: VRPanelStatus, pulse: number) => {
-    const st = useGameStore.getState();
-    _panel.status = status;
-    _panel.kills = st.kills;
-    _panel.shotsFired = st.shotsFired;
-    _panel.shotsHit = st.shotsHit;
-    _panel.timeRem = st.timeRemaining;
-    _panel.pulse = pulse;
-    _panel.offered = st.offeredUpgrades;
-    _panel.settings = st.settings;
-    _panel.selectedIndex = selectedRef.current;
-    _panel.recordKills = st.recordKills;
-    drawVRStatusPanel(panelCanvas, _panel);
-    panelTex.needsUpdate = true;
-  };
+  const panel = useMemo(() => new VRStatusPanel(), []);
 
   useFrame(({ clock }, dt, frame) => {
     const latches = latchesRef.current;
@@ -113,13 +76,8 @@ export function VRHud() {
     }
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
-        statusMeshRef.current.visible = true;
-        camera.getWorldDirection(_camFwd);
-        camera.getWorldPosition(_camPos);
-        camera.getWorldQuaternion(_camQuat);
-        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
-        statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel('PAUSED', clock.getElapsedTime());
+        VRStatusPanel.place(statusMeshRef.current, camera);
+        panel.render('PAUSED', clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       if (latches.pauseCooldown <= 0 && xrSession) {
         for (const src of xrSession.inputSources) {
@@ -156,13 +114,8 @@ export function VRHud() {
     }
     if (st.status === 'LEVEL_UP') {
       if (statusMeshRef.current) {
-        statusMeshRef.current.visible = true;
-        camera.getWorldDirection(_camFwd);
-        camera.getWorldPosition(_camPos);
-        camera.getWorldQuaternion(_camQuat);
-        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
-        statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel('LEVEL_UP', clock.getElapsedTime());
+        VRStatusPanel.place(statusMeshRef.current, camera);
+        panel.render('LEVEL_UP', clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       const nav = navRef.current,
         count = Math.min(3, st.offeredUpgrades.length);
@@ -180,13 +133,8 @@ export function VRHud() {
     if (st.status === 'DEFEAT' || st.status === 'VICTORY') {
       defeatTimerRef.current += dt;
       if (statusMeshRef.current) {
-        statusMeshRef.current.visible = true;
-        camera.getWorldDirection(_camFwd);
-        camera.getWorldPosition(_camPos);
-        camera.getWorldQuaternion(_camQuat);
-        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
-        statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel(st.status, clock.getElapsedTime());
+        VRStatusPanel.place(statusMeshRef.current, camera);
+        panel.render(st.status, clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
         defeatTimerRef.current = 0;
@@ -249,7 +197,13 @@ export function VRHud() {
       </group>
       <mesh ref={statusMeshRef} visible={false}>
         <planeGeometry args={[1.5, 0.75]} />
-        <meshBasicMaterial map={panelTex} transparent depthTest={false} depthWrite={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial
+          map={panel.texture}
+          transparent
+          depthTest={false}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </>
   );
