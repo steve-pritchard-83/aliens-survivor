@@ -1,6 +1,7 @@
 import { UpgradeCard } from '../data/balance';
 import { GameSettings } from '../core/GameTypes';
 import { VR_MENU_ROWS, valueText } from './vrMenuModel';
+import { DIFFICULTY } from '../data/difficulty';
 
 export type VRPanelStatus = 'MENU' | 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
@@ -21,6 +22,14 @@ export interface VRPanelData {
   settings?: GameSettings;
   selectedIndex: number;
   recordKills: number;
+}
+
+/** `◀ MARINE ▶` selector line: stick left/right changes it on the start and end screens. */
+function drawDifficultyLine(ctx: CanvasRenderingContext2D, settings: GameSettings, y: number, size: number): void {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffcc66';
+  ctx.font = `bold ${size}px Courier New, monospace`;
+  ctx.fillText(`DIFFICULTY  ◀ ${DIFFICULTY[settings.difficulty].label} ▶`, 512, y);
 }
 
 /** In-headset start screen shown before the mission begins. */
@@ -50,12 +59,13 @@ function drawMenuPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
     ctx.fillText(`BEST: ${recordKills} KILLS`, 512, 262);
   }
   if (settings) {
+    drawDifficultyLine(ctx, settings, 292, 24);
     ctx.fillStyle = '#88ffaa';
-    ctx.font = '17px Courier New, monospace';
+    ctx.font = '16px Courier New, monospace';
     const turn = settings.snapAngle === 0 ? 'SMOOTH' : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
     const hand = settings.leftHanded ? 'LEFT-HANDED' : 'RIGHT-HANDED';
-    ctx.fillText(`TURN: ${turn}   |   ${hand}   |   VIGNETTE: ${settings.vignette.toUpperCase()}`, 512, 305);
-    ctx.fillText('SETTINGS: PRESS [B] / [Y] DURING THE MISSION', 512, 333);
+    ctx.fillText(`TURN: ${turn}   |   ${hand}   |   VIGNETTE: ${settings.vignette.toUpperCase()}`, 512, 322);
+    ctx.fillText('SETTINGS: PRESS [B] / [Y] DURING THE MISSION', 512, 346);
   }
 
   const a = 0.75 + Math.sin(pulse * 6.0) * 0.25;
@@ -119,7 +129,7 @@ function drawPausedPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
 }
 
 export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): void {
-  const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, selectedIndex, recordKills } = d;
+  const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, selectedIndex, recordKills, settings } = d;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -224,4 +234,5 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
   ctx.fillStyle = isDefeat ? '#ff8888' : '#00ff88';
   ctx.font = 'bold 32px Courier New, monospace';
   ctx.fillText('▶ PULL TRIGGER TO REDEPLOY ◀', 512, 402);
+  if (settings) drawDifficultyLine(ctx, settings, 468, 20);
 }

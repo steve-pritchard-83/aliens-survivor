@@ -14,6 +14,7 @@ import { VRMenuNav } from './VRMenuNav';
 import { openPauseMenu, stepPauseMenu } from './vrPauseMenu';
 import { attachSessionHandlers } from './vrSessionEvents';
 import { launchMission } from '../core/MissionLauncher';
+import { cycleDifficulty } from '../data/difficulty';
 import {
   pollControllers,
   createVRControllerInput,
@@ -120,8 +121,15 @@ export function VRHud() {
         panel.render(st.status, clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       // A fresh trigger press (armed after a short delay) starts or restarts the mission; nothing auto-restarts
-      navRef.current.update(dt, 0, 0, firing);
-      if (navRef.current.consumeConfirm()) launchMission();
+      const nav = navRef.current;
+      nav.update(dt, rightStickX || moveX, 0, firing);
+      // Stick left/right picks the difficulty for the next run
+      const dir = nav.consumeLeft() ? -1 : nav.consumeRight() ? 1 : 0;
+      if (dir !== 0) {
+        AudioManager.play2D('ui_beep', 0.6);
+        st.updateSettings({ difficulty: cycleDifficulty(st.settings.difficulty, dir) });
+      }
+      if (nav.consumeConfirm()) launchMission();
     } else if (statusMeshRef.current) statusMeshRef.current.visible = false;
 
     if (wristGroupRef.current) {

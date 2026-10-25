@@ -1,4 +1,5 @@
 import type { GameSettings, VignetteLevel } from './GameTypes';
+import { DEFAULT_DIFFICULTY, DIFFICULTY_ORDER, DifficultyId } from '../data/difficulty';
 
 export const SETTINGS_KEY = 'uscm_settings_v1';
 export const RECORD_KEY = 'uscm_record_kills';
@@ -8,6 +9,7 @@ export const VIGNETTE_OPTIONS: readonly VignetteLevel[] = ['off', 'low', 'high']
 export const MOUSE_SENSITIVITY_RANGE = { min: 0.3, max: 3 } as const;
 
 export const DEFAULT_SETTINGS: GameSettings = {
+  difficulty: DEFAULT_DIFFICULTY,
   snapAngle: Math.PI / 2,
   reducedFlash: false,
   leftHanded: false,
@@ -38,6 +40,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
   const o = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const d = DEFAULT_SETTINGS;
   return {
+    difficulty: DIFFICULTY_ORDER.includes(o.difficulty as DifficultyId) ? (o.difficulty as DifficultyId) : d.difficulty,
     snapAngle: isSnapAngle(o.snapAngle) ? o.snapAngle : d.snapAngle,
     reducedFlash: bool(o.reducedFlash, d.reducedFlash),
     leftHanded: bool(o.leftHanded, d.leftHanded),

@@ -93,3 +93,16 @@ test('the status bar shows health, ammo and phase and can be switched off', asyn
   await expect(bar).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test('the chosen difficulty is applied when the mission starts', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?e2e=1');
+  await page.getByRole('button', { name: 'RECRUIT' }).click();
+  await expect(page.getByRole('button', { name: 'RECRUIT' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: /INITIATE COMBAT DROP/ }).click();
+  await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
+  expect(await page.evaluate(() => window.__game!.getState().rules.difficulty)).toBe('recruit');
+  expect(await page.evaluate(() => window.__game!.getState().rules.enemyDamageMult)).toBe(0.7);
+  expect(errors).toEqual([]);
+});

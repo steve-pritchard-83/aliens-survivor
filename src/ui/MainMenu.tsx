@@ -1,4 +1,11 @@
 import { GREEN, RED, INK, solidButton, overlay, formatTimer } from './uiStyles';
+import { ChoiceRow, Choice } from './SettingsControls';
+import { DIFFICULTY, DIFFICULTY_ORDER, DifficultyId } from '../data/difficulty';
+
+const DIFFICULTY_CHOICES: readonly Choice<DifficultyId>[] = DIFFICULTY_ORDER.map((id) => ({
+  value: id,
+  label: DIFFICULTY[id].label
+}));
 
 export interface MenuStats {
   timeRemaining: number;
@@ -12,11 +19,15 @@ export function MainMenu({
   status,
   vrCapable,
   stats,
+  difficulty,
+  onDifficulty,
   onLaunch
 }: {
   status: 'MENU' | 'DEFEAT';
   vrCapable: boolean;
   stats: MenuStats;
+  difficulty: DifficultyId;
+  onDifficulty: (id: DifficultyId) => void;
   onLaunch: (mode: 'STANDARD' | 'VR') => void;
 }) {
   const defeat = status === 'DEFEAT';
@@ -54,6 +65,9 @@ export function MainMenu({
       {!defeat && stats.best > 0 && (
         <p style={{ color: '#ffcc66', letterSpacing: 3, fontSize: 14, marginBottom: 18 }}>BEST: {stats.best} KILLS</p>
       )}
+      <div style={{ width: 'min(440px, 90vw)', marginBottom: 20 }}>
+        <ChoiceRow label="Difficulty" value={difficulty} choices={DIFFICULTY_CHOICES} onChange={onDifficulty} />
+      </div>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
         {vrCapable ? (
           <button

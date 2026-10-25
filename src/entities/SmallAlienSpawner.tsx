@@ -150,7 +150,7 @@ export function SmallAlienSpawner() {
     if (!e.active && state.status === 'PLAYING' && (e.spawnCooldown -= dt) <= 0) {
       const node = CORRIDOR_SPAWN_NODES[pickSpawnNode(px, pz, state.playerYaw, -1, SMALL_FALLBACK_NODES)],
         isFH = Math.random() < 0.5;
-      spawnSmall(e, node.position[0], node.position[1], node.position[2], px, pz, isFH);
+      spawnSmall(e, node.position[0], node.position[1], node.position[2], px, pz, isFH, state.rules.enemyHpMult);
       r.scale.set(1, 1, 1);
       fhGroup.visible = isFH;
       cbGroup.visible = !isFH;
@@ -180,7 +180,7 @@ export function SmallAlienSpawner() {
       e.active = false;
       hideAll();
       r.scale.set(1, 1, 1);
-      e.spawnCooldown = 4.5 + Math.random() * 3.5;
+      e.spawnCooldown = (4.5 + Math.random() * 3.5) * state.rules.spawnIntervalMult;
       clearSmallThreat(state);
       return;
     }

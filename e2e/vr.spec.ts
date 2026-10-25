@@ -49,6 +49,20 @@ test('VR start: the mission waits in the menu and a trigger press deploys', asyn
   expect(errors).toEqual([]);
 });
 
+test('VR start menu: the stick picks the difficulty used by the next mission', async ({ page }) => {
+  await openVrMenu(page);
+  expect(await page.evaluate(() => window.__game!.getState().settings.difficulty)).toBe('marine');
+  await rightStick(page, 0.9, 0);
+  await page.waitForFunction(() => window.__game?.getState().settings.difficulty === 'ultimate_badass', undefined, {
+    timeout: 30_000
+  });
+  await rightStick(page, 0, 0);
+  await page.waitForTimeout(HOLD);
+  await pressTrigger(page, 'PLAYING');
+  expect(await page.evaluate(() => window.__game!.getState().rules.difficulty)).toBe('ultimate_badass');
+  await page.evaluate(() => window.__game!.getState().updateSettings({ difficulty: 'marine' }));
+});
+
 test('VR level-up: a held trigger never picks a card; stick selects and a fresh trigger confirms', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

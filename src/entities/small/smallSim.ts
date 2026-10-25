@@ -79,9 +79,11 @@ export function spawnSmall(
   nodeZ: number,
   px: number,
   pz: number,
-  isFacehugger: boolean
+  isFacehugger: boolean,
+  hpMult = 1
 ): void {
-  const hp = isFacehugger ? BALANCE.SMALL_ALIEN.FACEHUGGER_HP : BALANCE.SMALL_ALIEN.CHESTBURSTER_HP;
+  const baseHp = isFacehugger ? BALANCE.SMALL_ALIEN.FACEHUGGER_HP : BALANCE.SMALL_ALIEN.CHESTBURSTER_HP;
+  const hp = Math.round(baseHp * hpMult);
   e.active = true;
   e.kind = isFacehugger ? 'FACEHUGGER' : 'CHESTBURSTER';
   e.state = 'SPAWNING';

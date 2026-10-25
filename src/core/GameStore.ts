@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
+import { freshRunState } from './runState';
 import { incomingDamage } from '../systems/combatMath';
 import { loadSettings, saveSettings, loadRecordKills, commitRecord } from './Persistence';
 import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../data/balance';
@@ -17,70 +18,23 @@ import {
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase, isSimulationFrozen };
 
+const initialSettings = loadSettings();
+
 export const useGameStore = create<GameState>((set, get) => ({
+  ...freshRunState(initialSettings),
   status: 'MENU',
   runId: 0,
-  timeRemaining: BALANCE.MISSION_DURATION_SECONDS,
-  phase: 1,
-  hp: BALANCE.PLAYER.MAX_HP,
-  maxHp: BALANCE.PLAYER.MAX_HP,
-  lastDamageTime: 0,
-  ammo: BALANCE.WEAPON.MAGAZINE_DEFAULT,
-  maxAmmo: BALANCE.WEAPON.MAGAZINE_DEFAULT,
-  fireInterval: BALANCE.WEAPON.FIRE_INTERVAL_DEFAULT,
-  isReloading: false,
-  reloadProgress: 0,
-  continuousFireTime: 0,
-  isJammed: false,
-  kills: 0,
-  shotsFired: 0,
-  shotsHit: 0,
   trackerRaised: false,
   flashlightOn: true,
-  damageFlash: 0,
-  screenShake: 0,
-  playerPos: [-0.32, 1.15, 13.0],
-  playerYaw: Math.PI,
-  activeThreats: [],
-  smallThreat: null,
-  xp: 0,
-  level: 1,
-  nextLevelXp: BALANCE.XP.LEVEL_THRESHOLDS[0],
-  offeredUpgrades: [],
-  activeUpgrades: [],
-  settings: loadSettings(),
+  settings: initialSettings,
   recordKills: loadRecordKills(),
 
+  // A new run resets every per-run field together (freshRunState) and resolves the difficulty rules once
   startGame: () =>
     set((s) => ({
+      ...freshRunState(s.settings),
       status: 'PLAYING',
-      runId: s.runId + 1,
-      timeRemaining: BALANCE.MISSION_DURATION_SECONDS,
-      phase: 1,
-      hp: BALANCE.PLAYER.MAX_HP,
-      maxHp: BALANCE.PLAYER.MAX_HP,
-      lastDamageTime: 0,
-      ammo: BALANCE.WEAPON.MAGAZINE_DEFAULT,
-      maxAmmo: BALANCE.WEAPON.MAGAZINE_DEFAULT,
-      fireInterval: BALANCE.WEAPON.FIRE_INTERVAL_DEFAULT,
-      isReloading: false,
-      reloadProgress: 0,
-      continuousFireTime: 0,
-      isJammed: false,
-      kills: 0,
-      shotsFired: 0,
-      shotsHit: 0,
-      damageFlash: 0,
-      screenShake: 0,
-      playerPos: [-0.32, 1.15, 13.0],
-      playerYaw: Math.PI,
-      activeThreats: [],
-      smallThreat: null,
-      xp: 0,
-      level: 1,
-      nextLevelXp: BALANCE.XP.LEVEL_THRESHOLDS[0],
-      offeredUpgrades: [],
-      activeUpgrades: []
+      runId: s.runId + 1
     })),
 
   pauseGame: () => set((s) => (s.status === 'PLAYING' ? { status: 'PAUSED' } : s)),
@@ -96,7 +50,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     let nextHp = s.hp;
     if (now - s.lastDamageTime > BALANCE.PLAYER.REGEN_DELAY && nextHp < s.maxHp && nextHp > 0) {
-      nextHp = Math.min(s.maxHp, nextHp + BALANCE.PLAYER.REGEN_RATE * dt);
+      nextHp = Math.min(s.maxHp, nextHp + s.rules.regenRate * dt);
     }
 
     let isReloading = s.isReloading,
@@ -147,7 +101,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = get();
     if (s.status !== 'PLAYING') return;
     Haptics.damage();
-    const effectiveAmount = incomingDamage(amount, isAcid, s.activeUpgrades);
+    const effectiveAmount = incomingDamage(amount * s.rules.enemyDamageMult, isAcid, s.activeUpgrades);
     const nextHp = Math.max(0, s.hp - effectiveAmount);
     const recordKills = nextHp <= 0 ? commitRecord(s.kills, s.recordKills) : s.recordKills;
     set({

@@ -1,4 +1,5 @@
 import { UpgradeCard, BALANCE } from '../data/balance';
+import type { DifficultyId, GameRules } from '../data/difficulty';
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT' | 'LEVEL_UP';
 export type KillKind = 'drone' | 'small' | 'boss';
@@ -15,6 +16,7 @@ export interface ActiveThreat {
 export type VignetteLevel = 'off' | 'low' | 'high';
 
 export interface GameSettings {
+  difficulty: DifficultyId;
   snapAngle: number;
   reducedFlash: boolean;
   leftHanded: boolean;
@@ -31,6 +33,7 @@ export interface GameSettings {
 export interface GameState {
   status: GameStatus;
   runId: number;
+  rules: GameRules;
   timeRemaining: number;
   phase: WavePhase;
   hp: number;

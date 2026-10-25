@@ -14,6 +14,16 @@ export function spawnInterval(phase: WavePhase): number {
   return BALANCE.XENO_POOL.SPAWN_INTERVALS[phase - 1];
 }
 
+/** Spawn interval after the difficulty multiplier. */
+export function scaledSpawnInterval(phase: WavePhase, rules: { spawnIntervalMult: number }): number {
+  return spawnInterval(phase) * rules.spawnIntervalMult;
+}
+
+/** Hit points after the difficulty multiplier (rounded so health stays a whole number). */
+export function scaledHp(baseHp: number, rules: { enemyHpMult: number }): number {
+  return Math.round(baseHp * rules.enemyHpMult);
+}
+
 export function droneBaseSpeed(phase: WavePhase): number {
   return BALANCE.XENO_POOL.BASE_SPEEDS[phase - 1];
 }

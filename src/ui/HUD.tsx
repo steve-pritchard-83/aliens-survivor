@@ -24,6 +24,8 @@ export function HUD() {
   const timeRemaining = useGameStore((s) => (s.status !== 'PLAYING' ? s.timeRemaining : 0));
   const recordKills = useGameStore((s) => s.recordKills);
   const showStatusBar = useGameStore((s) => s.settings.showHud2D);
+  const difficulty = useGameStore((s) => s.settings.difficulty);
+  const updateSettings = useGameStore((s) => s.updateSettings);
   const kills = useGameStore((s) => s.kills),
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
@@ -176,6 +178,8 @@ export function HUD() {
           status={status}
           vrCapable={isQuest || isVrApp}
           stats={{ timeRemaining, kills, accuracy, best }}
+          difficulty={difficulty}
+          onDifficulty={(id) => updateSettings({ difficulty: id })}
           onLaunch={handleLaunch}
         />
       )}

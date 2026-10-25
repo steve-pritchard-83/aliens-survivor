@@ -7,7 +7,15 @@ import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
 import { CORRIDOR_SPAWN_NODES } from '../core/CorridorNav';
-import { shouldSpawnBoss, spawnInterval, droneBaseSpeed, droneMaxHp, pickSpawnNode } from '../systems/waveDirector';
+import {
+  shouldSpawnBoss,
+  scaledSpawnInterval,
+  scaledHp,
+  droneBaseSpeed,
+  droneMaxHp,
+  pickSpawnNode
+} from '../systems/waveDirector';
+import type { GameRules } from '../data/difficulty';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { POOL_SIZE, PooledXenomorph, sanitizeClips } from './XenoTypes';
 import { buildXenoPool, resetXenoPool, spawnXeno, XENO_BASE_EMISSIVE } from './xeno/xenoPool';
@@ -157,10 +165,10 @@ export function XenomorphPool() {
     if (
       state.status === 'PLAYING' &&
       (spawnCooldownRef.current -= dt) <= 0 &&
-      activeCount < BALANCE.XENO_POOL.MAX_CONCURRENT
+      activeCount < state.rules.maxConcurrentDrones
     ) {
       const free = pool.find((x) => !x.active);
-      if (free) spawnOne(free, phase, px, pz, state.playerYaw);
+      if (free) spawnOne(free, phase, px, pz, state.playerYaw, state.rules);
     }
     if ((hissTimerRef.current -= dt) <= 0 && activeCount > 0) {
       hissTimerRef.current = 2.4 + Math.random() * 2.4;
@@ -193,7 +201,14 @@ export function XenomorphPool() {
     }
   });
 
-  function spawnOne(free: PooledXenomorph, phase: 1 | 2 | 3 | 4, px: number, pz: number, pyaw: number): void {
+  function spawnOne(
+    free: PooledXenomorph,
+    phase: 1 | 2 | 3 | 4,
+    px: number,
+    pz: number,
+    pyaw: number,
+    rules: GameRules
+  ): void {
     const idx = pickSpawnNode(px, pz, pyaw, lastSpawnIndexRef.current, XENO_FALLBACK_NODES);
     lastSpawnIndexRef.current = idx;
     const node = CORRIDOR_SPAWN_NODES[idx];
@@ -204,13 +219,13 @@ export function XenomorphPool() {
       nodeY: node.position[1],
       nodeZ: node.position[2],
       isBoss,
-      hp: isBoss ? BALANCE.PRAETORIAN.HP : droneMaxHp(phase),
+      hp: scaledHp(isBoss ? BALANCE.PRAETORIAN.HP : droneMaxHp(phase), rules),
       scale: isBoss ? BALANCE.PRAETORIAN.SCALE : BALANCE.XENO_POOL.SCALE,
       baseSpeed: droneBaseSpeed(phase)
     });
     AudioManager.play3D('vent_clang', free.x, free.y + 1.0, free.z, 0.85);
     if (isBoss) AudioManager.play3D('xeno_hiss1', free.x, free.y + 1.2, free.z, 1.0, 0.75);
-    spawnCooldownRef.current = spawnInterval(phase);
+    spawnCooldownRef.current = scaledSpawnInterval(phase, rules);
   }
 
   return (
