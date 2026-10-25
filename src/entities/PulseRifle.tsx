@@ -174,8 +174,8 @@ export function PulseRifle() {
         weaponGroupRef.current.position.copy(camera.parent.position).add(_handPos);
         weaponGroupRef.current.quaternion.copy(camera.parent.quaternion).multiply(xrControllerState.rightHand.quaternion);
         weaponGroupRef.current.translateY(-0.02);
-        weaponGroupRef.current.translateZ(-0.06 + recoilOffset.current);
-        weaponGroupRef.current.rotateX(-0.62 + recoilPitch.current);
+        weaponGroupRef.current.translateZ(-0.05 + recoilOffset.current);
+        weaponGroupRef.current.rotateX(-0.79 + recoilPitch.current);
         weaponGroupRef.current.getWorldDirection(_camDir).negate();
         flashLightTarget.position.copy(weaponGroupRef.current.position).addScaledVector(_camDir, 28.0);
       } else {
@@ -197,9 +197,9 @@ export function PulseRifle() {
         }
         weaponGroupRef.current.position.copy(camera.position);
         weaponGroupRef.current.quaternion.copy(camera.quaternion);
-        weaponGroupRef.current.translateX(0.155 + swayX + rX + recoilYaw.current * 0.25);
-        weaponGroupRef.current.translateY(-0.145 + swayY + rY - recoilOffset.current * 0.16);
-        weaponGroupRef.current.translateZ(-0.29 + recoilOffset.current + rZ);
+        weaponGroupRef.current.translateX(0.165 + swayX + rX + recoilYaw.current * 0.25);
+        weaponGroupRef.current.translateY(-0.165 + swayY + rY - recoilOffset.current * 0.16);
+        weaponGroupRef.current.translateZ(-0.33 + recoilOffset.current + rZ);
         weaponGroupRef.current.rotateY(0.065 + recoilYaw.current + rYaw);
         weaponGroupRef.current.rotateX(0.02 + recoilPitch.current + rPitch);
         weaponGroupRef.current.rotateZ(recoilRoll.current + rRoll);
@@ -212,22 +212,22 @@ export function PulseRifle() {
 
   return (
     <group ref={weaponGroupRef}>
-      <group scale={0.0056} position={[-0.043, -0.01, 0.04]} rotation={[0, Math.PI, 0]}>
+      <group scale={0.0086} position={[-0.066, 0.024, 0.022]} rotation={[0, Math.PI, 0]}>
         <primitive object={clonedRifle} />
       </group>
-      <pointLight ref={muzzleLightRef} position={[0, 0.018, -0.38]} color="#ffaa33" intensity={0} distance={18} decay={1.2} />
+      <pointLight ref={muzzleLightRef} position={[0, 0.06, -0.47]} color="#ffaa33" intensity={0} distance={18} decay={1.2} />
       {flashlightOn && (
         <>
-          <spotLight ref={spotLightRef} position={[0, -0.01, -0.28]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={78} distance={38} decay={1.0} color="#eef8ff" />
-          <pointLight position={[0, 0.02, -0.45]} color="#d6ebff" intensity={12} distance={22} decay={1.2} />
+          <spotLight ref={spotLightRef} position={[0, 0.02, -0.40]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={78} distance={38} decay={1.0} color="#eef8ff" />
+          <pointLight position={[0, 0.05, -0.52]} color="#d6ebff" intensity={12} distance={22} decay={1.2} />
         </>
       )}
-      <group ref={muzzleGroupRef} position={[0, 0.018, -0.36]} visible={false}>
-        <mesh><planeGeometry args={[0.32, 0.32]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
-        <mesh position={[0, 0, -0.12]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.36, 0.2]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
-        <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, Math.PI / 2]}><planeGeometry args={[0.36, 0.2]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+      <group ref={muzzleGroupRef} position={[0, 0.06, -0.47]} visible={false}>
+        <mesh><planeGeometry args={[0.38, 0.38]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0, -0.12]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.42, 0.24]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0, -0.12]} rotation={[Math.PI / 2, 0, Math.PI / 2]}><planeGeometry args={[0.42, 0.24]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
       </group>
-      <mesh ref={tracerMeshRef} position={[0, 0.015, -4.6]} rotation={[Math.PI / 2, 0, 0]} visible={false}>
+      <mesh ref={tracerMeshRef} position={[0, 0.06, -4.8]} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <cylinderGeometry args={[0.004, 0.001, 8.5, 12]} />
         <meshBasicMaterial color="#ffdd77" transparent opacity={0.75} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
