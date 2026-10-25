@@ -1,89 +1,18 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
-import { BALANCE, UPGRADE_CATALOG, UpgradeCard } from '../data/balance';
+import { BALANCE, UPGRADE_CATALOG } from '../data/balance';
+import {
+  GameStatus,
+  WavePhase,
+  ActiveThreat,
+  GameSettings,
+  GameState,
+  PHASE_NAMES,
+  computePhase
+} from './GameTypes';
 
-export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT' | 'LEVEL_UP';
-export type WavePhase = 1 | 2 | 3 | 4;
-
-export interface ActiveThreat {
-  id: number;
-  x: number;
-  z: number;
-  state: 'SPAWNING' | 'PURSUING' | 'ATTACKING' | 'DEAD';
-  isBoss?: boolean;
-}
-
-export interface GameSettings {
-  snapAngle: number;
-  reducedFlash: boolean;
-  leftHanded: boolean;
-}
-
-export interface GameState {
-  status: GameStatus;
-  timeRemaining: number;
-  phase: WavePhase;
-  hp: number;
-  maxHp: number;
-  lastDamageTime: number;
-  ammo: number;
-  maxAmmo: number;
-  fireInterval: number;
-  isReloading: boolean;
-  reloadProgress: number;
-  continuousFireTime: number;
-  isJammed: boolean;
-  kills: number;
-  shotsFired: number;
-  shotsHit: number;
-  trackerRaised: boolean;
-  flashlightOn: boolean;
-  damageFlash: number;
-  screenShake: number;
-  playerPos: [number, number, number];
-  playerYaw: number;
-  activeThreats: ActiveThreat[];
-  smallThreat: ActiveThreat | null;
-  xp: number;
-  level: number;
-  nextLevelXp: number;
-  offeredUpgrades: UpgradeCard[];
-  activeUpgrades: string[];
-  settings: GameSettings;
-  recordKills: number;
-
-  startGame: () => void;
-  pauseGame: () => void;
-  resumeGame: () => void;
-  tick: (dt: number, now: number) => void;
-  fireRound: () => boolean;
-  startReload: () => void;
-  takeDamage: (amount: number, now: number, isAcid?: boolean) => void;
-  addScreenShake: (intensity: number) => void;
-  registerKill: (isBoss?: boolean) => void;
-  registerHit: () => void;
-  chooseUpgrade: (upgradeId: string) => void;
-  updateSettings: (partial: Partial<GameSettings>) => void;
-  toggleTracker: () => void;
-  toggleFlashlight: () => void;
-  updatePlayerTransform: (x: number, y: number, z: number, yaw: number) => void;
-  setActiveThreats: (threats: ActiveThreat[]) => void;
-  setSmallThreat: (threat: ActiveThreat | null) => void;
-}
-
-export const PHASE_NAMES: Record<WavePhase, string> = {
-  1: 'PHASE 1: AWAKENING',
-  2: 'PHASE 2: THE SWARM',
-  3: 'PHASE 3: HULL BREACH',
-  4: 'PHASE 4: EXTRACTION'
-};
-
-export function computePhase(timeRemaining: number): WavePhase {
-  if (timeRemaining > BALANCE.PHASES.PHASE_1_END) return 1;
-  if (timeRemaining > BALANCE.PHASES.PHASE_2_END) return 2;
-  if (timeRemaining > BALANCE.PHASES.PHASE_3_END) return 3;
-  return 4;
-}
+export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
+export { PHASE_NAMES, computePhase };
 
 function loadRecordKills(): number {
   try { return parseInt(localStorage.getItem('uscm_record_kills') || '0', 10); } catch { return 0; }

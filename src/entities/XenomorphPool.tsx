@@ -12,10 +12,10 @@ import {
 } from '../core/CorridorNav';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 
-const POOL_SIZE = 6, CLIP_IDLE = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|idle', CLIP_RUN = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|run1';
+const POOL_SIZE = 6;
+const CLIP_IDLE = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|idle', CLIP_RUN = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|run1';
 const CLIP_WALK = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|walk', CLIP_DIE = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|die', CLIP_LEAP = 'alien_xenos_drone_SK_Xenos_Drone_skeleton|attack2';
 const ATK_CLIPS = ['alien_xenos_drone_SK_Xenos_Drone_skeleton|attack1', 'alien_xenos_drone_SK_Xenos_Drone_skeleton|attack2', 'alien_xenos_drone_SK_Xenos_Drone_skeleton|kill1'];
-// 5 dismemberable joints (no tail): 0=Left Arm, 1=Right Arm, 2=Left Leg, 3=Right Leg, 4=Head
 const LIMB_NAMES = ['XenosBiped_l_Arm_ShoulderSHJnt_028', 'XenosBiped_r_Arm_ShoulderSHJnt_046', 'XenosBiped_l_Leg_Knee1SHJnt_077', 'XenosBiped_r_Leg_Knee1SHJnt_087', 'XenosBiped_Neck_TopSHJnt_09'];
 
 interface PooledXenomorph {
@@ -35,12 +35,7 @@ function sanitizeClips(clips: THREE.AnimationClip[]): THREE.AnimationClip[] {
     const c = raw.clone();
     c.tracks = c.tracks.filter((t) => !t.name.includes('TrajectorySHJnt_02.position') && !t.name.endsWith('.scale'));
     if (c.name === CLIP_DIE) c.tracks.forEach((t) => {
-      if (!t.name.includes('ROOTSHJnt_03.position')) return;
-      const v = t.values;
-      for (let i = 0; i < v.length; i += 3) {
-        v[i + 1] = Math.min(6.0, v[i + 1] * 0.15);
-        v[i + 2] = Math.min(155.92, v[i + 2]);
-      }
+      if (t.name.includes('ROOTSHJnt_03.position')) for (let i = 0; i < t.values.length; i += 3) { t.values[i + 1] = Math.min(6.0, t.values[i + 1] * 0.15); t.values[i + 2] = Math.min(155.92, t.values[i + 2]); }
     });
     return c;
   });
