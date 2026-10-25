@@ -21,6 +21,8 @@ export function freshRunState(settings: GameSettings) {
     continuousFireTime: 0,
     isJammed: false,
     kills: 0,
+    killsByKind: { drone: 0, small: 0, boss: 0 },
+    lastRun: null,
     shotsFired: 0,
     shotsHit: 0,
     damageFlash: 0,

@@ -106,3 +106,23 @@ test('the chosen difficulty is applied when the mission starts', async ({ page }
   expect(await page.evaluate(() => window.__game!.getState().rules.enemyDamageMult)).toBe(0.7);
   expect(errors).toEqual([]);
 });
+
+test('a finished run is scored, ranked and remembered on the leaderboard', async ({ page }) => {
+  const errors: string[] = [];
+  await startMission(page, errors);
+  await page.evaluate(() => {
+    window.__game!.getState().registerKill('drone');
+    window.__game!.getState().takeDamage(1000, 0);
+  });
+  await page.waitForFunction(() => window.__game?.getState().status === 'DEFEAT');
+
+  await expect(page.getByText(/SCORE: [\d,]+ \/\/ RANK #1/)).toBeVisible();
+  const board = page.getByRole('table', { name: 'Leaderboard' });
+  await expect(board).toBeVisible();
+  await expect(board.locator('tr[aria-current="true"]')).toHaveCount(1);
+
+  await page.reload();
+  await expect(page.getByRole('table', { name: 'Leaderboard' })).toBeVisible();
+  expect(await page.evaluate(() => window.__game!.getState().leaderboard.marine.length)).toBe(1);
+  expect(errors).toEqual([]);
+});

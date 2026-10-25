@@ -1,6 +1,9 @@
 import { GREEN, RED, INK, solidButton, overlay, formatTimer } from './uiStyles';
 import { ChoiceRow, Choice } from './SettingsControls';
 import { DIFFICULTY, DIFFICULTY_ORDER, DifficultyId } from '../data/difficulty';
+import type { ScoreEntry } from '../systems/scoring';
+import type { RunSummary } from '../core/GameTypes';
+import { Leaderboard } from './Leaderboard';
 
 const DIFFICULTY_CHOICES: readonly Choice<DifficultyId>[] = DIFFICULTY_ORDER.map((id) => ({
   value: id,
@@ -21,6 +24,8 @@ export function MainMenu({
   stats,
   difficulty,
   onDifficulty,
+  lastRun,
+  board,
   onLaunch
 }: {
   status: 'MENU' | 'DEFEAT';
@@ -28,6 +33,9 @@ export function MainMenu({
   stats: MenuStats;
   difficulty: DifficultyId;
   onDifficulty: (id: DifficultyId) => void;
+  /** The run that just ended (defeat screen) and the leaderboard for the difficulty it was played on. */
+  lastRun: RunSummary | null;
+  board: readonly ScoreEntry[];
   onLaunch: (mode: 'STANDARD' | 'VR') => void;
 }) {
   const defeat = status === 'DEFEAT';
@@ -65,6 +73,13 @@ export function MainMenu({
       {!defeat && stats.best > 0 && (
         <p style={{ color: '#ffcc66', letterSpacing: 3, fontSize: 14, marginBottom: 18 }}>BEST: {stats.best} KILLS</p>
       )}
+      {defeat && lastRun && (
+        <p style={{ color: '#ffcc66', letterSpacing: 3, fontSize: 16, marginBottom: 10 }}>
+          SCORE: {lastRun.entry.score.toLocaleString('en-US')}{' '}
+          {lastRun.rank > 0 ? `// RANK #${lastRun.rank}` : '// UNRANKED'}
+        </p>
+      )}
+      <Leaderboard entries={board} highlightRank={defeat && lastRun ? lastRun.rank : -1} limit={defeat ? 5 : 3} />
       <div style={{ width: 'min(440px, 90vw)', marginBottom: 20 }}>
         <ChoiceRow label="Difficulty" value={difficulty} choices={DIFFICULTY_CHOICES} onChange={onDifficulty} />
       </div>

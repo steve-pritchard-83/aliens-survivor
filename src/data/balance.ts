@@ -80,6 +80,14 @@ export const BALANCE = {
   },
   TRACKER: {
     BASE_RANGE: 25.0
+  },
+  /** Leaderboard score weights (see systems/scoring.ts). */
+  SCORE: {
+    DRONE_KILL: 100,
+    SMALL_KILL: 60,
+    BOSS_KILL: 1000,
+    ACCURACY_PER_PERCENT: 10,
+    SURVIVAL_PER_SECOND: 5
   }
 } as const;
 

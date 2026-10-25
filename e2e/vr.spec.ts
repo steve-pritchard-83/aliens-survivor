@@ -135,6 +135,7 @@ test('VR end screen never auto-restarts; a fresh trigger press redeploys', async
   await trigger(page, 0);
   await page.waitForTimeout(11_000); // the old build restarted by itself after 9 s
   expect(await status(page)).toBe('DEFEAT');
+  expect(await page.evaluate(() => window.__game!.getState().lastRun?.rank)).toBe(1);
   const run = await page.evaluate(() => window.__game!.getState().runId);
   await pressTrigger(page, 'PLAYING');
   expect(await page.evaluate(() => window.__game!.getState().runId)).toBe(run + 1);

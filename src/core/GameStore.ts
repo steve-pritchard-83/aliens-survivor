@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { Haptics } from './Haptics';
 import { freshRunState } from './runState';
 import { incomingDamage } from '../systems/combatMath';
-import { loadSettings, saveSettings, loadRecordKills, commitRecord } from './Persistence';
+import { loadSettings, saveSettings, loadRecordKills, loadLeaderboard } from './Persistence';
+import { endRunPatch } from './runSummary';
 import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../data/balance';
 import {
   GameStatus,
@@ -28,6 +29,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   flashlightOn: true,
   settings: initialSettings,
   recordKills: loadRecordKills(),
+  leaderboard: loadLeaderboard(),
 
   // A new run resets every per-run field together (freshRunState) and resolves the difficulty rules once
   startGame: () =>
@@ -76,7 +78,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammo,
       isJammed,
       continuousFireTime,
-      recordKills: nextStatus === 'VICTORY' ? commitRecord(s.kills, s.recordKills) : s.recordKills,
+      ...(nextStatus === 'VICTORY' ? endRunPatch(s, true) : {}),
       damageFlash: Math.max(0, s.damageFlash - dt * 2.5),
       screenShake: Math.max(0, s.screenShake - dt * 4.2)
     });
@@ -103,9 +105,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     Haptics.damage();
     const effectiveAmount = incomingDamage(amount * s.rules.enemyDamageMult, isAcid, s.activeUpgrades);
     const nextHp = Math.max(0, s.hp - effectiveAmount);
-    const recordKills = nextHp <= 0 ? commitRecord(s.kills, s.recordKills) : s.recordKills;
     set({
-      recordKills,
+      ...(nextHp <= 0 ? endRunPatch(s, false) : {}),
       hp: nextHp,
       lastDamageTime: now,
       damageFlash: s.settings.reducedFlash ? 0.25 : 1.0,
@@ -123,6 +124,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       kind === 'boss' ? BALANCE.XP.PRAETORIAN_KILL : kind === 'small' ? BALANCE.XP.SMALL_KILL : BALANCE.XP.DRONE_KILL;
     const nextXp = s.xp + earnedXp;
     const nextKills = s.kills + 1;
+    const killsByKind = { ...s.killsByKind, [kind]: s.killsByKind[kind] + 1 };
     let nextLevel = s.level,
       nextTargetXp = s.nextLevelXp,
       triggerLevelUp = false;
@@ -138,6 +140,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const choices = pool.sort(() => Math.random() - 0.5).slice(0, 3);
       set({
         kills: nextKills,
+        killsByKind,
         xp: nextXp,
         level: nextLevel,
         nextLevelXp: nextTargetXp,
@@ -145,7 +148,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         status: choices.length > 0 ? 'LEVEL_UP' : 'PLAYING'
       });
     } else {
-      set({ kills: nextKills, xp: nextXp });
+      set({ kills: nextKills, killsByKind, xp: nextXp });
     }
   },
 

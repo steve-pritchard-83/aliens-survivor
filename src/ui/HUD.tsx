@@ -26,6 +26,10 @@ export function HUD() {
   const showStatusBar = useGameStore((s) => s.settings.showHud2D);
   const difficulty = useGameStore((s) => s.settings.difficulty);
   const updateSettings = useGameStore((s) => s.updateSettings);
+  const lastRun = useGameStore((s) => s.lastRun);
+  const leaderboard = useGameStore((s) => s.leaderboard);
+  // End screens show the board of the difficulty the run was played on; the start menu shows the selected one
+  const board = leaderboard[lastRun?.entry.difficulty ?? difficulty];
   const kills = useGameStore((s) => s.kills),
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
@@ -171,7 +175,14 @@ export function HUD() {
       <SettingsPanel onResume={handleResume} onRestart={() => handleLaunch('STANDARD')} />
       <LevelUpModal />
       {status === 'VICTORY' && (
-        <VictoryScreen kills={kills} accuracy={accuracy} best={best} onRedeploy={() => handleLaunch('STANDARD')} />
+        <VictoryScreen
+          kills={kills}
+          accuracy={accuracy}
+          best={best}
+          lastRun={lastRun}
+          board={board}
+          onRedeploy={() => handleLaunch('STANDARD')}
+        />
       )}
       {!isVrApp && (status === 'MENU' || status === 'DEFEAT') && (
         <MainMenu
@@ -180,6 +191,8 @@ export function HUD() {
           stats={{ timeRemaining, kills, accuracy, best }}
           difficulty={difficulty}
           onDifficulty={(id) => updateSettings({ difficulty: id })}
+          lastRun={status === 'DEFEAT' ? lastRun : null}
+          board={status === 'DEFEAT' ? board : leaderboard[difficulty]}
           onLaunch={handleLaunch}
         />
       )}

@@ -18,6 +18,8 @@ export class VRStatusPanel {
   private lastSettings: unknown = null;
   private lastOffered: unknown = null;
   private lastKills = -1;
+  private lastRunRef: unknown = null;
+  private lastBoard: unknown = null;
   private readonly data: VRPanelData = {
     status: 'PAUSED',
     kills: 0,
@@ -27,7 +29,9 @@ export class VRStatusPanel {
     pulse: 0,
     offered: [],
     selectedIndex: 0,
-    recordKills: 0
+    recordKills: 0,
+    lastRun: null,
+    bestScore: 0
   };
 
   constructor() {
@@ -46,7 +50,9 @@ export class VRStatusPanel {
       this.lastSelected !== selectedIndex ||
       this.lastSettings !== st.settings ||
       this.lastOffered !== st.offeredUpgrades ||
-      this.lastKills !== st.kills;
+      this.lastKills !== st.kills ||
+      this.lastRunRef !== st.lastRun ||
+      this.lastBoard !== st.leaderboard;
     if (!changed && this.timer < REDRAW_SECONDS) return;
     this.timer = 0;
     this.lastStatus = status;
@@ -54,6 +60,8 @@ export class VRStatusPanel {
     this.lastSettings = st.settings;
     this.lastOffered = st.offeredUpgrades;
     this.lastKills = st.kills;
+    this.lastRunRef = st.lastRun;
+    this.lastBoard = st.leaderboard;
     const d = this.data;
     d.status = status;
     d.kills = st.kills;
@@ -65,6 +73,8 @@ export class VRStatusPanel {
     d.settings = st.settings;
     d.selectedIndex = selectedIndex;
     d.recordKills = st.recordKills;
+    d.lastRun = st.lastRun;
+    d.bestScore = st.leaderboard[st.settings.difficulty][0]?.score ?? 0;
     drawVRStatusPanel(this.canvas, d);
     this.texture.needsUpdate = true;
   }

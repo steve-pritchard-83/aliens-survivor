@@ -1,5 +1,5 @@
 import { UpgradeCard } from '../data/balance';
-import { GameSettings } from '../core/GameTypes';
+import { GameSettings, RunSummary } from '../core/GameTypes';
 import { VR_MENU_ROWS, valueText } from './vrMenuModel';
 import { DIFFICULTY } from '../data/difficulty';
 
@@ -22,6 +22,9 @@ export interface VRPanelData {
   settings?: GameSettings;
   selectedIndex: number;
   recordKills: number;
+  /** The run that just ended and the best score on the current difficulty's board. */
+  lastRun: RunSummary | null;
+  bestScore: number;
 }
 
 /** `◀ MARINE ▶` selector line: stick left/right changes it on the start and end screens. */
@@ -34,7 +37,7 @@ function drawDifficultyLine(ctx: CanvasRenderingContext2D, settings: GameSetting
 
 /** In-headset start screen shown before the mission begins. */
 function drawMenuPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
-  const { settings, pulse, recordKills } = d;
+  const { settings, pulse, recordKills, bestScore } = d;
   ctx.clearRect(0, 0, 1024, 512);
   ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
   ctx.fillRect(20, 20, 984, 472);
@@ -56,7 +59,11 @@ function drawMenuPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
   if (recordKills > 0) {
     ctx.fillStyle = '#ffcc66';
     ctx.font = 'bold 22px Courier New, monospace';
-    ctx.fillText(`BEST: ${recordKills} KILLS`, 512, 262);
+    ctx.fillText(
+      `BEST: ${recordKills} KILLS${bestScore > 0 ? `   |   BEST SCORE: ${bestScore.toLocaleString('en-US')}` : ''}`,
+      512,
+      262
+    );
   }
   if (settings) {
     drawDifficultyLine(ctx, settings, 292, 24);
@@ -222,7 +229,9 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
   ctx.fillText(`SURVIVAL: ${dur}   |   KILLS: ${kills}   |   ACCURACY: ${acc}%`, 512, 290);
   ctx.fillStyle = '#ffcc66';
   ctx.font = 'bold 20px Courier New, monospace';
-  ctx.fillText(`BEST: ${Math.max(recordKills, kills)} KILLS`, 512, 325);
+  const rank = d.lastRun && d.lastRun.rank > 0 ? `RANK #${d.lastRun.rank}` : 'UNRANKED';
+  const scoreText = d.lastRun ? `SCORE: ${d.lastRun.entry.score.toLocaleString('en-US')}   |   ${rank}   |   ` : '';
+  ctx.fillText(`${scoreText}BEST: ${Math.max(recordKills, kills)} KILLS`, 512, 325);
 
   const btnAlpha = 0.75 + Math.sin(pulse * 6.0) * 0.25;
   ctx.fillStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha * 0.25})` : `rgba(0, 255, 136, ${btnAlpha * 0.25})`;

@@ -1,8 +1,10 @@
 import type { GameSettings, VignetteLevel } from './GameTypes';
 import { DEFAULT_DIFFICULTY, DIFFICULTY_ORDER, DifficultyId } from '../data/difficulty';
+import { LEADERBOARD_SIZE, ScoreEntry } from '../systems/scoring';
 
 export const SETTINGS_KEY = 'uscm_settings_v1';
 export const RECORD_KEY = 'uscm_record_kills';
+export const LEADERBOARD_KEY = 'uscm_leaderboard_v1';
 
 export const SNAP_ANGLE_OPTIONS = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0] as const;
 export const VIGNETTE_OPTIONS: readonly VignetteLevel[] = ['off', 'low', 'high'];
@@ -103,4 +105,64 @@ export function commitRecord(kills: number, record: number): number {
     return kills;
   }
   return record;
+}
+
+export type Leaderboard = Record<DifficultyId, ScoreEntry[]>;
+
+export function emptyLeaderboard(): Leaderboard {
+  return { recruit: [], marine: [], ultimate_badass: [] };
+}
+
+function sanitizeEntry(raw: unknown, difficulty: DifficultyId): ScoreEntry | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const o = raw as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
+  const score = num(o.score),
+    kills = num(o.kills),
+    accuracy = num(o.accuracy),
+    survivedSeconds = num(o.survivedSeconds);
+  if (score === null || kills === null || accuracy === null || survivedSeconds === null) return null;
+  return {
+    score,
+    kills,
+    accuracy,
+    survivedSeconds,
+    difficulty,
+    date: typeof o.date === 'string' ? o.date : '',
+    victory: o.victory === true
+  };
+}
+
+/** Pure: coerces stored data into a valid leaderboard (sorted, capped, bad entries dropped). */
+export function sanitizeLeaderboard(raw: unknown): Leaderboard {
+  const out = emptyLeaderboard();
+  if (typeof raw !== 'object' || raw === null) return out;
+  const o = raw as Record<string, unknown>;
+  for (const id of DIFFICULTY_ORDER) {
+    const list = Array.isArray(o[id]) ? (o[id] as unknown[]) : [];
+    out[id] = list
+      .map((e) => sanitizeEntry(e, id))
+      .filter((e): e is ScoreEntry => e !== null)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, LEADERBOARD_SIZE);
+  }
+  return out;
+}
+
+export function loadLeaderboard(): Leaderboard {
+  try {
+    const text = localStorage.getItem(LEADERBOARD_KEY);
+    return sanitizeLeaderboard(text ? JSON.parse(text) : null);
+  } catch (e) {
+    console.warn('[Persistence] leaderboard unreadable, starting empty', e);
+    return emptyLeaderboard();
+  }
+}
+
+export function saveLeaderboard(board: Leaderboard): void {
+  try {
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(board));
+  } catch (e) {
+    console.warn('[Persistence] leaderboard not saved', e);
+  }
 }

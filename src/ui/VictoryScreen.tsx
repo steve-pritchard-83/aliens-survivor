@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { GREEN, solidButton } from './uiStyles';
+import { Leaderboard } from './Leaderboard';
+import type { ScoreEntry } from '../systems/scoring';
+import type { RunSummary } from '../core/GameTypes';
 
 /** Extraction video followed by the victory banner and stats bar. */
 export function VictoryScreen({
   kills,
   accuracy,
   best,
+  lastRun,
+  board,
   onRedeploy
 }: {
   kills: number;
   accuracy: number;
   best: number;
+  lastRun: RunSummary | null;
+  board: readonly ScoreEntry[];
   onRedeploy: () => void;
 }) {
   const [videoEnded, setVideoEnded] = useState(false);
@@ -72,6 +79,15 @@ export function VictoryScreen({
           >
             EXTRACTION SUCCESSFUL // SECTOR 4 SECURED
           </p>
+          {lastRun && (
+            <p
+              style={{ color: '#ffcc66', letterSpacing: 4, fontSize: 'clamp(14px, 3vw, 22px)', margin: '18px 0 10px' }}
+            >
+              SCORE {lastRun.entry.score.toLocaleString('en-US')}{' '}
+              {lastRun.rank > 0 ? `// RANK #${lastRun.rank}` : '// UNRANKED'}
+            </p>
+          )}
+          <Leaderboard entries={board} highlightRank={lastRun ? lastRun.rank : -1} />
         </div>
       )}
       <div

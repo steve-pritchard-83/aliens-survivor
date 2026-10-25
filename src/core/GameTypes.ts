@@ -1,5 +1,7 @@
 import { UpgradeCard, BALANCE } from '../data/balance';
 import type { DifficultyId, GameRules } from '../data/difficulty';
+import type { ScoreEntry } from '../systems/scoring';
+import type { Leaderboard } from './Persistence';
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT' | 'LEVEL_UP';
 export type KillKind = 'drone' | 'small' | 'boss';
@@ -28,6 +30,12 @@ export interface GameSettings {
   invertY: boolean;
   showHud2D: boolean;
   seatedMode: boolean;
+}
+
+export interface RunSummary {
+  entry: ScoreEntry;
+  /** 1-based leaderboard position, or -1 if the run did not place. */
+  rank: number;
 }
 
 export interface GameState {
@@ -64,6 +72,9 @@ export interface GameState {
   activeUpgrades: string[];
   settings: GameSettings;
   recordKills: number;
+  killsByKind: Record<KillKind, number>;
+  lastRun: RunSummary | null;
+  leaderboard: Leaderboard;
 
   startGame: () => void;
   pauseGame: () => void;
