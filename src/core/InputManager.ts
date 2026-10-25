@@ -12,7 +12,7 @@ export interface InputSnapshot {
   pointerLocked: boolean;
 }
 
-class InputManagerController {
+export class InputManagerController {
   public mode: InputMode = 'DESKTOP';
   private keys = new Set<string>();
   private touchMoveX = 0;
