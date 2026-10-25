@@ -1,11 +1,5 @@
 import { useGameStore } from '../core/GameStore';
-
-function formatTimer(sec: number): string {
-  const m = Math.floor(sec / 60),
-    s = Math.floor(sec % 60),
-    ms = Math.floor((sec % 1) * 10);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
-}
+import { formatTimer } from './uiStyles';
 
 export function SettingsPanel({ onResume, onRestart }: { onResume: () => void; onRestart: () => void }) {
   const status = useGameStore((s) => s.status);

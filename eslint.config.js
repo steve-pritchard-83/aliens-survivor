@@ -29,7 +29,7 @@ export default tseslint.config(
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'max-lines': ['warn', { max: 250, skipBlankLines: true, skipComments: true }]
+      'max-lines': ['error', { max: 250, skipBlankLines: true, skipComments: true }]
     }
   },
   {

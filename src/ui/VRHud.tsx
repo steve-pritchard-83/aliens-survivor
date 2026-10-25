@@ -10,6 +10,12 @@ import { xrControllerState } from '../core/XRControllerState';
 
 import { drawVRStatusPanel, VRPanelData, VRPanelStatus } from './VRStatusCanvas';
 import { VRMenuNav } from './VRMenuNav';
+import {
+  pollControllers,
+  createVRControllerInput,
+  createVRControllerLatches,
+  VRControllerInput
+} from './vrControllers';
 
 const _panel: VRPanelData = {
   status: 'PAUSED',
@@ -22,6 +28,10 @@ const _panel: VRPanelData = {
   selectedIndex: 0,
   recordKills: 0
 };
+function resetInput(i: VRControllerInput): void {
+  i.moveX = i.moveZ = i.rightStickX = i.rightStickY = 0;
+  i.firing = i.anyButton = false;
+}
 const _camFwd = new THREE.Vector3(),
   _wristPos = new THREE.Vector3(),
   _camPos = new THREE.Vector3(),
@@ -32,14 +42,13 @@ export function VRHud() {
   const { gl, camera } = useThree();
   const wristGroupRef = useRef<THREE.Group>(null);
   const statusMeshRef = useRef<THREE.Mesh>(null);
-  const snapTurnCoolRef = useRef(false);
   const defeatTimerRef = useRef(0);
   const trackerVersionRef = useRef(-1);
   const navRef = useRef(new VRMenuNav()),
     selectedRef = useRef(0),
     prevStatusRef = useRef(useGameStore.getState().status);
-  const pauseCoolRef = useRef(0),
-    lightCoolRef = useRef(0);
+  const latchesRef = useRef(createVRControllerLatches());
+  const inputRef = useRef(createVRControllerInput());
 
   const wristTexture = useMemo(() => {
     if (!trackerCanvasState.canvas) return null;
@@ -74,8 +83,9 @@ export function VRHud() {
   };
 
   useFrame(({ clock }, dt, frame) => {
-    if (pauseCoolRef.current > 0) pauseCoolRef.current -= dt;
-    if (lightCoolRef.current > 0) lightCoolRef.current -= dt;
+    const latches = latchesRef.current;
+    if (latches.pauseCooldown > 0) latches.pauseCooldown -= dt;
+    if (latches.lightCooldown > 0) latches.lightCooldown -= dt;
     const isPresenting = Boolean(session);
     if (!isPresenting) {
       if (InputManager.mode === 'XR') InputManager.setXRState(false);
@@ -84,108 +94,12 @@ export function VRHud() {
       return;
     }
 
-    let moveX = 0,
-      moveZ = 0,
-      firing = false,
-      anyButtonPressed = false,
-      rightStickX = 0,
-      rightStickY = 0;
-    const xrSession = gl.xr.getSession(),
-      refSpace = gl.xr.getReferenceSpace();
-
-    if (xrSession) {
-      for (const source of xrSession.inputSources) {
-        if (!source.gamepad) continue;
-        const axes = source.gamepad.axes,
-          buttons = source.gamepad.buttons;
-        if (buttons[0]?.pressed || buttons[1]?.pressed || buttons[4]?.pressed || buttons[5]?.pressed)
-          anyButtonPressed = true;
-        let pauseTriggered = false;
-
-        if (source.handedness === 'left') {
-          xrControllerState.leftHand.hapticActuator =
-            (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
-          if (frame && refSpace && (source.gripSpace || source.targetRaySpace)) {
-            const pose = frame.getPose(source.gripSpace || source.targetRaySpace!, refSpace);
-            if (pose) {
-              xrControllerState.leftHand.active = true;
-              xrControllerState.leftHand.position.set(
-                pose.transform.position.x,
-                pose.transform.position.y,
-                pose.transform.position.z
-              );
-              xrControllerState.leftHand.quaternion.set(
-                pose.transform.orientation.x,
-                pose.transform.orientation.y,
-                pose.transform.orientation.z,
-                pose.transform.orientation.w
-              );
-            }
-          }
-          if (axes.length >= 4) {
-            moveX = axes[2] || 0;
-            moveZ = -(axes[3] || 0);
-          } else if (axes.length >= 2) {
-            moveX = axes[0] || 0;
-            moveZ = -(axes[1] || 0);
-          }
-          if (buttons[4]?.pressed && lightCoolRef.current <= 0) {
-            lightCoolRef.current = 0.35;
-            useGameStore.getState().toggleFlashlight();
-          }
-          if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
-        } else if (source.handedness === 'right') {
-          xrControllerState.rightHand.hapticActuator =
-            (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
-          if (frame && refSpace && (source.gripSpace || source.targetRaySpace)) {
-            const pose = frame.getPose(source.gripSpace || source.targetRaySpace!, refSpace);
-            if (pose) {
-              xrControllerState.rightHand.active = true;
-              xrControllerState.rightHand.position.set(
-                pose.transform.position.x,
-                pose.transform.position.y,
-                pose.transform.position.z
-              );
-              xrControllerState.rightHand.quaternion.set(
-                pose.transform.orientation.x,
-                pose.transform.orientation.y,
-                pose.transform.orientation.z,
-                pose.transform.orientation.w
-              );
-            }
-          }
-          firing = Boolean(buttons[0]?.pressed);
-          if (buttons[4]?.pressed) useGameStore.getState().startReload();
-          if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
-          const turnAxis = axes.length >= 4 ? axes[2] : axes.length >= 2 ? axes[0] : 0;
-          rightStickX = turnAxis || 0;
-          rightStickY = (axes.length >= 4 ? axes[3] : axes.length >= 2 ? axes[1] : 0) || 0;
-          const snap = useGameStore.getState().settings.snapAngle;
-          // Turning only applies during play; otherwise the stick drives menus and must not queue turns
-          if (useGameStore.getState().status !== 'PLAYING') {
-            snapTurnCoolRef.current = Math.abs(turnAxis) > 0.25;
-          } else if (snap > 0) {
-            if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
-              snapTurnCoolRef.current = true;
-              InputManager.addSnapTurn(turnAxis > 0 ? -snap : snap);
-            } else if (Math.abs(turnAxis) < 0.25) snapTurnCoolRef.current = false;
-          } else if (Math.abs(turnAxis) > 0.15) {
-            InputManager.addSnapTurn(-turnAxis * dt * 2.2);
-          }
-        }
-        if (pauseTriggered && pauseCoolRef.current <= 0) {
-          pauseCoolRef.current = 0.45;
-          const s = useGameStore.getState();
-          if (s.status === 'PLAYING') {
-            AudioManager.play2D('ui_beep', 0.8);
-            s.pauseGame();
-          } else if (s.status === 'PAUSED') {
-            AudioManager.play2D('ui_beep', 0.8);
-            s.resumeGame();
-          }
-        }
-      }
-    }
+    const input = inputRef.current;
+    const xrSession = gl.xr.getSession();
+    if (xrSession) pollControllers(xrSession, gl.xr.getReferenceSpace(), frame, dt, latches, input);
+    else resetInput(input);
+    const { moveX, moveZ, firing, rightStickX, rightStickY } = input;
+    const anyButtonPressed = input.anyButton;
 
     InputManager.setXRState(true, moveX, moveZ, firing);
 
@@ -207,12 +121,12 @@ export function VRHud() {
         statusMeshRef.current.quaternion.copy(_camQuat);
         renderPanel('PAUSED', clock.getElapsedTime());
       }
-      if (pauseCoolRef.current <= 0 && xrSession) {
+      if (latches.pauseCooldown <= 0 && xrSession) {
         for (const src of xrSession.inputSources) {
           const btns = src.gamepad?.buttons;
           if (!btns) continue;
           if (src.handedness === 'right' && btns[4]?.pressed) {
-            pauseCoolRef.current = 0.35;
+            latches.pauseCooldown = 0.35;
             AudioManager.play2D('ui_beep', 0.7);
             const angles = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0];
             const cur = angles.findIndex((a) => Math.abs(a - st.settings.snapAngle) < 0.05);
@@ -220,21 +134,21 @@ export function VRHud() {
             return;
           }
           if (src.handedness === 'left' && btns[4]?.pressed) {
-            pauseCoolRef.current = 0.35;
+            latches.pauseCooldown = 0.35;
             AudioManager.play2D('ui_beep', 0.7);
             st.updateSettings({ reducedFlash: !st.settings.reducedFlash });
             return;
           }
           if (btns[1]?.pressed) {
-            pauseCoolRef.current = 0.35;
+            latches.pauseCooldown = 0.35;
             AudioManager.play2D('ui_beep', 0.7);
             st.updateSettings({ leftHanded: !st.settings.leftHanded });
             return;
           }
         }
       }
-      if (pauseCoolRef.current <= 0 && firing) {
-        pauseCoolRef.current = 0.45;
+      if (latches.pauseCooldown <= 0 && firing) {
+        latches.pauseCooldown = 0.45;
         AudioManager.play2D('ui_beep', 0.8);
         st.resumeGame();
       }
