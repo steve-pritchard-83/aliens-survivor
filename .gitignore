@@ -40,3 +40,8 @@ Thumbs.db
 quest-build/
 *.idsig
 *.apk
+
+# Test output
+coverage/
+playwright-report/
+test-results/
