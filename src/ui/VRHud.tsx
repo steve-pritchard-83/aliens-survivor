@@ -34,6 +34,7 @@ export function VRHud() {
   const statusMeshRef = useRef<THREE.Mesh>(null);
   const snapTurnCoolRef = useRef(false);
   const defeatTimerRef = useRef(0);
+  const trackerVersionRef = useRef(-1);
   const navRef = useRef(new VRMenuNav()),
     selectedRef = useRef(0),
     prevStatusRef = useRef(useGameStore.getState().status);
@@ -310,7 +311,10 @@ export function VRHud() {
         wristGroupRef.current.rotateX(-0.35);
       }
     }
-    if (wristTexture) wristTexture.needsUpdate = true;
+    if (wristTexture && trackerVersionRef.current !== trackerCanvasState.version) {
+      trackerVersionRef.current = trackerCanvasState.version;
+      wristTexture.needsUpdate = true;
+    }
   });
 
   if (!session) return null;

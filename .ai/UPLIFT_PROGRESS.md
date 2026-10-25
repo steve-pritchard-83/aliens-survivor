@@ -15,8 +15,8 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 
 ## Phase 1 — Code health
 - [x] P1.1 (65a7ccb) Lint + verify pipeline
-- [ ] P1.2 Balance single source of truth
-- [ ] P1.3 Shared pure systems
+- [x] P1.2 (eef0d1d) Balance single source of truth
+- [x] P1.3 (f0f62f5) Shared pure systems
 - [ ] P1.4 Restore 250-line limit
 - [ ] P1.5 BVH environment raycast
 - [ ] P1.6 Audio rework
