@@ -3,11 +3,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
+import { BALANCE } from '../data/balance';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { constrainToCorridor } from '../core/CorridorNav';
 
-const MOVE_SPEED = 4.2; // metres per second
 const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
 const _worldQuat = new THREE.Quaternion();
 const _forward = new THREE.Vector3();
@@ -161,8 +161,8 @@ export function PlayerController() {
 
     const moveMag = Math.hypot(snap.moveX, snap.moveZ);
     const [basePosX, , basePosZ] = state.playerPos;
-    let nextX = basePosX + (_right.x * snap.moveX + _forward.x * snap.moveZ) * MOVE_SPEED * dt;
-    let nextZ = basePosZ + (_right.z * snap.moveX + _forward.z * snap.moveZ) * MOVE_SPEED * dt;
+    let nextX = basePosX + (_right.x * snap.moveX + _forward.x * snap.moveZ) * BALANCE.PLAYER.MOVE_SPEED * dt;
+    let nextZ = basePosZ + (_right.z * snap.moveX + _forward.z * snap.moveZ) * BALANCE.PLAYER.MOVE_SPEED * dt;
 
     const [clampedX, clampedZ] = constrainToCorridor(nextX, nextZ);
     nextX = clampedX;

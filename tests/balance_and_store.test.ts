@@ -69,12 +69,12 @@ describe('GameStore State Machine', () => {
     expect(useGameStore.getState().xp).toBe(0);
 
     // Drone kill gives 25 XP
-    useGameStore.getState().registerKill(false);
+    useGameStore.getState().registerKill('drone');
     expect(useGameStore.getState().xp).toBe(25);
     expect(useGameStore.getState().status).toBe('PLAYING');
 
     // Second drone kill gives +25 XP -> 50 XP (Level 1 threshold is 50)
-    useGameStore.getState().registerKill(false);
+    useGameStore.getState().registerKill('drone');
     expect(useGameStore.getState().xp).toBe(50);
     expect(useGameStore.getState().level).toBe(2);
     expect(useGameStore.getState().status).toBe('LEVEL_UP');

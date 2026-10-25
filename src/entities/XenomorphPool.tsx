@@ -7,6 +7,7 @@ import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStor
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import { shouldSpawnBoss } from '../systems/waveDirector';
+import { BALANCE } from '../data/balance';
 import {
   CORRIDOR_SPAWN_NODES,
   constrainToCorridor,
@@ -40,7 +41,7 @@ export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');
   const containerRef = useRef<THREE.Group>(null),
     fxRef = useRef<ImpactFXHandle>(null);
-  const spawnCooldownRef = useRef(5.0),
+  const spawnCooldownRef = useRef<number>(BALANCE.XENO_POOL.FIRST_SPAWN_DELAY),
     hissTimerRef = useRef(3.5),
     lastSpawnIndexRef = useRef(-1),
     deathCounterRef = useRef(0),
@@ -53,7 +54,7 @@ export function XenomorphPool() {
     () =>
       Array.from({ length: POOL_SIZE }, (_, i) => {
         const cloned = SkeletonUtils.clone(scene) as THREE.Group;
-        cloned.scale.setScalar(0.45);
+        cloned.scale.setScalar(BALANCE.XENO_POOL.SCALE);
         cloned.position.set(0.09, -0.24, 0);
         const materials: THREE.MeshStandardMaterial[] = [];
         cloned.traverse((child) => {
@@ -146,7 +147,11 @@ export function XenomorphPool() {
         const t = pool[id],
           prevHp = t.hp,
           relY = closestPoint.y - t.y;
-        const isKill = (t.hp -= dmg.amount * (t.state === 'SPAWNING' ? 0.75 : 1) * (t.isBoss ? 0.65 : 1)) <= 0;
+        const isKill =
+          (t.hp -=
+            dmg.amount *
+            (t.state === 'SPAWNING' ? BALANCE.WEAPON.SPAWNING_TARGET_DAMAGE_SCALE : 1) *
+            (t.isBoss ? BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT : 1)) <= 0;
         fxRef.current?.triggerImpact(closestPoint, origin, dir, isKill);
         const flashIntensity = useGameStore.getState().settings.reducedFlash ? 0.22 : 0.45;
         t.hitFlashTimer = 0.12;
@@ -196,7 +201,11 @@ export function XenomorphPool() {
           t.state = 'DEAD';
           t.stateTimer = 2.8;
           t.y = 0.0;
-          t.clonedMeshGroup.scale.set(dv === 1 ? -0.45 : 0.45, 0.45, 0.45);
+          t.clonedMeshGroup.scale.set(
+            dv === 1 ? -BALANCE.XENO_POOL.SCALE : BALANCE.XENO_POOL.SCALE,
+            BALANCE.XENO_POOL.SCALE,
+            BALANCE.XENO_POOL.SCALE
+          );
           t.clonedMeshGroup.position.set(dv === 1 ? -0.09 : 0.09, -0.24, 0);
           playClip(t, CLIP_DIE, false, [1.15, 1.25, 1.1, 1.3][dv], 0.0);
           AudioManager.play3D(Math.random() > 0.4 ? 'xeno_death1' : 'xeno_death2', t.x, t.y + 0.8, t.z, 0.95);
@@ -205,7 +214,7 @@ export function XenomorphPool() {
           AudioManager.play3D('acid_burn', t.x, 0.1, t.z, 0.85);
           fxRef.current?.triggerAcidPool(t.x, t.z, 1.15);
           fxRef.current?.startXenoMelt(t.id, 2.8);
-          useGameStore.getState().registerKill(t.isBoss);
+          useGameStore.getState().registerKill(t.isBoss ? 'boss' : 'drone');
         } else AudioManager.play3D('xeno_hit', t.x, t.y + 0.8, t.z, 0.75, 0.95 + Math.random() * 0.15);
       }
     };
@@ -224,7 +233,7 @@ export function XenomorphPool() {
         x.root.visible = false;
         x.y = -50;
       });
-      spawnCooldownRef.current = 5.0;
+      spawnCooldownRef.current = BALANCE.XENO_POOL.FIRST_SPAWN_DELAY;
     }
     if (isSimulationFrozen(state.status)) return;
     if (state.status === 'MENU') {
@@ -244,14 +253,16 @@ export function XenomorphPool() {
       return;
     }
     const phase = state.phase,
-      spawnInterval = phase === 1 ? 3.5 : phase === 2 ? 2.8 : phase === 3 ? 2.2 : 1.6;
-    const baseSpeed = phase === 1 ? 2.85 : phase === 2 ? 3.35 : phase === 3 ? 3.85 : 4.35,
-      maxHp = phase === 1 ? 300 : phase === 2 ? 360 : phase === 3 ? 420 : 480;
+      spawnInterval = BALANCE.XENO_POOL.SPAWN_INTERVALS[phase - 1];
+    const baseSpeed = BALANCE.XENO_POOL.BASE_SPEEDS[phase - 1],
+      maxHp = BALANCE.XENO_POOL.MAX_HPS[phase - 1];
     const activeCount = pool.reduce((acc, x) => acc + (x.active ? 1 : 0), 0),
       [px, , pz] = state.playerPos,
       pyaw = state.playerYaw;
     const freeXeno =
-      state.status === 'PLAYING' && (spawnCooldownRef.current -= dt) <= 0 && activeCount < 2
+      state.status === 'PLAYING' &&
+      (spawnCooldownRef.current -= dt) <= 0 &&
+      activeCount < BALANCE.XENO_POOL.MAX_CONCURRENT
         ? pool.find((x) => !x.active)
         : undefined;
     if (freeXeno) {
@@ -276,8 +287,8 @@ export function XenomorphPool() {
         pool.some((x) => x.active && x.isBoss)
       );
       if (isBoss) bossPhasesRef.current.add(phase);
-      const droneHp = isBoss ? 1100 : maxHp,
-        droneScale = isBoss ? 0.62 : 0.45;
+      const droneHp = isBoss ? BALANCE.PRAETORIAN.HP : maxHp,
+        droneScale = isBoss ? BALANCE.PRAETORIAN.SCALE : BALANCE.XENO_POOL.SCALE;
       freeXeno.isBoss = isBoss;
       Object.assign(freeXeno, {
         active: true,
@@ -289,7 +300,8 @@ export function XenomorphPool() {
         x: node.position[0],
         y: node.position[1],
         z: node.position[2],
-        speed: (isBoss ? 3.1 : baseSpeed) * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18),
+        speed:
+          (isBoss ? BALANCE.PRAETORIAN.SPEED : baseSpeed) * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18),
         laneOffset: (Math.random() - 0.5) * 0.24,
         preferCW: Math.random() < 0.5,
         targetCorner: -1,
@@ -365,8 +377,8 @@ export function XenomorphPool() {
           !x.severedLimbs[2] &&
           !x.severedLimbs[3] &&
           x.leapCooldown <= 0 &&
-          distToPlayer >= 3.2 &&
-          distToPlayer <= 8.5
+          distToPlayer >= BALANCE.XENO_POOL.LEAP_MIN_DIST &&
+          distToPlayer <= BALANCE.XENO_POOL.LEAP_MAX_DIST
         ) {
           x.state = 'LEAPING';
           x.stateTimer = 0.78;
@@ -444,7 +456,7 @@ export function XenomorphPool() {
           x.state = 'ATTACKING';
           x.attackCooldown = 0.75;
           AudioManager.play2D('marine_pain', 0.75);
-          state.takeDamage(38, now);
+          state.takeDamage(BALANCE.XENO_POOL.LEAP_DAMAGE, now);
           if (useGameStore.getState().status === 'DEFEAT') AudioManager.play2D('marine_death', 0.9);
           playClip(x, ATK_CLIPS[0], true, 1.1);
         } else if (x.stateTimer <= 0) {
@@ -459,11 +471,11 @@ export function XenomorphPool() {
           x.state = 'PURSUING';
           playClip(x, x.severedLimbs[2] || x.severedLimbs[3] ? CLIP_WALK : CLIP_RUN, true, 1.0);
         } else if ((x.attackCooldown -= dt) <= 0) {
-          x.attackCooldown = 1.15;
+          x.attackCooldown = BALANCE.XENO_POOL.SLASH_INTERVAL;
           playClip(x, ATK_CLIPS[Math.floor(Math.random() * ATK_CLIPS.length)], true, 1.05);
           AudioManager.play3D('xeno_attack', x.x, x.y + 0.9, x.z, 0.9);
           AudioManager.play2D('marine_pain', 0.65);
-          state.takeDamage(34, now);
+          state.takeDamage(BALANCE.XENO_POOL.SLASH_DAMAGE, now);
           if (useGameStore.getState().status === 'DEFEAT') AudioManager.play2D('marine_death', 0.9);
         }
       } else if (x.state === 'DEAD') {

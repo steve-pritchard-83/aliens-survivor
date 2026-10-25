@@ -1,6 +1,7 @@
 import { UpgradeCard, BALANCE } from '../data/balance';
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT' | 'LEVEL_UP';
+export type KillKind = 'drone' | 'small' | 'boss';
 export type WavePhase = 1 | 2 | 3 | 4;
 
 export interface ActiveThreat {
@@ -59,7 +60,7 @@ export interface GameState {
   startReload: () => void;
   takeDamage: (amount: number, now: number, isAcid?: boolean) => void;
   addScreenShake: (intensity: number) => void;
-  registerKill: (isBoss?: boolean) => void;
+  registerKill: (kind?: KillKind) => void;
   registerHit: () => void;
   chooseUpgrade: (upgradeId: string) => void;
   updateSettings: (partial: Partial<GameSettings>) => void;

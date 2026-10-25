@@ -14,7 +14,7 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P0.8 Phase close — gate green: 38 tests, build ok
 
 ## Phase 1 — Code health
-- [ ] P1.1 Lint + verify pipeline
+- [x] P1.1 (65a7ccb) Lint + verify pipeline
 - [ ] P1.2 Balance single source of truth
 - [ ] P1.3 Shared pure systems
 - [ ] P1.4 Restore 250-line limit

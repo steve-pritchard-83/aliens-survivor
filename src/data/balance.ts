@@ -14,7 +14,20 @@ export const BALANCE = {
     RELOAD_TIME: 2.5,
     JAM_THRESHOLD_SECONDS: 5.0,
     BASE_DAMAGE: 24,
-    AP_DAMAGE: 34
+    AP_MULTIPLIER: 1.4,
+    /** Damage scale against aliens still emerging from vents (18 / 24). */
+    SPAWNING_TARGET_DAMAGE_SCALE: 0.75,
+    SPREAD_PER_SEC: 0.007,
+    SPREAD_MAX: 0.03,
+    MAX_RANGE: 32
+  },
+  BISHOP: {
+    DAMAGE: 24,
+    FIRE_INTERVAL_MIN: 0.24,
+    FIRE_INTERVAL_JITTER: 0.12,
+    ENGAGE_RANGE: 22,
+    FOLLOW_SPEED: 4.15,
+    CATCHUP_SPEED: 5.2
   },
   PHASES: {
     PHASE_1_END: 225,
@@ -23,22 +36,49 @@ export const BALANCE = {
   },
   XENO_POOL: {
     MAX_DRONES: 6,
+    MAX_CONCURRENT: 2,
+    FIRST_SPAWN_DELAY: 5.0,
     SPAWN_INTERVALS: [3.5, 2.8, 2.2, 1.6],
     BASE_SPEEDS: [2.85, 3.35, 3.85, 4.35],
-    MAX_HPS: [300, 360, 420, 480]
+    MAX_HPS: [300, 360, 420, 480],
+    SCALE: 0.45,
+    LEAP_DAMAGE: 38,
+    SLASH_DAMAGE: 34,
+    SLASH_INTERVAL: 1.15,
+    LEAP_MIN_DIST: 3.2,
+    LEAP_MAX_DIST: 8.5
   },
   PRAETORIAN: {
     HP: 1100,
-    SPEED: 3.2,
-    SCALE: 0.65,
-    DAMAGE_RESISTANCE: 0.35
+    SPEED: 3.1,
+    SCALE: 0.62,
+    /** Multiplier on damage taken (0.65 = 35% damage resistance). */
+    DAMAGE_TAKEN_MULT: 0.65
+  },
+  SMALL_ALIEN: {
+    FACEHUGGER_HP: 72,
+    CHESTBURSTER_HP: 96,
+    DAMAGE_PER_HIT: 30,
+    LEAP_DAMAGE: 26,
+    BITE_DAMAGE: 22,
+    FIRST_SPAWN_DELAY: 7.0
   },
   XP: {
     DRONE_KILL: 25,
     SMALL_KILL: 15,
     PRAETORIAN_KILL: 150,
     LEVEL_THRESHOLDS: [50, 120, 220, 360, 550, 800, 1150]
+  },
+  TRACKER: {
+    BASE_RANGE: 25.0
   }
+} as const;
+
+/** Numeric effects of each upgrade card; GameStore and MotionTracker read these instead of literals. */
+export const UPGRADE_EFFECTS = {
+  armor_boost: { maxHpBonus: 50 },
+  acid_proofing: { acidDamageMult: 0.5 },
+  tracker_gain: { trackerRange: 42.0 }
 } as const;
 
 export interface UpgradeCard {

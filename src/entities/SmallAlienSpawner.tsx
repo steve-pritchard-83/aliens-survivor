@@ -6,6 +6,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
+import { BALANCE } from '../data/balance';
 import {
   CORRIDOR_SPAWN_NODES,
   constrainToCorridor,
@@ -50,7 +51,7 @@ export function SmallAlienSpawner() {
     attackCooldown: 0,
     hitFlashTimer: 0,
     vocalTimer: 1.5,
-    spawnCooldown: 7.0,
+    spawnCooldown: BALANCE.SMALL_ALIEN.FIRST_SPAWN_DELAY as number,
     animTime: 0
   });
 
@@ -129,7 +130,7 @@ export function SmallAlienSpawner() {
       // Small aliens take a flat hit regardless of weapon damage (kept from original balance).
       applyHit: (_id, pt, origin, dir) => {
         const e = entityRef.current;
-        const isKill = (e.hp -= 30) <= 0;
+        const isKill = (e.hp -= BALANCE.SMALL_ALIEN.DAMAGE_PER_HIT) <= 0;
         fxRef.current?.triggerImpact(pt, origin, dir, isKill);
         e.hitFlashTimer = 0.12;
         (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => {
@@ -146,7 +147,7 @@ export function SmallAlienSpawner() {
           AudioManager.play3D('xeno_gib1', e.x, 0.2, e.z, 0.88, 1.2);
           AudioManager.play3D('acid_burn', e.x, 0.1, e.z, 0.82, 1.1);
           fxRef.current?.triggerAcidPool(e.x, e.z, 0.68);
-          useGameStore.getState().registerKill();
+          useGameStore.getState().registerKill('small');
         }
       }
     };
@@ -164,7 +165,7 @@ export function SmallAlienSpawner() {
       lastRunIdRef.current = state.runId;
       e.active = false;
       e.state = 'DEAD';
-      e.spawnCooldown = 7.0;
+      e.spawnCooldown = BALANCE.SMALL_ALIEN.FIRST_SPAWN_DELAY;
       fhGroup.visible = false;
       cbGroup.visible = false;
       state.setSmallThreat(null);
@@ -200,8 +201,8 @@ export function SmallAlienSpawner() {
         kind: isFH ? 'FACEHUGGER' : 'CHESTBURSTER',
         state: 'SPAWNING',
         stateTimer: 0.45,
-        hp: isFH ? 72 : 96,
-        maxHp: isFH ? 72 : 96,
+        hp: isFH ? BALANCE.SMALL_ALIEN.FACEHUGGER_HP : BALANCE.SMALL_ALIEN.CHESTBURSTER_HP,
+        maxHp: isFH ? BALANCE.SMALL_ALIEN.FACEHUGGER_HP : BALANCE.SMALL_ALIEN.CHESTBURSTER_HP,
         x: node.position[0],
         y: Math.min(0.6, node.position[1]),
         z: node.position[2],
@@ -334,7 +335,7 @@ export function SmallAlienSpawner() {
         e.state = 'ATTACKING';
         e.attackCooldown = 0.65;
         AudioManager.play2D('marine_pain', 0.75);
-        state.takeDamage(26, now);
+        state.takeDamage(BALANCE.SMALL_ALIEN.LEAP_DAMAGE, now);
         if (useGameStore.getState().status === 'DEFEAT') AudioManager.play2D('marine_death', 0.9);
       } else if (e.stateTimer <= 0) {
         e.y = 0.0;
@@ -347,7 +348,7 @@ export function SmallAlienSpawner() {
       else if ((e.attackCooldown -= dt) <= 0) {
         e.attackCooldown = 0.95;
         AudioManager.play2D('marine_pain', 0.65);
-        state.takeDamage(22, now);
+        state.takeDamage(BALANCE.SMALL_ALIEN.BITE_DAMAGE, now);
         if (useGameStore.getState().status === 'DEFEAT') AudioManager.play2D('marine_death', 0.9);
       }
     } else if (e.state === 'DEAD') {

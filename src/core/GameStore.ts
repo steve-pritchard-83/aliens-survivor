@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
 import { loadSettings, saveSettings, loadRecordKills, commitRecord } from './Persistence';
-import { BALANCE, UPGRADE_CATALOG } from '../data/balance';
+import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../data/balance';
 import {
   GameStatus,
   WavePhase,
@@ -146,7 +146,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = get();
     if (s.status !== 'PLAYING') return;
     Haptics.damage();
-    const effectiveAmount = isAcid && s.activeUpgrades.includes('acid_proofing') ? amount * 0.5 : amount;
+    const effectiveAmount =
+      isAcid && s.activeUpgrades.includes('acid_proofing')
+        ? amount * UPGRADE_EFFECTS.acid_proofing.acidDamageMult
+        : amount;
     const nextHp = Math.max(0, s.hp - effectiveAmount);
     const recordKills = nextHp <= 0 ? commitRecord(s.kills, s.recordKills) : s.recordKills;
     set({
@@ -161,10 +164,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addScreenShake: (intensity) => set((s) => ({ screenShake: Math.min(1.0, Math.max(s.screenShake, intensity)) })),
 
-  registerKill: (isBoss = false) => {
+  registerKill: (kind = 'drone') => {
     Haptics.kill();
     const s = get();
-    const earnedXp = isBoss ? BALANCE.XP.PRAETORIAN_KILL : BALANCE.XP.DRONE_KILL;
+    const earnedXp =
+      kind === 'boss' ? BALANCE.XP.PRAETORIAN_KILL : kind === 'small' ? BALANCE.XP.SMALL_KILL : BALANCE.XP.DRONE_KILL;
     const nextXp = s.xp + earnedXp;
     const nextKills = s.kills + 1;
     let nextLevel = s.level,
@@ -207,7 +211,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammo = maxAmmo;
     }
     if (id === 'armor_boost') {
-      maxHp += 50;
+      maxHp += UPGRADE_EFFECTS.armor_boost.maxHpBonus;
       hp = maxHp;
     }
     if (id === 'fire_rate') {

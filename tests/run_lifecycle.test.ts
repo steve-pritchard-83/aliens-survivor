@@ -16,8 +16,8 @@ describe('Run lifecycle', () => {
     const id = useGameStore.getState().runId;
     useGameStore.getState().pauseGame();
     useGameStore.getState().resumeGame();
-    useGameStore.getState().registerKill(false);
-    useGameStore.getState().registerKill(false);
+    useGameStore.getState().registerKill('drone');
+    useGameStore.getState().registerKill('drone');
     expect(useGameStore.getState().status).toBe('LEVEL_UP');
     useGameStore.getState().chooseUpgrade(useGameStore.getState().offeredUpgrades[0].id);
     expect(useGameStore.getState().runId).toBe(id);

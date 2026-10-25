@@ -11,7 +11,6 @@ import { Haptics } from '../core/Haptics';
 import { xrControllerState } from '../core/XRControllerState';
 import { getMuzzleStarTexture } from '../core/MuzzleTexture';
 
-const AP_DAMAGE_MULTIPLIER = 1.4;
 const _dmg: DamageSpec = { amount: 0, source: 'player' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3(),
@@ -150,7 +149,7 @@ export function PulseRifle() {
     fireCooldown.current = Math.max(0, fireCooldown.current - dt);
     if (isFiring && !state.isReloading && !state.isJammed) {
       continuousFireRef.current += dt;
-      if (continuousFireRef.current > 5.0) {
+      if (continuousFireRef.current > BALANCE.WEAPON.JAM_THRESHOLD_SECONDS) {
         if (wasFiringRef.current) {
           AudioManager.stopPulseLoop(false);
           wasFiringRef.current = false;
@@ -184,12 +183,12 @@ export function PulseRifle() {
             camera.getWorldPosition(_rayOrigin);
             camera.getWorldDirection(_rayDir);
           }
-          const spread = Math.min(0.03, continuousFireRef.current * 0.007);
+          const spread = Math.min(BALANCE.WEAPON.SPREAD_MAX, continuousFireRef.current * BALANCE.WEAPON.SPREAD_PER_SEC);
           _rayDir.x += (Math.random() - 0.5) * spread;
           _rayDir.y += (Math.random() - 0.5) * spread;
           _rayDir.normalize();
           const hasAp = state.activeUpgrades.includes('ap_ammo');
-          _dmg.amount = BALANCE.WEAPON.BASE_DAMAGE * (hasAp ? AP_DAMAGE_MULTIPLIER : 1);
+          _dmg.amount = BALANCE.WEAPON.BASE_DAMAGE * (hasAp ? BALANCE.WEAPON.AP_MULTIPLIER : 1);
           const outcome = CombatSystem.resolveShot(_rayOrigin, _rayDir, _dmg);
           if (outcome.kind === 'target') state.registerHit();
           else if (outcome.kind === 'wall') {

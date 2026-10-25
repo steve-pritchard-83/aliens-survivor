@@ -3,11 +3,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
+import { BALANCE, UPGRADE_EFFECTS } from '../data/balance';
 import { AudioManager } from '../core/AudioManager';
 import { Haptics } from '../core/Haptics';
 import { trackerCanvasState } from '../core/TrackerState';
 
-const MAX_RANGE = 25.0; // 25 metres tactical corridor radar range
+const MAX_RANGE: number = BALANCE.TRACKER.BASE_RANGE;
 
 export function MotionTracker() {
   const { scene } = useGLTF('/models/motion_tracker.glb');
@@ -79,7 +80,9 @@ export function MotionTracker() {
       fz = -Math.cos(yaw),
       rx = Math.cos(yaw),
       rz = -Math.sin(yaw);
-    const maxRange = state.activeUpgrades.includes('tracker_gain') ? 42.0 : MAX_RANGE;
+    const maxRange = state.activeUpgrades.includes('tracker_gain')
+      ? UPGRADE_EFFECTS.tracker_gain.trackerRange
+      : MAX_RANGE;
     const worldToRadar = (wx: number, wz: number): [number, number] => {
       const dx = wx - px,
         dz = wz - pz;

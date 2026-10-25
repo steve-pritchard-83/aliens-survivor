@@ -5,10 +5,11 @@ import * as THREE from 'three';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, DamageSpec } from '../core/CombatEvents';
+import { BALANCE } from '../data/balance';
 import { constrainToCorridor, getHallId, CORNERS, HALL_CORNERS, ADJ_CORNERS } from '../core/CorridorNav';
 import { buildBishopRig, poseBishop } from './BishopRig';
 
-const _dmg: DamageSpec = { amount: 24, source: 'bishop' };
+const _dmg: DamageSpec = { amount: BALANCE.BISHOP.DAMAGE, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
 
@@ -130,7 +131,7 @@ export function BishopCompanion() {
     // Avoid walking through the player: only advance if not encroaching on player's personal radius (1.8m)
     const movingCloserToPlayer = dx * (px - st.x) + dz * (pz - st.z) > 0;
     if (distToGoal > 0.45 && store.status === 'PLAYING' && (!movingCloserToPlayer || distToPlayer > 1.85)) {
-      const moveSpeed = distToPlayer > 5.0 ? 5.2 : 4.15;
+      const moveSpeed = distToPlayer > 5.0 ? BALANCE.BISHOP.CATCHUP_SPEED : BALANCE.BISHOP.FOLLOW_SPEED;
       [st.x, st.z] = constrainToCorridor(
         st.x + (dx / distToGoal) * moveSpeed * dt,
         st.z + (dz / distToGoal) * moveSpeed * dt,
@@ -165,7 +166,7 @@ export function BishopCompanion() {
     for (const t of allThreats) {
       if (t.state === 'DEAD') continue;
       const d = Math.hypot(t.x - st.x, t.z - st.z);
-      if (d > 22.0) continue;
+      if (d > BALANCE.BISHOP.ENGAGE_RANGE) continue;
       const tHall = getHallId(t.x, t.z);
       const hasLOS =
         tHall === curHall ||
@@ -194,7 +195,7 @@ export function BishopCompanion() {
     st.muzzleTimer = Math.max(0, st.muzzleTimer - dt);
 
     if (store.status === 'PLAYING' && bestTarget && st.fireCooldown <= 0 && Math.abs(yawDiff) < 0.45) {
-      st.fireCooldown = 0.24 + Math.random() * 0.12;
+      st.fireCooldown = BALANCE.BISHOP.FIRE_INTERVAL_MIN + Math.random() * BALANCE.BISHOP.FIRE_INTERVAL_JITTER;
       st.muzzleTimer = 0.055;
       const targetHeight = bestTarget.id === 99 ? 0.25 : 0.72;
       if (muzzleMarkerRef.current) muzzleMarkerRef.current.getWorldPosition(_rayOrigin);
