@@ -1,6 +1,23 @@
 import * as THREE from 'three';
 
 // Trim interior join walls & end-caps so all 4 L-corridor sections form a seamless Double-Size Figure-8 Sector
+
+/**
+ * World-space patches (xMin, xMax, zMin, zMax) at the two outer corners (south-east and north-west) whose walls
+ * must survive the trimming: the rules below meant to open the inner joins also removed these outer walls, leaving
+ * a hole that showed the void. Centroids inside a patch are always kept.
+ */
+const KEEP_PATCHES: readonly [number, number, number, number][] = [
+  [-1.3, 0.6, 7.3, 8.2], // south-east: the south end of the east spine
+  [-0.2, 0.6, 7.3, 9.3], // south-east: the east end of the south hall
+  [-14.5, -12.5, 36.2, 36.9], // north-west: the north end of the west spine
+  [-14.5, -13.9, 34.9, 36.9] // north-west: the west end of the north hall
+];
+
+function inKeepPatch(x: number, z: number): boolean {
+  for (const p of KEEP_PATCHES) if (x >= p[0] && x <= p[1] && z >= p[2] && z <= p[3]) return true;
+  return false;
+}
 export function trimSectorWalls(
   root: THREE.Object3D,
   isRotatedCopy: boolean,
@@ -66,7 +83,8 @@ export function trimSectorWalls(
         cz > 6.3 + zShift &&
         cz < 7.7 + zShift;
 
-      if (!isEndCap && !isTurnBlocker && !inNorthJunction && !inSouthJunction) newIndices.push(a, b, c);
+      if (inKeepPatch(cx, cz) || (!isEndCap && !isTurnBlocker && !inNorthJunction && !inSouthJunction))
+        newIndices.push(a, b, c);
     }
     mesh.geometry.setIndex(newIndices);
   });

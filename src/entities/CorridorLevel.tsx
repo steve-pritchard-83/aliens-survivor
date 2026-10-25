@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { trimSectorWalls } from './level/trimSectorWalls';
+import { buildEndCaps } from './level/endCaps';
 import { registerEnvironmentRaycast } from './level/envRaycast';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { MistFX } from './MistFX';
@@ -55,11 +56,22 @@ export function CorridorLevel() {
       });
     });
 
+    // The two outer corners the model never closed get mirrored end walls (before the raycast meshes are collected)
+    const group = sectorMeshGroupRef.current;
+    const caps = group ? buildEndCaps(group) : [];
+    caps.forEach((cap) => group?.add(cap));
     const meshes: THREE.Mesh[] = [];
-    sectorMeshGroupRef.current?.traverse((c) => {
+    group?.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) meshes.push(c as THREE.Mesh);
     });
-    return registerEnvironmentRaycast(meshes);
+    const unregister = registerEnvironmentRaycast(meshes);
+    return () => {
+      unregister();
+      caps.forEach((cap) => {
+        group?.remove(cap);
+        cap.geometry.dispose();
+      });
+    };
   }, [c1, c2, c3, c4]);
 
   useFrame(({ clock }) => {
