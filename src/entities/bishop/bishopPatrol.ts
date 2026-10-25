@@ -1,16 +1,19 @@
 // Bishop's idle behaviour: when nothing hostile is in sight he walks a loose patrol around the player, pausing to
-// scan, and steers around the player instead of through them. Pure logic, no React or three.js.
+// scan. Waypoints are always in his own hall on a straight, clear path that does not pass the player, so he never
+// has to squeeze past them in a narrow corridor (and never hugs a wall trying to). Pure logic, no React or three.js.
 import { BALANCE } from '../../data/balance';
-import { constrainToCorridorInto, type XZ } from '../../core/CorridorNav';
+import { getHallId } from '../../core/CorridorNav';
+import { getActiveLevel } from '../../levels';
 
 export interface PatrolState {
   x: number;
   z: number;
   active: boolean;
   arrived: boolean;
-  /** Seconds left standing at the current waypoint, and how long the current waypoint has been pursued. */
+  /** Seconds left standing at the current waypoint, how long it has been pursued, and how long progress has stalled. */
   pause: number;
   age: number;
+  stuck: number;
   /** Scan sweep while paused: the heading Bishop arrived with, the sweep phase and the resulting look direction. */
   heading: number;
   scan: number;
@@ -21,32 +24,40 @@ export type PatrolMode = 'MOVE' | 'PAUSE' | 'FOLLOW';
 
 const ARRIVE_DIST = 0.6;
 const GIVE_UP_SECONDS = 9;
-const _p: XZ = { x: 0, z: 0 };
+const STUCK_SECONDS = 0.7;
 
 export function createPatrol(): PatrolState {
-  return { x: 0, z: 0, active: false, arrived: false, pause: 0, age: 0, heading: 0, scan: 0, look: 0 };
+  return { x: 0, z: 0, active: false, arrived: false, pause: 0, age: 0, stuck: 0, heading: 0, scan: 0, look: 0 };
 }
 
-/** Picks a corridor point 3 to 11 m from the player that is not too close to the player or to Bishop. */
+/** Distance from point (px, pz) to the segment (ax, az) to (bx, bz). */
+export function segmentDistance(ax: number, az: number, bx: number, bz: number, px: number, pz: number): number {
+  const sx = bx - ax,
+    sz = bz - az,
+    len2 = sx * sx + sz * sz;
+  const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * sx + (pz - az) * sz) / len2)) : 0;
+  return Math.hypot(px - (ax + sx * t), pz - (az + sz * t));
+}
+
+/** Picks a point in Bishop's own hall, near the player but not too near, with a clear straight path to it. */
 function pickPoint(p: PatrolState, bx: number, bz: number, px: number, pz: number): void {
-  const { PATROL_PLAYER_GAP } = BALANCE.BISHOP;
+  const { PATROL_PLAYER_GAP, PATROL_LEASH, PATROL_PATH_CLEARANCE } = BALANCE.BISHOP;
+  const rect = getActiveLevel().halls[getHallId(bx, bz)].rect;
   for (let tries = 0; tries < 16; tries++) {
-    const a = Math.random() * Math.PI * 2,
-      d = 3 + Math.random() * 8;
-    const rawX = px + Math.cos(a) * d,
-      rawZ = pz + Math.sin(a) * d;
-    constrainToCorridorInto(rawX, rawZ, 0.3, _p);
-    // Reject points that had to be dragged into the corridor (they would pile up against walls)
-    if (Math.hypot(_p.x - rawX, _p.z - rawZ) > 0.8) continue;
-    if (Math.hypot(_p.x - px, _p.z - pz) < PATROL_PLAYER_GAP || Math.hypot(_p.x - bx, _p.z - bz) < 2) continue;
-    p.x = _p.x;
-    p.z = _p.z;
+    const x = rect[0] + 0.4 + Math.random() * (rect[1] - rect[0] - 0.8),
+      z = rect[2] + 0.4 + Math.random() * (rect[3] - rect[2] - 0.8);
+    const toPlayer = Math.hypot(x - px, z - pz);
+    if (Math.hypot(x - bx, z - bz) < 2.5 || toPlayer < PATROL_PLAYER_GAP || toPlayer > PATROL_LEASH - 1) continue;
+    if (segmentDistance(bx, bz, x, z, px, pz) < PATROL_PATH_CLEARANCE) continue;
+    p.x = x;
+    p.z = z;
     p.active = true;
     p.arrived = false;
     p.age = 0;
+    p.stuck = 0;
     return;
   }
-  // Nowhere sensible: stand still for a moment
+  // Nowhere sensible (for example the player is standing in his way): wait where he is
   p.x = bx;
   p.z = bz;
   p.active = true;
@@ -65,12 +76,15 @@ export function stepPatrol(
   pz: number,
   dt: number
 ): PatrolMode {
-  if (Math.hypot(bx - px, bz - pz) > BALANCE.BISHOP.PATROL_LEASH) {
+  const { PATROL_PLAYER_GAP, PATROL_LEASH, PATROL_PATH_CLEARANCE } = BALANCE.BISHOP;
+  if (Math.hypot(bx - px, bz - pz) > PATROL_LEASH) {
     p.active = false;
     return 'FOLLOW';
   }
   p.age += dt;
-  if (!p.active || p.age > GIVE_UP_SECONDS || Math.hypot(p.x - px, p.z - pz) < BALANCE.BISHOP.PATROL_PLAYER_GAP) {
+  const walking = Math.hypot(p.x - bx, p.z - bz) >= ARRIVE_DIST;
+  const blocked = walking && segmentDistance(bx, bz, p.x, p.z, px, pz) < PATROL_PATH_CLEARANCE * 0.75;
+  if (!p.active || p.age > GIVE_UP_SECONDS || blocked || Math.hypot(p.x - px, p.z - pz) < PATROL_PLAYER_GAP) {
     pickPoint(p, bx, bz, px, pz);
   }
   if (Math.hypot(p.x - bx, p.z - bz) >= ARRIVE_DIST) {
@@ -91,20 +105,12 @@ export function stepPatrol(
   return 'MOVE';
 }
 
-/**
- * Bends a desired walking direction (unit vector) around the player: inside the avoid radius the direction gains a
- * push away from the player, so Bishop slides past instead of walking through. Writes a unit vector into out.
- */
-export function steerAround(dirX: number, dirZ: number, bx: number, bz: number, px: number, pz: number, out: XZ): void {
-  const away = Math.hypot(bx - px, bz - pz),
-    radius = BALANCE.BISHOP.PLAYER_AVOID_RADIUS;
-  out.x = dirX;
-  out.z = dirZ;
-  if (away >= radius || away < 0.001) return;
-  const push = ((radius - away) / radius) * 2.2;
-  out.x += ((bx - px) / away) * push;
-  out.z += ((bz - pz) / away) * push;
-  const len = Math.hypot(out.x, out.z) || 1;
-  out.x /= len;
-  out.z /= len;
+/** Call after a patrol step with how far he actually moved: if he keeps failing to advance, choose a new waypoint. */
+export function reportPatrolProgress(p: PatrolState, moved: number, expected: number, dt: number): void {
+  if (expected <= 0 || moved >= expected * 0.3) {
+    p.stuck = 0;
+    return;
+  }
+  p.stuck += dt;
+  if (p.stuck > STUCK_SECONDS) p.active = false;
 }

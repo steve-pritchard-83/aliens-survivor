@@ -34,8 +34,8 @@ export const BALANCE = {
     PATROL_SPEED: 1.7,
     PATROL_LEASH: 12,
     PATROL_PLAYER_GAP: 2.8,
-    /** Inside this distance a walking Bishop is bent away from the player so he slides past instead of through. */
-    PLAYER_AVOID_RADIUS: 2.4
+    /** A patrol path must keep at least this far from the player, so he never has to squeeze past them. */
+    PATROL_PATH_CLEARANCE: 1.7
   },
   PHASES: {
     PHASE_1_END: 225,

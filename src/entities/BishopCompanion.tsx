@@ -10,14 +10,13 @@ import { constrainToCorridorInto, moveConstrained, getHallId, sharesLane } from 
 import { getActiveLevel } from '../levels';
 import { advanceCorner } from '../systems/corridorPathing';
 import { buildBishopRig, poseBishop } from './BishopRig';
-import { createPatrol, stepPatrol, steerAround } from './bishop/bishopPatrol';
+import { createPatrol, stepPatrol, reportPatrolProgress } from './bishop/bishopPatrol';
 
 const _goal = { x: 0, z: 0 };
 const _dmg: DamageSpec = { amount: BALANCE.BISHOP.DAMAGE, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
 const _best = { id: -1, x: 0, z: 0, dist: 0 };
-const _steer = { x: 0, z: 0 };
 
 /** Updates `_best` in place if `t` is a closer, visible, live threat than whatever `_best` already holds. */
 function considerThreat(
@@ -159,10 +158,12 @@ export function BishopCompanion() {
     // Avoid walking through the player: only advance if not encroaching on player's personal radius (1.8m)
     const movingCloserToPlayer = dx * (px - st.x) + dz * (pz - st.z) > 0;
     if (patrol === 'MOVE' && distToGoal > 0.1 && store.status === 'PLAYING') {
-      // Patrol walk: a slow pace, bent around the player so he never walks through them
-      steerAround(dx / distToGoal, dz / distToGoal, st.x, st.z, px, pz, _steer);
-      const stride = BALANCE.BISHOP.PATROL_SPEED * dt;
-      moveConstrained(st, st.x + _steer.x * stride, st.z + _steer.z * stride, 0.22);
+      // Patrol walk at a slow pace along a path chosen to stay clear of the player; if a wall stops him, pick again
+      const stride = BALANCE.BISHOP.PATROL_SPEED * dt,
+        fromX = st.x,
+        fromZ = st.z;
+      moveConstrained(st, st.x + (dx / distToGoal) * stride, st.z + (dz / distToGoal) * stride, 0.22);
+      reportPatrolProgress(st.patrol, Math.hypot(st.x - fromX, st.z - fromZ), stride, dt);
     } else if (
       patrol !== 'PAUSE' &&
       distToGoal > 0.45 &&
@@ -198,7 +199,7 @@ export function BishopCompanion() {
       : patrol === 'PAUSE'
         ? st.patrol.look
         : isMoving
-          ? Math.atan2(patrol === 'MOVE' ? _steer.x : dx, patrol === 'MOVE' ? _steer.z : dz)
+          ? Math.atan2(dx, dz)
           : pyaw + Math.PI;
     let yawDiff = desiredYaw - st.yaw;
     while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
