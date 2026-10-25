@@ -1,5 +1,6 @@
 import { UpgradeCard } from '../data/balance';
 import { GameSettings } from '../core/GameTypes';
+import { VR_MENU_ROWS, valueText } from './vrMenuModel';
 
 export type VRPanelStatus = 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
@@ -22,55 +23,62 @@ export interface VRPanelData {
   recordKills: number;
 }
 
+const MENU_TOP = 128;
+const MENU_ROW_HEIGHT = 36;
+
+/** Row-based pause menu: the selected row is highlighted, settings show their current value. */
+function drawPausedPanel(ctx: CanvasRenderingContext2D, d: VRPanelData): void {
+  const { settings, selectedIndex, kills, timeRem, pulse } = d;
+  ctx.clearRect(0, 0, 1024, 512);
+  ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
+  ctx.fillRect(20, 20, 984, 472);
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(20, 20, 984, 472);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 34px Courier New, monospace';
+  ctx.fillText('MISSION PAUSED', 512, 68);
+  ctx.fillStyle = '#88ffaa';
+  ctx.font = '16px Courier New, monospace';
+  ctx.fillText(`ELIMINATIONS: ${kills}   |   TIME REMAINING: ${fmtTime(timeRem)}`, 512, 98);
+
+  for (let i = 0; i < VR_MENU_ROWS.length; i++) {
+    const row = VR_MENU_ROWS[i];
+    const y = MENU_TOP + i * MENU_ROW_HEIGHT;
+    const selected = i === selectedIndex;
+    if (selected) {
+      const a = 0.22 + Math.sin(pulse * 6.0) * 0.05;
+      ctx.fillStyle = `rgba(0, 255, 136, ${a})`;
+      ctx.fillRect(110, y - 25, 804, 32);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(110, y - 25, 804, 32);
+    }
+    ctx.font = 'bold 21px Courier New, monospace';
+    ctx.fillStyle = selected ? '#ffffff' : '#aaffcc';
+    ctx.textAlign = 'left';
+    ctx.fillText((selected ? '▶ ' : '  ') + row.label, 130, y);
+    if (settings && row.kind !== 'action') {
+      ctx.textAlign = 'right';
+      const showArrows = selected && row.kind !== 'toggle';
+      ctx.fillText((showArrows ? '◀ ' : '') + valueText(row, settings) + (showArrows ? ' ▶' : ''), 894, y);
+    }
+  }
+  ctx.fillStyle = '#88ffaa';
+  ctx.textAlign = 'center';
+  ctx.font = '15px Courier New, monospace';
+  ctx.fillText('STICK: SELECT / ADJUST    TRIGGER: CONFIRM    [B] / [Y]: RESUME', 512, 470);
+}
+
 export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): void {
-  const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, settings, selectedIndex, recordKills } = d;
+  const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, selectedIndex, recordKills } = d;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   if (status === 'PAUSED') {
-    const snapLabel =
-      !settings || settings.snapAngle === 0
-        ? 'SMOOTH CONTINUOUS'
-        : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
-    const flashLabel = settings?.reducedFlash ? 'REDUCED (SAFE)' : 'FULL STROBE';
-    const handLabel = settings?.leftHanded ? 'LEFT-HANDED (WRIST RIGHT)' : 'RIGHT-HANDED (WRIST LEFT)';
-
-    ctx.clearRect(0, 0, 1024, 512);
-    ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
-    ctx.fillRect(20, 20, 984, 472);
-    ctx.strokeStyle = '#00ff88';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(20, 20, 984, 472);
-
-    ctx.fillStyle = '#88ffaa';
-    ctx.font = 'bold 22px Courier New, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK — VR SETTINGS', 512, 65);
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 44px Courier New, monospace';
-    ctx.fillText('MISSION PAUSED', 512, 120);
-
-    ctx.font = 'bold 20px Courier New, monospace';
-    ctx.fillStyle = '#aaffcc';
-    ctx.textAlign = 'left';
-    ctx.fillText('[A BUTTON] TURN MODE:       ' + snapLabel, 140, 190);
-    ctx.fillText('[X BUTTON] FLASH STROBE:    ' + flashLabel, 140, 235);
-    ctx.fillText('[GRIP]     ORIENTATION:     ' + handLabel, 140, 280);
-
-    ctx.fillStyle = '#88ffaa';
-    ctx.textAlign = 'center';
-    ctx.font = '16px Courier New, monospace';
-    ctx.fillText(`ELIMINATIONS: ${kills}   |   TIME REMAINING: ${fmtTime(timeRem)}`, 512, 335);
-
-    const ba = 0.75 + Math.sin(pulse * 6.0) * 0.25;
-    ctx.fillStyle = `rgba(0, 255, 136, ${ba * 0.25})`;
-    ctx.fillRect(162, 365, 700, 75);
-    ctx.strokeStyle = `rgba(0, 255, 136, ${ba})`;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(162, 365, 700, 75);
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 28px Courier New, monospace';
-    ctx.fillText('▶ PRESS [B] / [Y] / TRIGGER TO RESUME ◀', 512, 412);
+    drawPausedPanel(ctx, d);
     return;
   }
 

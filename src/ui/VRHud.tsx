@@ -10,6 +10,7 @@ import { xrControllerState } from '../core/XRControllerState';
 
 import { VRStatusPanel } from './VRStatusPanel';
 import { VRMenuNav } from './VRMenuNav';
+import { openPauseMenu, stepPauseMenu } from './vrPauseMenu';
 import {
   pollControllers,
   createVRControllerInput,
@@ -72,44 +73,14 @@ export function VRHud() {
       if (st.status === 'LEVEL_UP') {
         navRef.current.arm(0.6);
         selectedRef.current = 0;
-      }
+      } else if (st.status === 'PAUSED') openPauseMenu(navRef.current, selectedRef);
     }
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
         VRStatusPanel.place(statusMeshRef.current, camera);
         panel.render('PAUSED', clock.getElapsedTime(), dt, selectedRef.current, st);
       }
-      if (latches.pauseCooldown <= 0 && xrSession) {
-        for (const src of xrSession.inputSources) {
-          const btns = src.gamepad?.buttons;
-          if (!btns) continue;
-          if (src.handedness === 'right' && btns[4]?.pressed) {
-            latches.pauseCooldown = 0.35;
-            AudioManager.play2D('ui_beep', 0.7);
-            const angles = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0];
-            const cur = angles.findIndex((a) => Math.abs(a - st.settings.snapAngle) < 0.05);
-            st.updateSettings({ snapAngle: angles[(cur + 1) % angles.length] });
-            return;
-          }
-          if (src.handedness === 'left' && btns[4]?.pressed) {
-            latches.pauseCooldown = 0.35;
-            AudioManager.play2D('ui_beep', 0.7);
-            st.updateSettings({ reducedFlash: !st.settings.reducedFlash });
-            return;
-          }
-          if (btns[1]?.pressed) {
-            latches.pauseCooldown = 0.35;
-            AudioManager.play2D('ui_beep', 0.7);
-            st.updateSettings({ leftHanded: !st.settings.leftHanded });
-            return;
-          }
-        }
-      }
-      if (latches.pauseCooldown <= 0 && firing) {
-        latches.pauseCooldown = 0.45;
-        AudioManager.play2D('ui_beep', 0.8);
-        st.resumeGame();
-      }
+      stepPauseMenu(navRef.current, selectedRef, st, dt, input);
       return;
     }
     if (st.status === 'LEVEL_UP') {
