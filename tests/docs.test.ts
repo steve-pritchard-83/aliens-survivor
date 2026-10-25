@@ -8,7 +8,7 @@ describe('tracked documentation', () => {
     for (const file of tracked) {
       const text = readFileSync(file, 'utf8');
       expect(text, `${file} headset serial`).not.toMatch(/1WMHH831BS0504/);
-      expect(text, `${file} local adb path`).not.toMatch(/C:\RSL/i);
+      expect(text, `${file} local adb path`).not.toMatch(/C:\\RSL/i);
       expect(text, `${file} local audit path`).not.toMatch(/\.gemini/);
     }
   });
