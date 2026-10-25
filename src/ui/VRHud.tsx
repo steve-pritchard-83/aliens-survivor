@@ -37,7 +37,8 @@ export function VRHud() {
   }, []);
 
   const renderPanel = (status: VRPanelStatus, kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
-    drawVRStatusPanel(panelCanvas, status, kills, shotsFired, shotsHit, timeRem, pulse, useGameStore.getState().offeredUpgrades);
+    const st = useGameStore.getState();
+    drawVRStatusPanel(panelCanvas, status, kills, shotsFired, shotsHit, timeRem, pulse, st.offeredUpgrades, st.settings);
     panelTex.needsUpdate = true;
   };
 
@@ -121,7 +122,30 @@ export function VRHud() {
         statusMeshRef.current.quaternion.copy(_camQuat);
         renderPanel('PAUSED', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
       }
-      if (pauseCoolRef.current <= 0 && (firing || anyButtonPressed)) {
+      if (pauseCoolRef.current <= 0 && xrSession) {
+        for (const src of xrSession.inputSources) {
+          const btns = src.gamepad?.buttons;
+          if (!btns) continue;
+          if (src.handedness === 'right' && btns[4]?.pressed) {
+            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            const angles = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0];
+            const cur = angles.findIndex((a) => Math.abs(a - st.settings.snapAngle) < 0.05);
+            st.updateSettings({ snapAngle: angles[(cur + 1) % angles.length] });
+            return;
+          }
+          if (src.handedness === 'left' && btns[4]?.pressed) {
+            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            st.updateSettings({ reducedFlash: !st.settings.reducedFlash });
+            return;
+          }
+          if (btns[1]?.pressed) {
+            pauseCoolRef.current = 0.35; AudioManager.play2D('ui_beep', 0.7);
+            st.updateSettings({ leftHanded: !st.settings.leftHanded });
+            return;
+          }
+        }
+      }
+      if (pauseCoolRef.current <= 0 && firing) {
         pauseCoolRef.current = 0.45; AudioManager.play2D('ui_beep', 0.8); st.resumeGame();
       }
       return;

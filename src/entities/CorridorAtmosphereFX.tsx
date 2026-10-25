@@ -24,10 +24,6 @@ const SPARKS_PER_BURST = 42;
 
 export function CorridorAtmosphereFX() {
   const sparkPointsRef = useRef<THREE.Points>(null);
-  const sparkLightRef = useRef<THREE.PointLight>(null);
-  const strobeLight1Ref = useRef<THREE.PointLight>(null);
-  const strobeLight2Ref = useRef<THREE.PointLight>(null);
-
   const burstTimerRef = useRef(0);
   const nextBurstDelayRef = useRef(1.2);
 
@@ -42,21 +38,7 @@ export function CorridorAtmosphereFX() {
     const state = useGameStore.getState();
     if (state.status === 'PAUSED') return;
 
-    const t = clock.getElapsedTime();
     const phase = state.phase;
-
-    // High-Contrast Emergency Strobe Tubes (Sharp industrial double-flash pattern)
-    const strobeCycle1 = (t * (phase === 1 ? 1.8 : 3.2)) % 1.0;
-    const isFlash1 = (strobeCycle1 > 0.0 && strobeCycle1 < 0.06) || (strobeCycle1 > 0.12 && strobeCycle1 < 0.17);
-    if (strobeLight1Ref.current) {
-      strobeLight1Ref.current.intensity = isFlash1 ? (phase >= 2 ? 32 : 20) : 0.4;
-    }
-
-    const strobeCycle2 = ((t + 0.47) * (phase === 1 ? 2.1 : 3.6)) % 1.0;
-    const isFlash2 = (strobeCycle2 > 0.0 && strobeCycle2 < 0.055) || (strobeCycle2 > 0.11 && strobeCycle2 < 0.16);
-    if (strobeLight2Ref.current) {
-      strobeLight2Ref.current.intensity = isFlash2 ? (phase >= 2 ? 32 : 20) : 0.4;
-    }
 
     // Wall & Ceiling Electrical Spark Showers
     if (burstTimerRef.current <= 0) {
@@ -80,11 +62,6 @@ export function CorridorAtmosphereFX() {
           }
           posAttr.needsUpdate = true;
           sparkPointsRef.current.visible = true;
-        }
-
-        if (sparkLightRef.current) {
-          sparkLightRef.current.position.set(ex + nx * 0.15, ey, ez + nz * 0.15);
-          sparkLightRef.current.intensity = 24;
         }
 
         if (state.status === 'PLAYING') {
@@ -115,21 +92,14 @@ export function CorridorAtmosphereFX() {
         posAttr.needsUpdate = true;
       }
 
-      if (sparkLightRef.current) {
-        sparkLightRef.current.intensity = (Math.random() > 0.25 ? 22 : 4) * (burstTimerRef.current / 0.55);
-      }
-
-      if (burstTimerRef.current <= 0) {
-        if (sparkPointsRef.current) sparkPointsRef.current.visible = false;
-        if (sparkLightRef.current) sparkLightRef.current.intensity = 0;
+      if (burstTimerRef.current <= 0 && sparkPointsRef.current) {
+        sparkPointsRef.current.visible = false;
       }
     }
   });
 
   return (
     <group name="CorridorAtmosphereFX">
-      <pointLight ref={strobeLight1Ref} position={[-6.8, 2.25, 22.1]} color="#d8f0ff" intensity={0} distance={18} decay={1.4} />
-
       <points ref={sparkPointsRef} geometry={sparkGeo} visible={false}>
         <pointsMaterial
           color="#ffdd66"

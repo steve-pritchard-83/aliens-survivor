@@ -1,4 +1,5 @@
 import { UpgradeCard } from '../data/balance';
+import { GameSettings } from '../core/GameTypes';
 
 export type VRPanelStatus = 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
@@ -15,37 +16,53 @@ export function drawVRStatusPanel(
   shotsHit: number,
   timeRem: number,
   pulse: number,
-  offered: UpgradeCard[]
+  offered: UpgradeCard[],
+  settings?: GameSettings
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   if (status === 'PAUSED') {
+    const snapLabel = !settings || settings.snapAngle === 0 ? 'SMOOTH CONTINUOUS' : `${Math.round(settings.snapAngle * (180 / Math.PI))}° SNAP`;
+    const flashLabel = settings?.reducedFlash ? 'REDUCED (SAFE)' : 'FULL STROBE';
+    const handLabel = settings?.leftHanded ? 'LEFT-HANDED (WRIST RIGHT)' : 'RIGHT-HANDED (WRIST LEFT)';
+
     ctx.clearRect(0, 0, 1024, 512);
     ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
     ctx.fillRect(20, 20, 984, 472);
     ctx.strokeStyle = '#00ff88';
     ctx.lineWidth = 6;
     ctx.strokeRect(20, 20, 984, 472);
+
     ctx.fillStyle = '#88ffaa';
-    ctx.font = 'bold 24px Courier New, monospace';
+    ctx.font = 'bold 22px Courier New, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK', 512, 80);
+    ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK — VR SETTINGS', 512, 65);
     ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 52px Courier New, monospace';
-    ctx.fillText('MISSION PAUSED', 512, 170);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px Courier New, monospace';
-    ctx.fillText(`KILLS: ${kills}   |   TIME LEFT: ${fmtTime(timeRem)}`, 512, 245);
+    ctx.font = 'bold 44px Courier New, monospace';
+    ctx.fillText('MISSION PAUSED', 512, 120);
+
+    ctx.font = 'bold 20px Courier New, monospace';
+    ctx.fillStyle = '#aaffcc';
+    ctx.textAlign = 'left';
+    ctx.fillText('[A BUTTON] TURN MODE:       ' + snapLabel, 140, 190);
+    ctx.fillText('[X BUTTON] FLASH STROBE:    ' + flashLabel, 140, 235);
+    ctx.fillText('[GRIP]     ORIENTATION:     ' + handLabel, 140, 280);
+
+    ctx.fillStyle = '#88ffaa';
+    ctx.textAlign = 'center';
+    ctx.font = '16px Courier New, monospace';
+    ctx.fillText(`ELIMINATIONS: ${kills}   |   TIME REMAINING: ${fmtTime(timeRem)}`, 512, 335);
+
     const ba = 0.75 + Math.sin(pulse * 6.0) * 0.25;
     ctx.fillStyle = `rgba(0, 255, 136, ${ba * 0.25})`;
-    ctx.fillRect(162, 330, 700, 80);
+    ctx.fillRect(162, 365, 700, 75);
     ctx.strokeStyle = `rgba(0, 255, 136, ${ba})`;
     ctx.lineWidth = 4;
-    ctx.strokeRect(162, 330, 700, 80);
+    ctx.strokeRect(162, 365, 700, 75);
     ctx.fillStyle = '#00ff88';
     ctx.font = 'bold 28px Courier New, monospace';
-    ctx.fillText('PRESS [B] / [Y] / TRIGGER TO RESUME', 512, 380);
+    ctx.fillText('▶ PRESS [B] / [Y] / TRIGGER TO RESUME ◀', 512, 412);
     return;
   }
 

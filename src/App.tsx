@@ -14,6 +14,7 @@ import { HUD } from './ui/HUD';
 import { VRHud } from './ui/VRHud';
 import { VRAutoLauncher } from './ui/VRAutoLauncher';
 import { DebugTelemetry } from './ui/DebugTelemetry';
+import { AdaptiveQuality } from './core/AdaptiveQuality';
 import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 
@@ -38,6 +39,7 @@ export function App() {
       >
         <XR store={xrStore}>
           <VRAutoLauncher />
+          <AdaptiveQuality />
           <XROrigin position={[-0.8, 0, 13.0]} />
           <Suspense fallback={null}>
             <CorridorLevel />

@@ -18,7 +18,6 @@ export function BishopCompanion() {
 
   const rootRef = useRef<THREE.Group>(null);
   const muzzleFlashRef = useRef<THREE.Mesh>(null);
-  const muzzleLightRef = useRef<THREE.PointLight>(null);
   const tracerRef = useRef<THREE.Mesh>(null);
   const muzzleMarkerRef = useRef<THREE.Object3D>(null);
 
@@ -173,7 +172,6 @@ export function BishopCompanion() {
       muzzleFlashRef.current.visible = flashOn;
       muzzleFlashRef.current.rotation.z = now * 35;
     }
-    if (muzzleLightRef.current) muzzleLightRef.current.intensity = flashOn ? 14 : 0;
     if (tracerRef.current) tracerRef.current.visible = st.muzzleTimer > 0.02;
 
     root.position.set(st.x, 0, st.z);
@@ -196,7 +194,6 @@ export function BishopCompanion() {
             <cylinderGeometry args={[0.004, 0.001, 5.6, 8]} />
             <meshBasicMaterial color="#ffdd77" transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} />
           </mesh>
-          <pointLight ref={muzzleLightRef} position={[0, 0.06, 0.45]} color="#ffaa33" intensity={0} distance={10} decay={1.4} />
         </primitive>
       </group>
     </group>

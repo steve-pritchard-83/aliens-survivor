@@ -52,8 +52,6 @@ function createSparkTexture(): THREE.CanvasTexture {
 export function WallImpactFX() {
   const decalGroupRef = useRef<THREE.Group>(null);
   const sparkPointsRef = useRef<THREE.Points>(null);
-  const impactLightRef = useRef<THREE.PointLight>(null);
-  const flashTimerRef = useRef(0);
   const nextDecalIdx = useRef(0);
   const nextSparkIdx = useRef(0);
   const hadSparksRef = useRef(false);
@@ -115,13 +113,6 @@ export function WallImpactFX() {
         s.vz = (_refl.z * 0.7 + normal.z * 0.3 + (Math.random() - 0.5) * cone) * speed;
         s.life = 0.22 + Math.random() * 0.18;
         s.maxLife = s.life;
-      }
-
-      // 3. Incandescent wall flash
-      if (impactLightRef.current) {
-        impactLightRef.current.position.copy(point).addScaledVector(normal, 0.12);
-        impactLightRef.current.intensity = 14.0;
-        flashTimerRef.current = 0.055;
       }
     });
 
@@ -186,13 +177,6 @@ export function WallImpactFX() {
       sparkPointsRef.current.visible = hasLiveSparks;
     }
     hadSparksRef.current = hasLiveSparks;
-
-    // Animate impact point light flash
-    if (impactLightRef.current && flashTimerRef.current > 0) {
-      flashTimerRef.current -= dt;
-      impactLightRef.current.intensity = Math.max(0, impactLightRef.current.intensity - dt * 240);
-      if (flashTimerRef.current <= 0) impactLightRef.current.intensity = 0;
-    }
   });
 
   return (
@@ -224,8 +208,6 @@ export function WallImpactFX() {
           depthWrite={false}
         />
       </points>
-
-      <pointLight ref={impactLightRef} color="#ff9922" intensity={0} distance={5.5} decay={1.8} />
     </group>
   );
 }
