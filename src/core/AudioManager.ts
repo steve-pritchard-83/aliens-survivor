@@ -1,101 +1,31 @@
-export type SoundKey =
-  | 'pulse_shot'
-  | 'pulse_shot2'
-  | 'pulse_shot3'
-  | 'pulse_shot4'
-  | 'pulse_tail'
-  | 'reload_out'
-  | 'reload_in'
-  | 'reload_slap'
-  | 'empty_click'
-  | 'tracker_sweep'
-  | 'tracker_ping'
-  | 'xeno_hiss1'
-  | 'xeno_hiss2'
-  | 'xeno_hit'
-  | 'xeno_death1'
-  | 'xeno_death2'
-  | 'xeno_attack'
-  | 'xeno_sprint'
-  | 'xeno_bodyfall'
-  | 'xeno_gib1'
-  | 'xeno_explode1'
-  | 'small_screech1'
-  | 'small_screech2'
-  | 'small_death'
-  | 'small_skitter'
-  | 'small_bite'
-  | 'small_leap'
-  | 'bullet_flesh1'
-  | 'bullet_flesh2'
-  | 'ricochet1'
-  | 'ricochet2'
-  | 'acid_fizz'
-  | 'acid_burn'
-  | 'vent_clang'
-  | 'marine_pain'
-  | 'marine_death'
-  | 'torch_on'
-  | 'torch_off'
-  | 'distant_boom1'
-  | 'distant_boom2'
-  | 'console_alarm'
-  | 'spark'
-  | 'ui_beep'
-  | 'defeat';
+import { AmbienceLoop } from './AmbienceLoop';
+import { SoundKey, SOUND_URLS, BGM_URL, CRITICAL_SOUNDS, HRTF_SOUNDS } from './AudioCatalog';
 
-const SOUND_URLS: Record<SoundKey, string> = {
-  pulse_shot: '/audio/sfx_pulse.wav',
-  pulse_shot2: '/audio/sfx_pulse2.wav',
-  pulse_shot3: '/audio/sfx_pulse3.wav',
-  pulse_shot4: '/audio/sfx_pulse4.wav',
-  pulse_tail: '/audio/sfx_pulse_tail.wav',
-  reload_out: '/audio/sfx_reload_out.wav',
-  reload_in: '/audio/sfx_reload_in.wav',
-  reload_slap: '/audio/sfx_reload_slap.wav',
-  empty_click: '/audio/sfx_empty.wav',
-  tracker_sweep: '/audio/sfx_tracker_sweep.wav',
-  tracker_ping: '/audio/sfx_tracker_ping.wav',
-  xeno_hiss1: '/audio/sfx_xeno_hiss1.wav',
-  xeno_hiss2: '/audio/sfx_xeno_hiss2.wav',
-  xeno_hit: '/audio/sfx_xeno_hit.wav',
-  xeno_death1: '/audio/sfx_xeno_death1.wav',
-  xeno_death2: '/audio/sfx_xeno_death2.wav',
-  xeno_attack: '/audio/sfx_xeno_attack.wav',
-  xeno_sprint: '/audio/sfx_xeno_sprint.wav',
-  xeno_bodyfall: '/audio/sfx_xeno_bodyfall.wav',
-  xeno_gib1: '/audio/sfx_xeno_gib1.wav',
-  xeno_explode1: '/audio/sfx_xeno_explode1.wav',
-  small_screech1: '/audio/sfx_small_screech1.wav',
-  small_screech2: '/audio/sfx_small_screech2.wav',
-  small_death: '/audio/sfx_small_death.wav',
-  small_skitter: '/audio/sfx_small_skitter.wav',
-  small_bite: '/audio/sfx_small_bite.wav',
-  small_leap: '/audio/sfx_small_leap.wav',
-  bullet_flesh1: '/audio/sfx_bullet_flesh1.wav',
-  bullet_flesh2: '/audio/sfx_bullet_flesh2.wav',
-  ricochet1: '/audio/sfx_ricochet1.wav',
-  ricochet2: '/audio/sfx_ricochet2.wav',
-  acid_fizz: '/audio/sfx_acid_fizz.wav',
-  acid_burn: '/audio/sfx_acid_burn.wav',
-  vent_clang: '/audio/sfx_vent_clang.wav',
-  marine_pain: '/audio/sfx_marine_pain.wav',
-  marine_death: '/audio/sfx_marine_death.wav',
-  torch_on: '/audio/sfx_torch_on.wav',
-  torch_off: '/audio/sfx_torch_off.wav',
-  distant_boom1: '/audio/sfx_distant_boom1.wav',
-  distant_boom2: '/audio/sfx_distant_boom2.wav',
-  console_alarm: '/audio/sfx_console_alarm.wav',
-  spark: '/audio/sfx_spark.wav',
-  ui_beep: '/audio/sfx_ui_beep.wav',
-  defeat: '/audio/defeat.mp3'
-};
+export type { SoundKey };
+
+export interface AudioVolumes {
+  master: number;
+  music: number;
+  sfx: number;
+}
+
+// 0.4 x the default music level (0.8) reproduces the original fixed BGM volume of 0.32
+const BGM_BASE_VOLUME = 0.4;
+const MAX_VOICES = 24;
+const PULSE_VARIANTS: SoundKey[] = ['pulse_shot', 'pulse_shot2', 'pulse_shot3', 'pulse_shot4'];
+
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
 
 class WebAudioController {
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private sfxGain: GainNode | null = null;
+  private volumes: AudioVolumes = { master: 1, music: 0.8, sfx: 1 };
   private buffers = new Map<SoundKey, AudioBuffer>();
   private bgmAudio: HTMLAudioElement | null = null;
-  private ambienceTimer: number | null = null;
+  private ambience = new AmbienceLoop((key, volume, rate) => this.play2D(key, volume, rate));
   private loadingPromise: Promise<void> | null = null;
   private activePulseSrc: AudioBufferSourceNode | null = null;
   private activePulseGain: GainNode | null = null;
@@ -109,10 +39,30 @@ class WebAudioController {
       const AudioCtx =
         window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
+      this.masterGain = this.ctx.createGain();
+      this.sfxGain = this.ctx.createGain();
+      this.sfxGain.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
+      this.applyVolumes();
     }
     if (this.ctx.state === 'suspended') await this.ctx.resume();
     if (!this.loadingPromise) this.loadingPromise = this.preloadAll();
     await this.loadingPromise;
+  }
+
+  /** Sets master / music / effects levels (0..1). Safe to call before audio is unlocked. */
+  public setVolumes(partial: Partial<AudioVolumes>): void {
+    if (partial.master !== undefined) this.volumes.master = clamp01(partial.master);
+    if (partial.music !== undefined) this.volumes.music = clamp01(partial.music);
+    if (partial.sfx !== undefined) this.volumes.sfx = clamp01(partial.sfx);
+    this.applyVolumes();
+  }
+
+  private applyVolumes(): void {
+    if (this.masterGain) this.masterGain.gain.value = this.volumes.master;
+    if (this.sfxGain) this.sfxGain.gain.value = this.volumes.sfx;
+    // BGM plays through an <audio> element, outside the Web Audio graph, so its level is applied directly
+    if (this.bgmAudio) this.bgmAudio.volume = clamp01(BGM_BASE_VOLUME * this.volumes.music * this.volumes.master);
   }
 
   private async preloadAll(): Promise<void> {
@@ -133,9 +83,9 @@ class WebAudioController {
 
   public startBGM(): void {
     if (!this.bgmAudio) {
-      this.bgmAudio = new Audio('/audio/bgm_sulaco.mp3');
+      this.bgmAudio = new Audio(BGM_URL);
       this.bgmAudio.loop = true;
-      this.bgmAudio.volume = 0.32;
+      this.applyVolumes();
     }
     this.bgmAudio.play().catch((e) => console.warn('[AudioManager] BGM play blocked', e));
   }
@@ -178,27 +128,38 @@ class WebAudioController {
     }
   }
 
+  /** True if a new sound may start: not muted by defeat and, for non-critical sounds, under the voice cap. */
+  private canPlay(key: SoundKey): boolean {
+    if (!this.ctx || !this.sfxGain) return false;
+    if (this.defeatMute && key !== 'defeat') return false;
+    return this.activeSources.size < MAX_VOICES || CRITICAL_SOUNDS.has(key);
+  }
+
+  private track(src: AudioBufferSourceNode): void {
+    this.activeSources.add(src);
+    src.onended = () => {
+      this.activeSources.delete(src);
+    };
+  }
+
   public play2D(key: SoundKey, volume = 0.6, playbackRate = 1.0): void {
-    if (!this.ctx || (this.defeatMute && key !== 'defeat')) return;
+    if (!this.canPlay(key)) return;
     const buf = this.buffers.get(key);
-    if (!buf) return;
+    if (!buf || !this.ctx || !this.sfxGain) return;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = playbackRate;
     const gain = this.ctx.createGain();
     gain.gain.value = volume;
     src.connect(gain);
-    gain.connect(this.ctx.destination);
-    this.activeSources.add(src);
-    src.onended = () => {
-      this.activeSources.delete(src);
-    };
+    gain.connect(this.sfxGain);
+    this.track(src);
     src.start(0);
   }
 
   // Monophonic Pulse Rifle Burst Controller: prevents overlapping multi-shot comb-filtering echo
   public playPulseShot(): void {
-    if (!this.ctx || this.defeatMute) return;
+    if (!this.ctx || !this.sfxGain || this.defeatMute) return;
     const now = this.ctx.currentTime;
     if (this.activeTailSrc) {
       try {
@@ -217,8 +178,7 @@ class WebAudioController {
         /* source already stopped: non-fatal */
       }
     }
-    const variants: SoundKey[] = ['pulse_shot', 'pulse_shot2', 'pulse_shot3', 'pulse_shot4'];
-    const buf = this.buffers.get(variants[Math.floor(Math.random() * variants.length)]);
+    const buf = this.buffers.get(PULSE_VARIANTS[Math.floor(Math.random() * PULSE_VARIANTS.length)]);
     if (!buf) return;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
@@ -226,11 +186,8 @@ class WebAudioController {
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.58, now);
     src.connect(gain);
-    gain.connect(this.ctx.destination);
-    this.activeSources.add(src);
-    src.onended = () => {
-      this.activeSources.delete(src);
-    };
+    gain.connect(this.sfxGain);
+    this.track(src);
     src.start(0);
     this.activePulseSrc = src;
     this.activePulseGain = gain;
@@ -248,7 +205,7 @@ class WebAudioController {
     }
     this.activePulseSrc = null;
     this.activePulseGain = null;
-    if (withTail) {
+    if (withTail && this.sfxGain) {
       const tailBuf = this.buffers.get('pulse_tail');
       if (tailBuf) {
         const tailSrc = this.ctx.createBufferSource();
@@ -256,7 +213,7 @@ class WebAudioController {
         const tailGain = this.ctx.createGain();
         tailGain.gain.value = 0.42;
         tailSrc.connect(tailGain);
-        tailGain.connect(this.ctx.destination);
+        tailGain.connect(this.sfxGain);
         tailSrc.start(0);
         this.activeTailSrc = tailSrc;
       }
@@ -264,14 +221,15 @@ class WebAudioController {
   }
 
   public play3D(key: SoundKey, x: number, y: number, z: number, volume = 0.85, playbackRate = 1.0): void {
-    if (!this.ctx || (this.defeatMute && key !== 'defeat')) return;
+    if (!this.canPlay(key)) return;
     const buf = this.buffers.get(key);
-    if (!buf) return;
+    if (!buf || !this.ctx || !this.sfxGain) return;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = playbackRate;
     const panner = this.ctx.createPanner();
-    panner.panningModel = 'HRTF';
+    // HRTF is the most expensive panner: reserve it for the cues that need precise direction
+    panner.panningModel = HRTF_SOUNDS.has(key) ? 'HRTF' : 'equalpower';
     panner.distanceModel = 'inverse';
     panner.refDistance = 2.5;
     panner.maxDistance = 42;
@@ -285,11 +243,8 @@ class WebAudioController {
     gain.gain.value = volume;
     src.connect(panner);
     panner.connect(gain);
-    gain.connect(this.ctx.destination);
-    this.activeSources.add(src);
-    src.onended = () => {
-      this.activeSources.delete(src);
-    };
+    gain.connect(this.sfxGain);
+    this.track(src);
     src.start(0);
   }
 
@@ -320,18 +275,7 @@ class WebAudioController {
   }
 
   public setKlaxonActive(active: boolean): void {
-    if (active && this.ambienceTimer === null) {
-      this.ambienceTimer = window.setInterval(() => {
-        const roll = Math.random();
-        if (roll < 0.4)
-          this.play2D(Math.random() > 0.5 ? 'distant_boom1' : 'distant_boom2', 0.42, 0.9 + Math.random() * 0.15);
-        else if (roll < 0.75) this.play2D('console_alarm', 0.28, 0.85);
-        else this.play2D('spark', 0.35, 0.95 + Math.random() * 0.1);
-      }, 3400);
-    } else if (!active && this.ambienceTimer !== null) {
-      clearInterval(this.ambienceTimer);
-      this.ambienceTimer = null;
-    }
+    this.ambience.setActive(active);
   }
 }
 

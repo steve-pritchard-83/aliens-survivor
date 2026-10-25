@@ -19,11 +19,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['models/*.glb', 'audio/*.wav', 'audio/*.mp3', 'fonts/*.otf'],
+      includeAssets: ['models/*.glb', 'audio/*.wav', 'audio/*.m4a', 'audio/*.mp3', 'fonts/*.otf'],
       manifest: false, // Using public/manifest.json directly per PRD structure
       workbox: {
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,glb,wav,mp3,otf,json}'],
+        globPatterns: ['**/*.{js,css,html,glb,wav,m4a,mp3,otf,json}'],
         globIgnores: ['**/emulate*', '**/*room*', '**/office_*']
       }
     })
