@@ -25,13 +25,13 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P1.9 Phase close — gate green: 77 tests, build ok, precache 10.6 MB, largest chunk 854 kB
 
 ## Phase 2 — Tests and gates
-- [ ] P2.1 Pure AI step functions
-- [ ] P2.2 Unit test suite
-- [ ] P2.3 Coverage gate
-- [ ] P2.4 Playwright smoke
-- [ ] P2.5 Budgets
-- [ ] P2.6 IWER (optional)
-- [ ] P2.7 Phase close
+- [x] P2.1 (aec7ccc) Pure AI step functions — small/xeno AI extracted as pure step functions with tests (Bishop AI not extracted)
+- [x] P2.2 (04605bc) Unit test suite
+- [x] P2.3 (04605bc) Coverage gate — thresholds raised to 80/75/65 (actual ~86% lines)
+- [x] P2.4 (5ff96c6) Playwright smoke
+- [x] P2.5 (134c48a) Budgets
+- [x] P2.6 (d3221b6) IWER (optional) — worked: forceInstall needed because Chromium has a native navigator.xr; emulator spoofs a Quest UA so the app auto-enters VR
+- [x] P2.7 Phase close — gate green: 128 tests, 86% lines, 3 e2e, budgets ok
 
 ## Phase 3 — UX
 - [ ] P3.1 Settings model
@@ -82,3 +82,8 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] Preview build (`npm run preview`): menu, play, pause, resume, level-up, victory video all work (vendor chunk split sanity check).
 - [ ] Aliens still pursue around corners, leap, and slash on cadence; facehugger/chestburster kills award 15 XP.
 - [ ] Settings screens and touch controls look and behave the same after the HUD split (phone and desktop).
+
+### Phase 2 (branch uplift/p2-quality) — needs verification outside this machine
+- [ ] Push the branch (or open a PR) and confirm the GitHub Actions CI run is green: `verify` job and the Linux `e2e` job (software WebGL on ubuntu-latest has not been run here).
+- [ ] Locally: `npm run e2e` passes on your machine (it passed here on Windows with Chromium).
+- [ ] Skim the coverage table from `npm run test:coverage` and confirm the excluded files list in vitest.config.ts is acceptable.
