@@ -18,6 +18,7 @@ import { AdaptiveQuality } from './core/AdaptiveQuality';
 import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 import { Platform } from './core/Platform';
+import { ShaderWarmup } from './entities/fx/ShaderWarmup';
 
 // Telemetry is only ever used with ?debug=1, so keep it out of the main bundle
 const DebugTelemetry = lazy(() => import('./ui/DebugTelemetry').then((m) => ({ default: m.DebugTelemetry })));
@@ -64,6 +65,7 @@ export function App() {
             <SmallAlienSpawner />
             <VRHud />
             <ComfortVignette />
+            <ShaderWarmup />
             {Platform.isDebug && <DebugTelemetry />}
           </Suspense>
         </XR>
