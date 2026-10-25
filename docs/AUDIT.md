@@ -12,7 +12,7 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 | Performance (Quest 2) | 15 | 6.0 | 8.0 | BVH wall raycasts, allocation-free hot paths, 15.9 → 10.6 MB precache, chunk split, tiers; not yet measured on device |
 | Architecture | 10 | 6.5 | 8.5 | Query/resolve combat, pure `systems/`, `*Sim`/`*AI` modules, single balance source |
 | Code quality | 10 | 5.0 | 8.5 | Lint-enforced size and style, unpacked code, shared pathing, no empty `catch` |
-| Testing | 10 | 3.0 | 8.5 | 8 → 180 unit tests, 86% line coverage on logic layers, 15 browser tests including emulated Quest 3 |
+| Testing | 10 | 3.0 | 8.5 | 8 → 226 unit tests, 87% line coverage on logic layers, 18 browser tests including emulated Quest 3 |
 | CI/CD | 8 | 5.0 | 7.0 | `verify` gate, e2e job, budgets, signed-APK workflow (not yet run on GitHub) |
 | Documentation | 8 | 5.0 | 8.5 | HANDOFF/CONTEXT/CONVENTIONS rewritten from the code, ADRs, credits, audit record |
 | UX and accessibility | 10 | 5.0 | 8.0 | VR menus, volumes, vignette, seated mode, optional PWA prompt, labelled settings, zoomable menus |
@@ -55,6 +55,10 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 4. **Residual quality items.** The 68 MB `assets/` source folder lives in the repo (LFS or external storage is an owner decision); Bishop's AI is not yet extracted into a pure step function; Praetorian and small-alien balance have not been re-tuned.
 5. **Repository history.** An earlier version of `HANDOFF.md` containing the headset serial number remains in git history (history was deliberately not rewritten).
 
-## 4. Method
+## 4. Product depth added in phase 5
+
+Beyond fixing findings, the programme added the structure for future content: difficulty profiles and a ranked local leaderboard (both tested and shown in 2D and VR), a weapon-profile framework with weapon cycling (one weapon registered), and a data-driven `LevelDefinition` with validation (the Sulaco is the first map; a second synthetic map proves the systems are level-agnostic). Designs for the Smartgun, Flamethrower and an LV-426 map are in `docs/design/`; building them needs art and sound assets and owner decisions, which are listed in `HANDOFF.md` section 9.
+
+## 5. Method
 
 Baseline: read all source and docs, ran the tests, build, `npm audit` and `npm outdated`. After: every claim above maps to a test, lint rule, budget or a documented manual check. See `.ai/UPLIFT_PLAN.md` (the execution plan) and `.ai/UPLIFT_PROGRESS.md` (commit-by-commit record, deviations, checklists).

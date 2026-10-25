@@ -1,7 +1,7 @@
 # Aliens Survivor: Engineering Handoff
 
 > **Audience:** the next engineer or AI coding assistant.
-> **Verified against code at commit `61eeb0d`** (end of uplift phase 4). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
+> **Verified against code at commit `b99ba2f`** (end of uplift phase 5). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
 > Machine-specific details (headset serial, ADB paths, keystore location) live in `HANDOFF.local.md`, which is gitignored.
 
 ---
@@ -62,6 +62,7 @@ src/
 │   ├── Persistence.ts         Validated localStorage for settings and best kills
 │   ├── SettingsBinding.ts     Pushes settings into audio, input and haptics
 │   ├── MissionLauncher.ts     launchMission(): start a run and bring up audio
+│   ├── runState.ts / runSummary.ts   Per-run reset fields; scoring a finished run onto the leaderboard
 │   ├── CombatEvents.ts        Target providers, queryTarget / resolveShot, wall impacts
 │   ├── CorridorNav.ts         Hall rectangles, corners, spawn nodes, allocation-free clamping
 │   ├── InputManager.ts        Keyboard, mouse, touch and XR input aggregation
@@ -69,8 +70,13 @@ src/
 │   ├── AdaptiveQuality.tsx / QualityState.ts   FPS governor and effect tiers (0..2)
 │   ├── XRStore.ts, XRControllerState.ts, Haptics.ts, ComfortState.ts   XR session and controllers
 │   └── Platform.ts, e2e.ts, iwerHarness.ts, TrackerState.ts, MuzzleTexture.ts, SevenSegment.ts
-├── data/balance.ts            All balance numbers and upgrade catalogue/effects
-├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort
+├── data/
+│   ├── balance.ts             Game numbers, score weights, upgrade catalogue and effects
+│   ├── difficulty.ts          Recruit / Marine / Ultimate Badass profiles and per-run GameRules
+│   └── weapons.ts             WeaponProfile registry (M41A only), cycling order
+├── levels/                    LevelDefinition (halls, junctions, spawns, starts, radar outline), validateLevel,
+│   └── sulaco.ts              the Sulaco map; index.ts holds the registry and the active level
+├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort, scoring
 ├── entities/                  three.js / R3F world objects
 │   ├── XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool}.ts
 │   ├── SmallAlienSpawner.tsx + small/{smallSim,smallAssets}.ts
@@ -81,12 +87,12 @@ src/
 │   ├── BishopCompanion.tsx, BishopRig.ts, ComfortVignette.tsx, AlienEggs.tsx
 │   └── WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
 └── ui/                        2D overlays and VR menus
-    ├── HUD.tsx → MainMenu, VictoryScreen, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
+    ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
     └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
 tests/   Vitest suites (logic, systems, UI models, budgets, credits)
 e2e/     Playwright (smoke, mobile, vr)
 scripts/ compress-models, compress-audio, check-budgets, list-asset-metadata, tick-progress
-docs/    AUDIT.md, IP_REVIEW.md, adr/
+docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 .ai/     Context, conventions, asset manifest, uplift plan and progress
 ```
 
@@ -94,11 +100,11 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/
 
 | Platform | Controls |
 |---|---|
-| Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, F flashlight, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
+| Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, F flashlight, Q cycle weapon, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
 | Touch | Left half: move stick. Right half: look; the rifle auto-fires when a threat is in the crosshair. PAUSE button |
-| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · X flashlight · B/Y or stick click pause · look at the left wrist for the tracker |
+| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · X flashlight · left grip cycle weapon · B/Y or stick click pause · look at the left wrist for the tracker |
 
-**VR menus.** On entering VR the mission waits in a start menu: a fresh trigger press deploys. **Pause (B/Y):** right or left stick up/down selects a row, left/right adjusts (snap turn, comfort vignette, reduced flash, handedness, seated mode, master/music/effects volume), trigger on *Resume* resumes. **Level-up:** stick left/right selects a card, trigger confirms (input is ignored for 0.6 s and until the trigger has been released). **Defeat/victory:** a fresh trigger press redeploys; nothing restarts automatically.
+**VR menus.** On entering VR the mission waits in a start menu: stick left/right picks the difficulty and a fresh trigger press deploys. **Pause (B/Y):** right or left stick up/down selects a row, left/right adjusts (snap turn, comfort vignette, reduced flash, handedness, seated mode, master/music/effects volume), trigger on *Resume* resumes. **Level-up:** stick left/right selects a card, trigger confirms (input is ignored for 0.6 s and until the trigger has been released). **Defeat/victory:** a fresh trigger press redeploys; nothing restarts automatically.
 
 ## 6. Architecture notes
 
@@ -108,6 +114,10 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/
 - **Quality:** `XRStore` picks the framebuffer scale once per device class (three.js ignores scale changes mid-session). `AdaptiveQuality` then adjusts effect tiers from measured FPS (sparks, decals, droplets, eggs).
 - **Audio:** master/SFX gain buses, a 24-voice cap (gunfire, damage and UI are exempt), HRTF only for key cues, music through an `<audio>` element.
 - **Settings:** stored under `uscm_settings_v1` (validated per field); `SettingsBinding` applies them live.
+- **Difficulty:** the chosen profile is resolved once per run into `state.rules` (spawn interval, enemy HP and damage, concurrent drones, regen); marine equals the original balance, and it cannot change mid-run.
+- **Scoring:** `systems/scoring.ts` computes a score (kills by kind, accuracy, survival, weights in `BALANCE.SCORE`); `runSummary.ts` ranks each finished run on a top-10 board per difficulty (`uscm_leaderboard_v1`).
+- **Weapons:** `data/weapons.ts` holds a profile per weapon; the store tracks `activeWeapon` and switching costs a reload. Only the M41A exists; see `docs/design/weapons.md`.
+- **Levels:** navigation, pathing, spawns, starts and the radar outline come from the active `LevelDefinition` (`src/levels`); the 3D scene of a map is still its own component. See `docs/design/lv426.md`.
 
 ## 7. Release and deployment
 
@@ -128,4 +138,6 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/
 
 ## 9. Open items
 
-See `.ai/UPLIFT_PROGRESS.md` for the status of the uplift programme and the manual device checklists, and `docs/AUDIT.md` for remaining findings.
+- **Owner decisions pending** (assets and legal): Smartgun and Flamethrower art and sounds (`docs/design/weapons.md`), a second map (`docs/design/lv426.md`), IP and licensing and visible CC BY attribution (`docs/IP_REVIEW.md`, `CREDITS.md`), Git LFS for `assets/`.
+- **Device verification:** the manual checklists in `.ai/UPLIFT_PROGRESS.md` have not been run on a headset or phone yet.
+- See `docs/AUDIT.md` for the scorecard and remaining findings.

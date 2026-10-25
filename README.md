@@ -14,7 +14,7 @@ A 5-minute (300-second) first-person survival wave shooter set aboard the *USS S
   - **Mobile:** left-half move stick, right-half look with auto-fire on targets; installable PWA (optional).
 - **Arsenal and gear:** M41A pulse rifle (digital ammo counter, 2.5 s reload, overheat jams), underslung flashlight, muzzle strobe, M314 motion tracker (sweep radar with pitch-modulated pings).
 - **Enemies:** pooled Xenomorph drones with five-zone dismemberment, facehuggers and chestbursters, and a Praetorian boss once in each of the last two phases.
-- **Progression:** XP from kills, Field Promotion level-ups with six upgrade cards, a best-kills record.
+- **Progression and scoring:** XP from kills, Field Promotion level-ups with six upgrade cards, three difficulty levels (Recruit, Marine, Ultimate Badass) and a local top-10 leaderboard per difficulty (score from kills, accuracy and survival time).
 - **Comfort and accessibility:** snap-turn angles (30°, 45°, 90°) or smooth turning, comfort vignette (off/low/high), reduced-flash mode, seated mode, left-handed mode, master/music/effects volumes, keyboard-focusable settings with labels, zoomable menus on mobile.
 
 ---

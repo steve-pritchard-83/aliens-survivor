@@ -54,14 +54,33 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P4.6 Phase close — gate green: 183 tests; decisions listed above
 
 ## Phase 5 — Product depth
-- [ ] P5.1 Difficulty
-- [ ] P5.2 Leaderboard
-- [ ] P5.3 Weapon framework
-- [ ] P5.4 Level definition
-- [ ] P5.5 Phase close
+- [x] P5.1 (d223eb4) Difficulty
+- [x] P5.2 (74e60db) Leaderboard
+- [x] P5.3 (1046745) Weapon framework
+- [x] P5.4 (b99ba2f) Level definition
+- [x] P5.5 Phase close — gate green: 226 tests, 18 e2e, budgets ok; owner decisions listed
 
 ## Deviations
 - Phase boundaries: user instructed "execute all phases", so phases proceed without waiting for approval between them. Manual checklists are still recorded per phase.
+
+- P0.1: the reformat was followed (P3.3) by normalising every file to LF via `.gitattributes` and Prettier `endOfLine: lf`, because a checkout had left one file as CRLF and broke multi-line edits.
+- P0.3: the armor-piercing multiplier is applied at the weapon, not inside the target; small aliens still take a flat 30 per hit regardless of weapon damage (balance question left for the owner).
+- P0.6: initial framebuffer scale is 0.85 on Quest 3 and 0.72 otherwise; the old 0.58–0.80 runtime scaling was removed because three.js ignores it mid-session.
+- P1.2: `registerKill` now takes a kind; small kills award 15 XP (was 25). Boss scale/speed use the values the code ran (0.62 / 3.1), not the stale 0.65 / 3.2 in the old table; `AP_DAMAGE` was removed (it was unused).
+- P1.4: the 250-line rule is enforced by ESLint `max-lines` ignoring blank lines and comments, so some files exceed 250 raw lines (for example AudioManager ~282).
+- P1.5: three-mesh-bvh is 0.8.x (not 0.9) to match drei's copy and avoid duplicate type declarations.
+- P1.6: the background music was also converted (AAC 80 kbps); the duplicate source copy was removed from audio-src because assets/music/bgmusic.mp3 is the same file. Precache ended at ~10.6 MB (limit 11).
+- P2.1: Bishop's AI was not extracted into a pure step function; xeno and small-alien AI were.
+- P2.3: coverage thresholds are 80 / 75 / 65 (plan said 60 / 60 / 50) because the logic layers sit at about 87% lines; tests are now type-checked by `tsc`.
+- P2.4/P2.6: e2e builds set VITE_E2E_XR=1 to include the IWER emulator; IWER needs forceInstall (Chromium has a native navigator.xr with no runtimes) and spoofs a Quest user agent, so the app auto-enters VR in those tests.
+- P3.5: **walking speed is now 1.2 m/s and frame-rate independent** (it was effectively 1.2 on Quest at 72 Hz, 1.4 at 60 fps and 2.8 at 30 fps because movement integrated from a position refreshed every 50 ms). The VR rig pivots about the XR viewer pose, not three.js's camera, because the camera is stale inside frame callbacks.
+- P3.7: the VR mission no longer starts automatically; it waits in an in-headset menu.
+- P4.3: all nine models turned out to be CC BY 4.0, so attribution is required; the app does not yet display it (owner decision).
+- P4.5: the keystore password line was printed once in a tool result because a masking command was wrong (see the Phase 4 section). The value never entered git.
+- P5.1: one commit (d223eb4) landed with a lint error in a test regex; fixed in 8281d05.
+- P5.3: weapon switching costs a reload; VR cycles weapons with the left grip (the right grip stays free); only the M41A is registered.
+- Shell note for future sessions: some multi-line shell heredocs and backslash-heavy snippets were mangled by the tool, so edits were made with script files and the Edit/Write tools instead.
+
 
 ## Manual Test Checklists
 
@@ -106,3 +125,10 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] USER DECISION: add visible attribution for the nine CC BY 4.0 models (credits screen or page); not done because it is a product/legal call.
 - [ ] USER DECISION: move the 68 MB `assets/` folder to Git LFS or external storage (not done; needs history/policy choice).
 - [ ] The headset serial number remains in git history (history not rewritten, per plan).
+
+### Phase 5 (branch uplift/p5-product) — needs device testing and owner decisions
+- [ ] Phone/desktop/Quest: choose each difficulty on the start screen and play a few minutes; confirm Recruit is forgiving, Marine feels as before, Ultimate Badass is clearly harder (tuning numbers live in `src/data/difficulty.ts`).
+- [ ] Finish a run (defeat and victory) on each platform: score and rank appear on the end screen (2D and VR), the leaderboard persists after a reload, and the start screen shows the best score.
+- [ ] Press Q (desktop) or the left grip (Quest): nothing should happen while only the M41A exists.
+- [ ] USER DECISION: supply or approve assets for the Smartgun and Flamethrower (`docs/design/weapons.md`) and say whether a second map is wanted (`docs/design/lv426.md`).
+- [ ] USER DECISION: score weights (`BALANCE.SCORE`) and difficulty values are first guesses; adjust after playtesting.

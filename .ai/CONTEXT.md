@@ -5,15 +5,16 @@
 
 ## 2. Directory Architecture
 - `src/core/`: engine services and state. `GameStore`/`GameTypes` (Zustand store, status machine, `runId`, settings), `Persistence` (validated localStorage), `SettingsBinding`, `MissionLauncher`, `CombatEvents` (target providers, `queryTarget`/`resolveShot`), `CorridorNav`, `InputManager`, `AudioManager`/`AudioCatalog`, `AdaptiveQuality`/`QualityState`, `XRStore`/`XRControllerState`/`Haptics`/`ComfortState`, `Platform`.
-- `src/data/balance.ts`: **the** source of game numbers (mission timers, player, weapon, Bishop, xeno pool, Praetorian, small aliens, XP, tracker, upgrade effects). Do not restate its values elsewhere; read them from the file.
-- `src/systems/`: pure logic with no React: corridor pathing, combat maths, wave director (boss rule, spawn picking), comfort vignette.
+- `src/data/`: `balance.ts` is **the** source of game numbers (mission timers, player, Bishop, xeno pool, Praetorian, small aliens, XP, tracker, score weights, upgrade effects); `difficulty.ts` holds the difficulty profiles and per-run rules; `weapons.ts` holds weapon profiles. Do not restate their values elsewhere; read them from the files.
+- `src/levels/`: `LevelDefinition` (halls, junctions, adjacency, spawn nodes, starts, radar outline), `validateLevel` and the Sulaco map. Systems read the active level; do not hard-code map coordinates.
+- `src/systems/`: pure logic with no React: corridor pathing, combat maths, wave director (boss rule, spawn picking, difficulty scaling), comfort vignette, scoring.
 - `src/entities/`: three.js / R3F world objects, each a thin adapter over pure modules (`xeno/`, `small/`, `rifle/`, `player/`, `level/`, `tracker/`, `fx/`).
 - `src/ui/`: 2D overlays (`HUD`, `MainMenu`, `SettingsPanel`, `StatusBar`, `TouchControls`, `PwaInstallPrompt`, `VictoryScreen`, `LevelUpModal`) and VR menus (`VRHud`, `VRStatusPanel`, `vrControllers`, `vrPauseMenu`, `vrMenuModel`, `VRMenuNav`, `vrSessionEvents`).
 - `tests/` (Vitest), `e2e/` (Playwright, including an emulated Quest 3), `scripts/` (asset compression, budgets, metadata), `docs/` (audit, IP inventory, ADRs).
 
 ## 3. Coordinate Space & Level Geometry
 - Floor `Y = 0`, ceiling `Y = 2.50 m`.
-- Double-size figure-8 sector (hall rectangles and corners are defined in `CorridorNav.ts`):
+- Double-size figure-8 sector (hall rectangles, junctions and spawn nodes are defined in `src/levels/sulaco.ts`):
   - East spine `X ≈ -0.32`, `Z ∈ [8.3, 35.9]`; west spine `X ≈ -13.48`.
   - Transverse connectors at `Z = 35.9` (north), `22.1` (centre) and `8.3` (south).
 - Player start `(-0.32, 13.0)` facing +Z. In VR the head (XR viewer pose) is the player position.

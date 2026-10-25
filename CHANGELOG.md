@@ -3,12 +3,14 @@
 ## Unreleased
 
 ### Added
+- **Difficulty:** Recruit, Marine (the original balance) and Ultimate Badass, chosen on the start and end screens (2D and VR). **Scoring:** a score from kills, accuracy and survival time with a ranked local top-10 board per difficulty, shown on the menus and end screens.
+- **Weapon framework:** weapon profiles, an active-weapon state and weapon cycling (Q, left grip); only the M41A exists until assets for new weapons are supplied. **Level framework:** maps are data (`LevelDefinition`), with the Sulaco as the first.
 - **Settings:** master/music/effects volume, comfort vignette (off/low/high), seated mode, mouse sensitivity, invert-Y and an optional status bar (health, ammo, clock, phase). All are validated and persisted.
 - **VR menus:** an in-headset start menu (the mission waits for a trigger press), a stick-driven pause menu with all settings, and a stick-driven level-up screen.
 - **Comfort vignette** in VR that darkens the periphery while turning or walking.
 - Best-kills record shown on the menu and end screens (2D and VR), saved on victory as well as defeat.
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
-- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 180 unit tests and 15 Playwright tests (including an emulated Quest 3).
+- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
 ### Fixed
 - Touch auto-aim no longer damages aliens just by looking at them, and bullets from the player and Bishop no longer pass through walls.

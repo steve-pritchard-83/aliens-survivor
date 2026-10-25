@@ -13,7 +13,8 @@ Run `npm run verify` before every commit; it enforces most of this list.
 9. **Frame-rate independence:** integrate movement and timers with `dt` and local state, never from throttled store values.
 10. **Light cap:** at most 4 dynamic lights; never mount/unmount lights at runtime (ADR 0001). Variable-cost effects honour `quality.tier` (ADR 0006).
 11. **Cross-platform input:** all player input goes through `InputManager` (desktop, touch, XR) or `vrControllers`; VR menus use `VRMenuNav` (edge-detected, armed after a delay).
-12. **Centralised data:** every game number lives in `src/data/balance.ts`; settings shape and validation live in `GameTypes.ts` and `Persistence.ts`.
+12. **Centralised data:** every game number lives in `src/data/` (`balance.ts`, `difficulty.ts`, `weapons.ts`); settings shape and validation live in `GameTypes.ts` and `Persistence.ts`. Per-run values are reset in one place (`core/runState.ts`) and difficulty rules are read from `state.rules`, never recomputed mid-run.
+12a. **Levels and weapons are data:** map layout, spawns and starts come from the active `LevelDefinition` (validate new ones with `validateLevel`); weapons are `WeaponProfile` entries read through the active weapon. Do not hard-code corridor coordinates or weapon numbers in entities.
 13. **Testing:** every logic change needs unit tests (coverage gate 80/75/65 on the logic layers); behaviour that spans the browser or XR gets a Playwright test. The IWER-based VR tests hold inputs for about a second because software rendering is slow.
 14. **Assets:** compress per ADR 0004, consult `.ai/ASSET_MANIFEST.md` for node/clip/audio names, and update `CREDITS.md` (a test checks models).
 15. **Docs:** keep `HANDOFF.md` and these files in step with the code; reference `balance.ts` instead of copying numbers.
