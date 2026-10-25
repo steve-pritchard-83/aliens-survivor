@@ -39,6 +39,7 @@ export function freshRunState(settings: GameSettings) {
     level: 1,
     nextLevelXp: BALANCE.XP.LEVEL_THRESHOLDS[0] as number,
     offeredUpgrades: [],
+    levelUpPending: false,
     activeUpgrades: [] as string[],
     rules: resolveRules(settings.difficulty) as GameRules
   };

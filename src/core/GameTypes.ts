@@ -70,6 +70,8 @@ export interface GameState {
   level: number;
   nextLevelXp: number;
   offeredUpgrades: UpgradeCard[];
+  /** A level-up earned mid-fight, held back until the next lull (see systems/levelUpGate). */
+  levelUpPending: boolean;
   activeUpgrades: string[];
   settings: GameSettings;
   recordKills: number;
@@ -79,6 +81,8 @@ export interface GameState {
 
   startGame: () => void;
   pauseGame: () => void;
+  /** Opens a held-back level-up (the card screen). */
+  openLevelUp: () => void;
   resumeGame: () => void;
   tick: (dt: number, now: number) => void;
   fireRound: () => boolean;

@@ -87,7 +87,10 @@ test('VR level-up: a held trigger never picks a card; stick selects and a fresh 
   // The player is holding the trigger (firing) when the level-up happens
   await trigger(page, 1);
   await page.waitForTimeout(300);
-  await page.evaluate(() => window.__game!.getState().registerKill('boss'));
+  await page.evaluate(() => {
+    window.__game!.getState().registerKill('boss');
+    window.__game!.getState().openLevelUp();
+  });
   await page.waitForFunction(() => window.__game?.getState().status === 'LEVEL_UP');
   await page.waitForTimeout(1500); // longer than the menu's arm delay, trigger still held
   expect(await status(page)).toBe('LEVEL_UP');

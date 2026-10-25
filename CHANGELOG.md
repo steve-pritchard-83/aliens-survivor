@@ -15,6 +15,9 @@
 ### Changed (look)
 - Faint blue-teal grade over the picture, thick close teal fog (1.5 to 15 m), and a light teal-blue M314 tracker with a fuzzy CRT effect (grain, scanlines, rolling band, glitch lines).
 
+### Changed (gameplay)
+- **Level-ups no longer freeze the game mid-fight.** If a hostile is within 14 m when the XP line is crossed, the upgrade is held back (a "FIELD PROMOTION READY" hint shows on flat screens) and the cards open after 1.5 s of calm, or after 60 s at the latest.
+
 ### Removed
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
 

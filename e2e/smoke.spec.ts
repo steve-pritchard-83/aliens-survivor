@@ -40,7 +40,11 @@ test('choosing a level-up upgrade keeps live aliens in play and resumes the miss
   });
   const before = await page.evaluate(() => window.__game!.getState().activeThreats.map((t) => t.id));
 
-  await page.evaluate(() => window.__game!.getState().registerKill('boss'));
+  // With a live drone nearby the level-up is held back; open it explicitly
+  await page.evaluate(() => {
+    window.__game!.getState().registerKill('boss');
+    window.__game!.getState().openLevelUp();
+  });
   await page.waitForFunction(() => window.__game?.getState().status === 'LEVEL_UP');
   await expect(page.getByText(/FIELD UPGRADE/)).toBeVisible();
 

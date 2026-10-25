@@ -10,6 +10,7 @@ import { AudioManager } from '../core/AudioManager';
 import { constrainToCorridorInto, XZ } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
 import { velocityDelta } from './player/playerMotion';
+import { isCalm, stepLevelUpGate } from '../systems/levelUpGate';
 import { readHeadLocal, turnAboutHead, moveHeadClamped, placeHeadAt } from './player/xrRig';
 
 const EYE_HEIGHT = 1.15;
@@ -33,6 +34,7 @@ export function PlayerController() {
   // Player position (the head in VR), integrated locally every frame; the store copy is throttled for other systems
   const posRef = useRef<XZ>({ x: getActiveLevel().playerStart.x, z: getActiveLevel().playerStart.z });
   const wasXrRef = useRef(false);
+  const levelUpGate = useRef({ calm: 0, waiting: 0 });
 
   const status = useGameStore((s) => s.status);
 
@@ -142,6 +144,16 @@ export function PlayerController() {
     if (state.status !== 'PLAYING') return;
 
     state.tick(dt, now);
+    const [gx, , gz] = state.playerPos;
+    if (
+      stepLevelUpGate(
+        levelUpGate.current,
+        state.levelUpPending,
+        isCalm(state.activeThreats, state.smallThreat, gx, gz),
+        dt
+      )
+    )
+      state.openLevelUp();
 
     const snap = InputManager.consumeSnapshot();
     if (snap.reloadRequested) state.startReload();

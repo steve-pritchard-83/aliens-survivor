@@ -24,6 +24,7 @@ export function HUD() {
   const timeRemaining = useGameStore((s) => (s.status !== 'PLAYING' ? s.timeRemaining : 0));
   const recordKills = useGameStore((s) => s.recordKills);
   const showStatusBar = useGameStore((s) => s.settings.showHud2D);
+  const levelUpPending = useGameStore((s) => s.levelUpPending);
   const difficulty = useGameStore((s) => s.settings.difficulty);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const lastRun = useGameStore((s) => s.lastRun);
@@ -123,6 +124,22 @@ export function HUD() {
             pointerEvents: 'none'
           }}
         />
+      )}
+      {status === 'PLAYING' && levelUpPending && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 14,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#9aeaff',
+            fontSize: 12,
+            letterSpacing: 3,
+            textShadow: '0 0 8px rgba(120, 220, 255, 0.7)'
+          }}
+        >
+          FIELD PROMOTION READY - HOLD THE LINE
+        </div>
       )}
       {status === 'PLAYING' && (
         <div

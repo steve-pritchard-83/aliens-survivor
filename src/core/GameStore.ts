@@ -5,6 +5,7 @@ import { WEAPONS, WEAPON_ORDER, nextWeapon } from '../data/weapons';
 import { incomingDamage } from '../systems/combatMath';
 import { loadSettings, saveSettings, loadRecordKills, loadLeaderboard } from './Persistence';
 import { endRunPatch } from './runSummary';
+import { isCalm } from '../systems/levelUpGate';
 import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../data/balance';
 import {
   GameStatus,
@@ -40,6 +41,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     })),
 
   pauseGame: () => set((s) => (s.status === 'PLAYING' ? { status: 'PAUSED' } : s)),
+  openLevelUp: () =>
+    set((s) => (s.levelUpPending && s.status === 'PLAYING' ? { status: 'LEVEL_UP', levelUpPending: false } : s)),
   resumeGame: () => set((s) => (s.status === 'PAUSED' || s.status === 'LEVEL_UP' ? { status: 'PLAYING' } : s)),
 
   tick: (dt, now) => {
@@ -149,7 +152,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       nextTargetXp = s.nextLevelXp,
       triggerLevelUp = false;
 
-    if (nextXp >= s.nextLevelXp && s.level <= BALANCE.XP.LEVEL_THRESHOLDS.length) {
+    if (nextXp >= s.nextLevelXp && s.level <= BALANCE.XP.LEVEL_THRESHOLDS.length && !s.levelUpPending) {
       nextLevel = s.level + 1;
       nextTargetXp = BALANCE.XP.LEVEL_THRESHOLDS[nextLevel - 1] || s.nextLevelXp * 1.5;
       triggerLevelUp = true;
@@ -158,6 +161,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (triggerLevelUp) {
       const pool = UPGRADE_CATALOG.filter((u) => !s.activeUpgrades.includes(u.id));
       const choices = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+      const calm = isCalm(s.activeThreats, s.smallThreat, s.playerPos[0], s.playerPos[2]);
       set({
         kills: nextKills,
         killsByKind,
@@ -165,7 +169,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         level: nextLevel,
         nextLevelXp: nextTargetXp,
         offeredUpgrades: choices,
-        status: choices.length > 0 ? 'LEVEL_UP' : 'PLAYING'
+        // Under fire the cards wait for a lull instead of freezing the game mid-fight
+        levelUpPending: choices.length > 0 && !calm,
+        status: choices.length > 0 && calm ? 'LEVEL_UP' : 'PLAYING'
       });
     } else {
       set({ kills: nextKills, killsByKind, xp: nextXp });
@@ -193,7 +199,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       fireInterval = WEAPONS[s.activeWeapon].overclockedFireInterval;
     }
 
-    set({ activeUpgrades: active, maxAmmo, ammo, maxHp, hp, fireInterval, status: 'PLAYING', offeredUpgrades: [] });
+    set({
+      activeUpgrades: active,
+      maxAmmo,
+      ammo,
+      maxHp,
+      hp,
+      fireInterval,
+      status: 'PLAYING',
+      offeredUpgrades: [],
+      levelUpPending: false
+    });
   },
 
   updateSettings: (partial) =>
