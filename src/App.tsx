@@ -18,7 +18,6 @@ import { AdaptiveQuality } from './core/AdaptiveQuality';
 import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 import { Platform } from './core/Platform';
-import { ScreenGrade } from './ui/ScreenGrade';
 
 // Telemetry is only ever used with ?debug=1, so keep it out of the main bundle
 const DebugTelemetry = lazy(() => import('./ui/DebugTelemetry').then((m) => ({ default: m.DebugTelemetry })));
@@ -69,7 +68,17 @@ export function App() {
           </Suspense>
         </XR>
       </Canvas>
-      <ScreenGrade />
+      {/* Faint blue-teal grade over the picture (VR gets the same look from the fog and light colours) */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 5,
+          pointerEvents: 'none',
+          background: 'rgba(30, 120, 150, 0.14)',
+          mixBlendMode: 'soft-light'
+        }}
+      />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { applyRim } from './fx/rimLight';
 
 // Bishop is authored as a static 1.75m mesh in a lowered T-pose facing +Z, with no skeleton.
 // This builds a procedural skeleton + smooth skin weights so he can be posed (arms IK'd onto the rifle) and animated (walk cycle).
@@ -99,7 +98,6 @@ export function buildBishopRig(source: THREE.Object3D): BishopRig {
     mat.roughnessMap = null;
     mat.metalnessMap = null;
     mat.envMapIntensity = 0;
-    applyRim(mat, 0.2, 3.2);
     mat.emissive.setHex(0x10161c);
     mat.emissiveIntensity = 0.1;
     mat.color.multiplyScalar(0.55); // his white suit otherwise glares against the dark corridor

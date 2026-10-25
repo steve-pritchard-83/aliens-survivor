@@ -7,8 +7,6 @@ import { trimSectorWalls } from './level/trimSectorWalls';
 import { registerEnvironmentRaycast } from './level/envRaycast';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { MistFX } from './MistFX';
-import { EndGlow } from './EndGlow';
-import { WetEnvironment } from './fx/WetEnvironment';
 import { AlienEggs } from './AlienEggs';
 
 export function CorridorLevel() {
@@ -112,8 +110,6 @@ export function CorridorLevel() {
 
       <CorridorAtmosphereFX />
       <MistFX />
-      <EndGlow />
-      <WetEnvironment />
     </group>
   );
 }

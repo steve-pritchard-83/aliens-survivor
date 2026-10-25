@@ -6,7 +6,7 @@
 Quest 2 (Adreno 650) renders forward-shaded stereo. Every dynamic light is evaluated per fragment per eye, and adding or removing a light at runtime recompiles shaders, which shows up as a visible hitch.
 
 ## Decision
-The whole scene may declare at most **four** point/spot/directional lights: the sector key light and the emergency beacon (`CorridorLevel`), the pale end-of-corridor glow (`EndGlow`) and the rifle muzzle flash (`PulseRifle`); the rifle torch has since been removed. Lights are always mounted; they are switched with `visible` or `intensity`. Impact feedback uses emissive flashes and particles instead of lights.
+The whole scene may declare at most **four** point/spot/directional lights: the sector key light and the emergency beacon (`CorridorLevel`), and the rifle muzzle flash (`PulseRifle`); the rifle torch has since been removed. Lights are always mounted; they are switched with `visible` or `intensity`. Impact feedback uses emissive flashes and particles instead of lights.
 
 ## Consequences
 - Lighting detail comes from baked/emissive materials, ambient and hemisphere lights (which are cheap).

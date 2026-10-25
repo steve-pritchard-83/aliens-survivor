@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { BALANCE } from '../../data/balance';
-import { applyRim } from '../fx/rimLight';
-import { registerWet } from '../fx/wetEnv';
 import { POOL_SIZE, LIMB_NAMES, PooledXenomorph, playClip, CLIP_IDLE } from '../XenoTypes';
 import { restoreMelt } from '../fx/meltTint';
 
@@ -20,10 +18,8 @@ export function buildXenoPool(scene: THREE.Group, clips: THREE.AnimationClip[]):
       if (!(child as THREE.Mesh).isMesh) return;
       const m = child as THREE.Mesh,
         mat = (m.material as THREE.MeshStandardMaterial).clone();
-      mat.roughness = 0.24;
-      mat.metalness = 0.35;
-      applyRim(mat, 0.28, 3.4);
-      registerWet(mat, 0.35);
+      mat.roughness = 0.34;
+      mat.metalness = 0.22;
       mat.color.setRGB(1.45, 1.52, 1.6);
       mat.emissive.setHex(XENO_BASE_EMISSIVE.hex);
       mat.emissiveIntensity = XENO_BASE_EMISSIVE.intensity;

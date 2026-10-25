@@ -3,8 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { quality } from '../core/QualityState';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { applyRim } from './fx/rimLight';
-import { registerWet } from './fx/wetEnv';
 
 // Candidate Ovomorph egg positions [x, z, yaw] tucked against corridor bulkheads; 3 picked randomly per session
 const EGG_SPOTS: [number, number, number][] = [
@@ -34,8 +32,6 @@ export function AlienEggs() {
         mat.metalness = 0.08;
         mat.emissive.setHex(0x000000);
         mat.emissiveIntensity = 0.0;
-        applyRim(mat, 0.8, 2.4);
-        registerWet(mat, 0.6);
         m.material = mat;
       });
       obj.scale.setScalar(0.2 + (idx % 2) * 0.03);

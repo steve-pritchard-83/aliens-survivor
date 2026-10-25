@@ -15,9 +15,6 @@
 ### Changed (look)
 - Faint blue-teal grade over the picture, thick close teal fog (1.5 to 15 m), and a light teal-blue M314 tracker with a fuzzy CRT effect (grain, scanlines, rolling band, glitch lines).
 
-### Changed (film look)
-- A pale glowing opening at the end of the east spine seen through the haze (card, light beam and one light), a cold fresnel rim glow on drones, facehuggers, chestbursters, eggs and Bishop, wet reflective skin on the creatures from a small teal environment map, and on flat screens a teal grade with vignette and animated film grain.
-
 ### Removed
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
 
