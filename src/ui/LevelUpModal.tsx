@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useGameStore } from '../core/GameStore';
 
 export function LevelUpModal() {
@@ -5,6 +6,16 @@ export function LevelUpModal() {
   const offered = useGameStore((s) => s.offeredUpgrades);
   const chooseUpgrade = useGameStore((s) => s.chooseUpgrade);
   const level = useGameStore((s) => s.level);
+
+  useEffect(() => {
+    if (status !== 'LEVEL_UP') return;
+    const onKey = (e: KeyboardEvent) => {
+      const idx = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code.replace('Numpad', 'Digit'));
+      if (idx >= 0 && idx < offered.length) chooseUpgrade(offered[idx].id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [status, offered, chooseUpgrade]);
 
   if (status !== 'LEVEL_UP' || offered.length === 0) return null;
 
@@ -40,7 +51,7 @@ export function LevelUpModal() {
           width: '100%'
         }}
       >
-        {offered.map((card) => (
+        {offered.map((card, index) => (
           <div
             key={card.id}
             onClick={() => chooseUpgrade(card.id)}
@@ -79,7 +90,7 @@ export function LevelUpModal() {
                 cursor: 'pointer'
               }}
             >
-              INSTALL UPGRADE
+              INSTALL UPGRADE [{index + 1}]
             </button>
           </div>
         ))}

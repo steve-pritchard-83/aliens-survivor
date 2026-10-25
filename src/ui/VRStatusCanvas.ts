@@ -9,17 +9,21 @@ function fmtTime(sec: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function drawVRStatusPanel(
-  canvas: HTMLCanvasElement,
-  status: VRPanelStatus,
-  kills: number,
-  shotsFired: number,
-  shotsHit: number,
-  timeRem: number,
-  pulse: number,
-  offered: UpgradeCard[],
-  settings?: GameSettings
-): void {
+export interface VRPanelData {
+  status: VRPanelStatus;
+  kills: number;
+  shotsFired: number;
+  shotsHit: number;
+  timeRem: number;
+  pulse: number;
+  offered: UpgradeCard[];
+  settings?: GameSettings;
+  selectedIndex: number;
+  recordKills: number;
+}
+
+export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): void {
+  const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, settings, selectedIndex, recordKills } = d;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -81,16 +85,17 @@ export function drawVRStatusPanel(
     ctx.font = 'bold 24px Courier New, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('WEYLAND-YUTANI // USCM FIELD PROMOTION', 512, 70);
-    const btnLabels = ['[TRIGGER / SELECT 1]', '[BUTTON A / SELECT 2]', '[BUTTON B / SELECT 3]'];
     for (let i = 0; i < Math.min(3, offered.length); i++) {
       const c = offered[i],
         cx = 80 + i * 300,
-        cw = 265;
-      ctx.fillStyle = 'rgba(0, 32, 16, 0.85)';
-      ctx.fillRect(cx, 100, cw, 350);
-      ctx.strokeStyle = '#00ff88';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(cx, 100, cw, 350);
+        cw = 265,
+        selected = i === selectedIndex;
+      ctx.fillStyle = selected ? 'rgba(0, 70, 36, 0.95)' : 'rgba(0, 32, 16, 0.85)';
+      ctx.fillRect(cx, 100, cw, 320);
+      ctx.strokeStyle = selected ? '#ffffff' : '#00ff88';
+      ctx.lineWidth = selected ? 7 : 3;
+      ctx.strokeRect(cx, 100, cw, 320);
+      ctx.textAlign = 'center';
       ctx.font = '40px monospace';
       ctx.fillText(c.icon, cx + cw / 2, 165);
       ctx.fillStyle = '#00ff88';
@@ -99,15 +104,21 @@ export function drawVRStatusPanel(
       ctx.fillStyle = '#ffffff';
       ctx.font = '13px Courier New, monospace';
       ctx.fillText(c.desc.slice(0, 26), cx + cw / 2, 270);
-      ctx.fillStyle = 'rgba(0, 255, 136, 0.25)';
-      ctx.fillRect(cx + 15, 360, cw - 30, 60);
-      ctx.strokeStyle = '#00ff88';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(cx + 15, 360, cw - 30, 60);
-      ctx.fillStyle = '#aaffd4';
-      ctx.font = 'bold 15px Courier New, monospace';
-      ctx.fillText(btnLabels[i], cx + cw / 2, 396);
+      if (selected) {
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.3)';
+        ctx.fillRect(cx + 15, 340, cw - 30, 60);
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx + 15, 340, cw - 30, 60);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 17px Courier New, monospace';
+        ctx.fillText('▶ SELECTED ◀', cx + cw / 2, 377);
+      }
     }
+    ctx.fillStyle = '#aaffd4';
+    ctx.font = 'bold 18px Courier New, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('◀ ▶  STICK: SELECT   //   TRIGGER: CONFIRM', 512, 462);
     return;
   }
 
@@ -140,6 +151,9 @@ export function drawVRStatusPanel(
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 28px Courier New, monospace';
   ctx.fillText(`SURVIVAL: ${dur}   |   KILLS: ${kills}   |   ACCURACY: ${acc}%`, 512, 290);
+  ctx.fillStyle = '#ffcc66';
+  ctx.font = 'bold 20px Courier New, monospace';
+  ctx.fillText(`BEST: ${Math.max(recordKills, kills)} KILLS`, 512, 325);
 
   const btnAlpha = 0.75 + Math.sin(pulse * 6.0) * 0.25;
   ctx.fillStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha * 0.25})` : `rgba(0, 255, 136, ${btnAlpha * 0.25})`;

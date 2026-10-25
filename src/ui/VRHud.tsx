@@ -8,8 +8,20 @@ import { AudioManager } from '../core/AudioManager';
 import { trackerCanvasState } from '../core/TrackerState';
 import { xrControllerState } from '../core/XRControllerState';
 
-import { drawVRStatusPanel, VRPanelStatus } from './VRStatusCanvas';
+import { drawVRStatusPanel, VRPanelData, VRPanelStatus } from './VRStatusCanvas';
+import { VRMenuNav } from './VRMenuNav';
 
+const _panel: VRPanelData = {
+  status: 'PAUSED',
+  kills: 0,
+  shotsFired: 0,
+  shotsHit: 0,
+  timeRem: 0,
+  pulse: 0,
+  offered: [],
+  selectedIndex: 0,
+  recordKills: 0
+};
 const _camFwd = new THREE.Vector3(),
   _wristPos = new THREE.Vector3(),
   _camPos = new THREE.Vector3(),
@@ -22,6 +34,9 @@ export function VRHud() {
   const statusMeshRef = useRef<THREE.Mesh>(null);
   const snapTurnCoolRef = useRef(false);
   const defeatTimerRef = useRef(0);
+  const navRef = useRef(new VRMenuNav()),
+    selectedRef = useRef(0),
+    prevStatusRef = useRef(useGameStore.getState().status);
   const pauseCoolRef = useRef(0),
     lightCoolRef = useRef(0);
 
@@ -41,26 +56,19 @@ export function VRHud() {
     return { panelCanvas: canvas, panelTex: tex };
   }, []);
 
-  const renderPanel = (
-    status: VRPanelStatus,
-    kills: number,
-    shotsFired: number,
-    shotsHit: number,
-    timeRem: number,
-    pulse: number
-  ) => {
+  const renderPanel = (status: VRPanelStatus, pulse: number) => {
     const st = useGameStore.getState();
-    drawVRStatusPanel(
-      panelCanvas,
-      status,
-      kills,
-      shotsFired,
-      shotsHit,
-      timeRem,
-      pulse,
-      st.offeredUpgrades,
-      st.settings
-    );
+    _panel.status = status;
+    _panel.kills = st.kills;
+    _panel.shotsFired = st.shotsFired;
+    _panel.shotsHit = st.shotsHit;
+    _panel.timeRem = st.timeRemaining;
+    _panel.pulse = pulse;
+    _panel.offered = st.offeredUpgrades;
+    _panel.settings = st.settings;
+    _panel.selectedIndex = selectedRef.current;
+    _panel.recordKills = st.recordKills;
+    drawVRStatusPanel(panelCanvas, _panel);
     panelTex.needsUpdate = true;
   };
 
@@ -78,7 +86,9 @@ export function VRHud() {
     let moveX = 0,
       moveZ = 0,
       firing = false,
-      anyButtonPressed = false;
+      anyButtonPressed = false,
+      rightStickX = 0,
+      rightStickY = 0;
     const xrSession = gl.xr.getSession(),
       refSpace = gl.xr.getReferenceSpace();
 
@@ -147,8 +157,13 @@ export function VRHud() {
           if (buttons[4]?.pressed) useGameStore.getState().startReload();
           if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
           const turnAxis = axes.length >= 4 ? axes[2] : axes.length >= 2 ? axes[0] : 0;
+          rightStickX = turnAxis || 0;
+          rightStickY = (axes.length >= 4 ? axes[3] : axes.length >= 2 ? axes[1] : 0) || 0;
           const snap = useGameStore.getState().settings.snapAngle;
-          if (snap > 0) {
+          // Turning only applies during play; otherwise the stick drives menus and must not queue turns
+          if (useGameStore.getState().status !== 'PLAYING') {
+            snapTurnCoolRef.current = Math.abs(turnAxis) > 0.25;
+          } else if (snap > 0) {
             if (Math.abs(turnAxis) > 0.65 && !snapTurnCoolRef.current) {
               snapTurnCoolRef.current = true;
               InputManager.addSnapTurn(turnAxis > 0 ? -snap : snap);
@@ -174,6 +189,13 @@ export function VRHud() {
     InputManager.setXRState(true, moveX, moveZ, firing);
 
     const st = useGameStore.getState();
+    if (st.status !== prevStatusRef.current) {
+      prevStatusRef.current = st.status;
+      if (st.status === 'LEVEL_UP') {
+        navRef.current.arm(0.6);
+        selectedRef.current = 0;
+      }
+    }
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
         statusMeshRef.current.visible = true;
@@ -182,7 +204,7 @@ export function VRHud() {
         camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel('PAUSED', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+        renderPanel('PAUSED', clock.getElapsedTime());
       }
       if (pauseCoolRef.current <= 0 && xrSession) {
         for (const src of xrSession.inputSources) {
@@ -225,11 +247,18 @@ export function VRHud() {
         camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel('LEVEL_UP', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+        renderPanel('LEVEL_UP', clock.getElapsedTime());
       }
-      if (st.offeredUpgrades.length > 0) {
-        if (firing) st.chooseUpgrade(st.offeredUpgrades[0].id);
-        else if (anyButtonPressed && st.offeredUpgrades.length > 1) st.chooseUpgrade(st.offeredUpgrades[1].id);
+      const nav = navRef.current,
+        count = Math.min(3, st.offeredUpgrades.length);
+      nav.update(dt, rightStickX, rightStickY, firing);
+      if (count > 0) {
+        if (nav.consumeLeft()) selectedRef.current = Math.max(0, selectedRef.current - 1);
+        if (nav.consumeRight()) selectedRef.current = Math.min(count - 1, selectedRef.current + 1);
+        if (nav.consumeConfirm()) {
+          AudioManager.play2D('ui_beep', 0.8);
+          st.chooseUpgrade(st.offeredUpgrades[selectedRef.current].id);
+        }
       }
       return;
     }
@@ -242,7 +271,7 @@ export function VRHud() {
         camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
-        renderPanel(st.status, st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+        renderPanel(st.status, clock.getElapsedTime());
       }
       if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
         defeatTimerRef.current = 0;
