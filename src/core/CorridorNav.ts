@@ -56,25 +56,37 @@ export const CORRIDOR_SPAWN_NODES: SpawnNode[] = [
   { id: 'vent_south_mid', label: 'SOUTH WING FLOOR GRATE', position: [-6.9, 0.0, 8.3], waypoints: [[-3.8, 0.0, 8.3]] }
 ];
 
-export function constrainToCorridor(x: number, z: number, margin = 0): [number, number] {
-  const halls: [number, number, number, number][] = [
-    [-0.95 + margin, 0.32 - margin, 7.68 + margin, 36.52 - margin],
-    [-14.12 + margin, -12.85 - margin, 7.68 + margin, 36.52 - margin],
-    [-14.12 + margin, 0.32 - margin, 35.28 + margin, 36.52 - margin],
-    [-14.12 + margin, 0.32 - margin, 21.48 + margin, 22.72 - margin],
-    [-14.12 + margin, 0.32 - margin, 7.68 + margin, 8.92 - margin]
-  ];
-  for (let i = 0; i < halls.length; i++) {
-    const [minX, maxX, minZ, maxZ] = halls[i];
-    if (x >= minX && x <= maxX && z >= minZ && z <= maxZ) return [x, z];
+// Walkable hall rectangles [minX, maxX, minZ, maxZ] at zero margin; a margin shrinks each rectangle inward
+const HALLS: readonly (readonly [number, number, number, number])[] = [
+  [-0.95, 0.32, 7.68, 36.52],
+  [-14.12, -12.85, 7.68, 36.52],
+  [-14.12, 0.32, 35.28, 36.52],
+  [-14.12, 0.32, 21.48, 22.72],
+  [-14.12, 0.32, 7.68, 8.92]
+];
+
+export interface XZ {
+  x: number;
+  z: number;
+}
+
+/** Clamps (x, z) into the nearest hall, shrunk by margin, writing into out. Allocation-free. */
+export function constrainToCorridorInto(x: number, z: number, margin: number, out: XZ): void {
+  for (let i = 0; i < HALLS.length; i++) {
+    const h = HALLS[i];
+    if (x >= h[0] + margin && x <= h[1] - margin && z >= h[2] + margin && z <= h[3] - margin) {
+      out.x = x;
+      out.z = z;
+      return;
+    }
   }
   let bestX = x,
     bestZ = z,
     bestDist = Infinity;
-  for (let i = 0; i < halls.length; i++) {
-    const [minX, maxX, minZ, maxZ] = halls[i];
-    const cx = Math.max(minX, Math.min(maxX, x)),
-      cz = Math.max(minZ, Math.min(maxZ, z));
+  for (let i = 0; i < HALLS.length; i++) {
+    const h = HALLS[i];
+    const cx = Math.max(h[0] + margin, Math.min(h[1] - margin, x)),
+      cz = Math.max(h[2] + margin, Math.min(h[3] - margin, z));
     const d = Math.hypot(x - cx, z - cz);
     if (d < bestDist) {
       bestDist = d;
@@ -82,7 +94,23 @@ export function constrainToCorridor(x: number, z: number, margin = 0): [number, 
       bestZ = cz;
     }
   }
-  return [bestX, bestZ];
+  out.x = bestX;
+  out.z = bestZ;
+}
+
+const _scratch: XZ = { x: 0, z: 0 };
+
+/** Convenience tuple form for non-hot paths and tests. */
+export function constrainToCorridor(x: number, z: number, margin = 0): [number, number] {
+  constrainToCorridorInto(x, z, margin, _scratch);
+  return [_scratch.x, _scratch.z];
+}
+
+/** Moves an agent to (x, z) constrained to the corridor. Allocation-free. */
+export function moveConstrained(agent: XZ, x: number, z: number, margin: number): void {
+  constrainToCorridorInto(x, z, margin, _scratch);
+  agent.x = _scratch.x;
+  agent.z = _scratch.z;
 }
 
 // 6 Junctions across the Double-Size Figure-8 Sector: 0=NE, 1=NW, 2=Mid-E, 3=Mid-W, 4=SE, 5=SW

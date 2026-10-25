@@ -6,9 +6,11 @@ import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, DamageSpec } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
-import { constrainToCorridor, getHallId, CORNERS, HALL_CORNERS, ADJ_CORNERS } from '../core/CorridorNav';
+import { constrainToCorridorInto, moveConstrained, getHallId, CORNERS } from '../core/CorridorNav';
+import { advanceCorner } from '../systems/corridorPathing';
 import { buildBishopRig, poseBishop } from './BishopRig';
 
+const _goal = { x: 0, z: 0 };
 const _dmg: DamageSpec = { amount: BALANCE.BISHOP.DAMAGE, source: 'bishop' };
 const _rayOrigin = new THREE.Vector3(),
   _rayDir = new THREE.Vector3();
@@ -77,7 +79,9 @@ export function BishopCompanion() {
       fz = -Math.cos(pyaw),
       rx = Math.cos(pyaw),
       rz = -Math.sin(pyaw);
-    const [goalX, goalZ] = constrainToCorridor(px - fx * 2.1 + rx * 0.28, pz - fz * 2.1 + rz * 0.28, 0.22);
+    constrainToCorridorInto(px - fx * 2.1 + rx * 0.28, pz - fz * 2.1 + rz * 0.28, 0.22, _goal);
+    const goalX = _goal.x,
+      goalZ = _goal.z;
 
     const bH = getHallId(st.x, st.z),
       pH = getHallId(goalX, goalZ);
@@ -95,30 +99,7 @@ export function BishopCompanion() {
     if (bH === pH) {
       st.targetCorner = -1;
     } else {
-      if (st.targetCorner < 0) {
-        st.targetCorner = HALL_CORNERS[bH].reduce(
-          (best, c) =>
-            Math.hypot(CORNERS[c][0] - st.x, CORNERS[c][1] - st.z) +
-              Math.hypot(goalX - CORNERS[c][0], goalZ - CORNERS[c][1]) <
-            Math.hypot(CORNERS[best][0] - st.x, CORNERS[best][1] - st.z) +
-              Math.hypot(goalX - CORNERS[best][0], goalZ - CORNERS[best][1])
-              ? c
-              : best,
-          HALL_CORNERS[bH][0]
-        );
-      }
-      if (Math.hypot(CORNERS[st.targetCorner][0] - st.x, CORNERS[st.targetCorner][1] - st.z) < 0.48) {
-        st.targetCorner = HALL_CORNERS[pH].includes(st.targetCorner)
-          ? -1
-          : ADJ_CORNERS[st.targetCorner].reduce(
-              (best, c) =>
-                Math.hypot(goalX - CORNERS[c][0], goalZ - CORNERS[c][1]) <
-                Math.hypot(goalX - CORNERS[best][0], goalZ - CORNERS[best][1])
-                  ? c
-                  : best,
-              ADJ_CORNERS[st.targetCorner][0]
-            );
-      }
+      st.targetCorner = advanceCorner(st.targetCorner, bH, pH, st.x, st.z, goalX, goalZ);
       if (st.targetCorner >= 0) [tx, tz] = CORNERS[st.targetCorner];
     }
 
@@ -132,11 +113,7 @@ export function BishopCompanion() {
     const movingCloserToPlayer = dx * (px - st.x) + dz * (pz - st.z) > 0;
     if (distToGoal > 0.45 && store.status === 'PLAYING' && (!movingCloserToPlayer || distToPlayer > 1.85)) {
       const moveSpeed = distToPlayer > 5.0 ? BALANCE.BISHOP.CATCHUP_SPEED : BALANCE.BISHOP.FOLLOW_SPEED;
-      [st.x, st.z] = constrainToCorridor(
-        st.x + (dx / distToGoal) * moveSpeed * dt,
-        st.z + (dz / distToGoal) * moveSpeed * dt,
-        0.22
-      );
+      moveConstrained(st, st.x + (dx / distToGoal) * moveSpeed * dt, st.z + (dz / distToGoal) * moveSpeed * dt, 0.22);
     }
 
     // If player backs into Bishop or gets too close (< 1.55m), smoothly step back away from player
@@ -144,14 +121,14 @@ export function BishopCompanion() {
     if (sepDist < 1.55 && store.status === 'PLAYING') {
       const awayX = sepDist > 0.05 ? (st.x - px) / sepDist : -fx;
       const awayZ = sepDist > 0.05 ? (st.z - pz) / sepDist : -fz;
-      [st.x, st.z] = constrainToCorridor(st.x + awayX * 2.8 * dt, st.z + awayZ * 2.8 * dt, 0.22);
+      moveConstrained(st, st.x + awayX * 2.8 * dt, st.z + awayZ * 2.8 * dt, 0.22);
     }
     // Hard collision boundary: never let Bishop overlap player within 1.15m
     const hardDist = Math.hypot(st.x - px, st.z - pz);
     if (hardDist < 1.15) {
       const pushX = hardDist > 0.05 ? (st.x - px) / hardDist : -fx;
       const pushZ = hardDist > 0.05 ? (st.z - pz) / hardDist : -fz;
-      [st.x, st.z] = constrainToCorridor(px + pushX * 1.15, pz + pushZ * 1.15, 0.22);
+      moveConstrained(st, px + pushX * 1.15, pz + pushZ * 1.15, 0.22);
     }
 
     // Ground-truth displacement prevents foot sliding: stride phase is locked directly to distance traveled

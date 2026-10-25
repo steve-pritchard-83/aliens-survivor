@@ -7,15 +7,9 @@ import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
-import {
-  CORRIDOR_SPAWN_NODES,
-  constrainToCorridor,
-  getHallId,
-  isSpawnVisibleToPlayer,
-  CORNERS,
-  HALL_CORNERS,
-  ADJ_CORNERS
-} from '../core/CorridorNav';
+import { CORRIDOR_SPAWN_NODES, moveConstrained, getHallId, CORNERS } from '../core/CorridorNav';
+import { advanceCorner, HALL_LANE } from '../systems/corridorPathing';
+import { pickSpawnNode } from '../systems/waveDirector';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { buildFaceRig, buildWormRig, animateFace, animateWorm, groundModel, AnimMode } from './SmallAlienAnim';
 
@@ -24,6 +18,7 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 
 const SMALL_ALIEN_ID = 99;
+const SMALL_FALLBACK_NODES = [0, 4, 5, 10];
 
 export function SmallAlienSpawner() {
   const fhGltf = useGLTF('/models/facehugger.glb'),
@@ -137,7 +132,7 @@ export function SmallAlienSpawner() {
           m.emissive.setHex(0xffffff);
           m.emissiveIntensity = 0.45;
         });
-        [e.x, e.z] = constrainToCorridor(e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
+        moveConstrained(e, e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
         AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
         AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);
         if (isKill) {
@@ -183,18 +178,7 @@ export function SmallAlienSpawner() {
 
     // Spawn at most ONE Facehugger or Chestburster at a time randomly from off-screen vents
     if (!e.active && state.status === 'PLAYING' && (e.spawnCooldown -= dt) <= 0) {
-      const hidden = CORRIDOR_SPAWN_NODES.map((_, i) => i).filter(
-        (i) =>
-          !isSpawnVisibleToPlayer(
-            CORRIDOR_SPAWN_NODES[i].position[0],
-            CORRIDOR_SPAWN_NODES[i].position[2],
-            px,
-            pz,
-            pyaw
-          )
-      );
-      const cands = hidden.length > 0 ? hidden : [0, 4, 5, 10],
-        node = CORRIDOR_SPAWN_NODES[cands[Math.floor(Math.random() * cands.length)]],
+      const node = CORRIDOR_SPAWN_NODES[pickSpawnNode(px, pz, pyaw, -1, SMALL_FALLBACK_NODES)],
         isFH = Math.random() < 0.5;
       Object.assign(e, {
         active: true,
@@ -280,36 +264,12 @@ export function SmallAlienSpawner() {
           e.targetCorner = -1;
           const slither = Math.sin(now * (e.kind === 'CHESTBURSTER' ? 9.5 : 6.5)) * 0.22;
           if (distToPlayer > 1.8) {
-            if (xH === 0) tx = -0.32 + slither;
-            else if (xH === 1) tx = -13.48 + slither;
-            else if (xH === 2) tz = 35.9 + slither;
-            else if (xH === 3) tz = 22.1 + slither;
-            else tz = 8.3 + slither;
+            const lane = HALL_LANE[xH];
+            if (lane.axis === 'x') tx = lane.value + slither;
+            else tz = lane.value + slither;
           }
         } else {
-          if (e.targetCorner < 0)
-            e.targetCorner = HALL_CORNERS[xH].reduce(
-              (best, c) =>
-                Math.hypot(CORNERS[c][0] - e.x, CORNERS[c][1] - e.z) +
-                  Math.hypot(px - CORNERS[c][0], pz - CORNERS[c][1]) <
-                Math.hypot(CORNERS[best][0] - e.x, CORNERS[best][1] - e.z) +
-                  Math.hypot(px - CORNERS[best][0], pz - CORNERS[best][1])
-                  ? c
-                  : best,
-              HALL_CORNERS[xH][0]
-            );
-          if (Math.hypot(CORNERS[e.targetCorner][0] - e.x, CORNERS[e.targetCorner][1] - e.z) < 0.48) {
-            e.targetCorner = HALL_CORNERS[pH].includes(e.targetCorner)
-              ? -1
-              : ADJ_CORNERS[e.targetCorner].reduce(
-                  (best, c) =>
-                    Math.hypot(px - CORNERS[c][0], pz - CORNERS[c][1]) <
-                    Math.hypot(px - CORNERS[best][0], pz - CORNERS[best][1])
-                      ? c
-                      : best,
-                  ADJ_CORNERS[e.targetCorner][0]
-                );
-          }
+          e.targetCorner = advanceCorner(e.targetCorner, xH, pH, e.x, e.z, px, pz);
           if (e.targetCorner >= 0) [tx, tz] = CORNERS[e.targetCorner];
         }
         const dx = tx - e.x,
@@ -320,7 +280,7 @@ export function SmallAlienSpawner() {
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
           e.yaw += diff * Math.min(1, dt * 15);
-          [e.x, e.z] = constrainToCorridor(e.x + (dx / dT) * e.speed * dt, e.z + (dz / dT) * e.speed * dt, 0.18);
+          moveConstrained(e, e.x + (dx / dT) * e.speed * dt, e.z + (dz / dT) * e.speed * dt, 0.18);
         }
       }
     } else if (e.state === 'LEAPING') {
@@ -328,7 +288,7 @@ export function SmallAlienSpawner() {
       const u = 1.0 - Math.max(0, e.stateTimer / 0.58);
       e.y = Math.sin(u * Math.PI) * (e.kind === 'FACEHUGGER' ? 1.35 : 0.88);
       pitchTilt = (u - 0.5) * -0.6;
-      [e.x, e.z] = constrainToCorridor(e.x + e.leapVx * dt, e.z + e.leapVz * dt, 0.18);
+      moveConstrained(e, e.x + e.leapVx * dt, e.z + e.leapVz * dt, 0.18);
       if (distToPlayer <= 1.45) {
         e.y = 0.0;
         pitchTilt = 0;

@@ -6,17 +6,11 @@ import { SkeletonUtils } from 'three-stdlib';
 import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, TargetProvider } from '../core/CombatEvents';
-import { shouldSpawnBoss } from '../systems/waveDirector';
+import { shouldSpawnBoss, spawnInterval, droneBaseSpeed, droneMaxHp, pickSpawnNode } from '../systems/waveDirector';
+import { damageAgainstXeno } from '../systems/combatMath';
 import { BALANCE } from '../data/balance';
-import {
-  CORRIDOR_SPAWN_NODES,
-  constrainToCorridor,
-  getHallId,
-  isSpawnVisibleToPlayer,
-  CORNERS,
-  HALL_CORNERS,
-  ADJ_CORNERS
-} from '../core/CorridorNav';
+import { CORRIDOR_SPAWN_NODES, moveConstrained, getHallId, CORNERS } from '../core/CorridorNav';
+import { advanceCorner, HALL_LANE } from '../systems/corridorPathing';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import {
   POOL_SIZE,
@@ -36,6 +30,8 @@ const _sphere = new THREE.Sphere(),
   _ray = new THREE.Ray(),
   _hitVec = new THREE.Vector3(),
   _jointPos = new THREE.Vector3();
+
+const XENO_FALLBACK_NODES = [0, 4, 5, 6];
 
 export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');
@@ -147,11 +143,7 @@ export function XenomorphPool() {
         const t = pool[id],
           prevHp = t.hp,
           relY = closestPoint.y - t.y;
-        const isKill =
-          (t.hp -=
-            dmg.amount *
-            (t.state === 'SPAWNING' ? BALANCE.WEAPON.SPAWNING_TARGET_DAMAGE_SCALE : 1) *
-            (t.isBoss ? BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT : 1)) <= 0;
+        const isKill = (t.hp -= damageAgainstXeno(dmg.amount, t.state === 'SPAWNING', t.isBoss)) <= 0;
         fxRef.current?.triggerImpact(closestPoint, origin, dir, isKill);
         const flashIntensity = useGameStore.getState().settings.reducedFlash ? 0.22 : 0.45;
         t.hitFlashTimer = 0.12;
@@ -159,7 +151,7 @@ export function XenomorphPool() {
           m.emissive.setHex(0xffffff);
           m.emissiveIntensity = flashIntensity;
         });
-        [t.x, t.z] = constrainToCorridor(t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
+        moveConstrained(t, t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
         const severSlot = (slot: number) => {
           const bone = t.limbBones[slot];
           if (t.severedLimbs[slot] || !bone) return;
@@ -253,9 +245,9 @@ export function XenomorphPool() {
       return;
     }
     const phase = state.phase,
-      spawnInterval = BALANCE.XENO_POOL.SPAWN_INTERVALS[phase - 1];
-    const baseSpeed = BALANCE.XENO_POOL.BASE_SPEEDS[phase - 1],
-      maxHp = BALANCE.XENO_POOL.MAX_HPS[phase - 1];
+      interval = spawnInterval(phase);
+    const baseSpeed = droneBaseSpeed(phase),
+      maxHp = droneMaxHp(phase);
     const activeCount = pool.reduce((acc, x) => acc + (x.active ? 1 : 0), 0),
       [px, , pz] = state.playerPos,
       pyaw = state.playerYaw;
@@ -266,19 +258,7 @@ export function XenomorphPool() {
         ? pool.find((x) => !x.active)
         : undefined;
     if (freeXeno) {
-      const hidden = CORRIDOR_SPAWN_NODES.map((_, i) => i).filter(
-        (i) =>
-          !isSpawnVisibleToPlayer(
-            CORRIDOR_SPAWN_NODES[i].position[0],
-            CORRIDOR_SPAWN_NODES[i].position[2],
-            px,
-            pz,
-            pyaw
-          )
-      );
-      const cands = hidden.length > 0 ? hidden : [0, 4, 5, 6];
-      let idx = cands[Math.floor(Math.random() * cands.length)];
-      if (idx === lastSpawnIndexRef.current && cands.length > 1) idx = cands[(cands.indexOf(idx) + 1) % cands.length];
+      const idx = pickSpawnNode(px, pz, pyaw, lastSpawnIndexRef.current, XENO_FALLBACK_NODES);
       lastSpawnIndexRef.current = idx;
       const node = CORRIDOR_SPAWN_NODES[idx];
       const isBoss = shouldSpawnBoss(
@@ -325,7 +305,7 @@ export function XenomorphPool() {
       playClip(freeXeno, CLIP_IDLE, true, 1.0);
       AudioManager.play3D('vent_clang', freeXeno.x, freeXeno.y + 1.0, freeXeno.z, 0.85);
       if (isBoss) AudioManager.play3D('xeno_hiss1', freeXeno.x, freeXeno.y + 1.2, freeXeno.z, 1.0, 0.75);
-      spawnCooldownRef.current = spawnInterval;
+      spawnCooldownRef.current = interval;
     }
     if ((hissTimerRef.current -= dt) <= 0 && activeCount > 0) {
       hissTimerRef.current = 2.4 + Math.random() * 2.4;
@@ -400,37 +380,12 @@ export function XenomorphPool() {
           if (xH === pH) {
             x.targetCorner = -1;
             if (distToPlayer > 2.2) {
-              if (xH === 0) tx = -0.32 + x.laneOffset;
-              else if (xH === 1) tx = -13.48 + x.laneOffset;
-              else if (xH === 2) tz = 35.9 + x.laneOffset;
-              else if (xH === 3) tz = 22.1 + x.laneOffset;
-              else tz = 8.3 + x.laneOffset;
+              const lane = HALL_LANE[xH];
+              if (lane.axis === 'x') tx = lane.value + x.laneOffset;
+              else tz = lane.value + x.laneOffset;
             }
           } else {
-            if (x.targetCorner < 0) {
-              x.targetCorner = HALL_CORNERS[xH].reduce(
-                (best, c) =>
-                  Math.hypot(CORNERS[c][0] - x.x, CORNERS[c][1] - x.z) +
-                    Math.hypot(px - CORNERS[c][0], pz - CORNERS[c][1]) <
-                  Math.hypot(CORNERS[best][0] - x.x, CORNERS[best][1] - x.z) +
-                    Math.hypot(px - CORNERS[best][0], pz - CORNERS[best][1])
-                    ? c
-                    : best,
-                HALL_CORNERS[xH][0]
-              );
-            }
-            if (Math.hypot(CORNERS[x.targetCorner][0] - x.x, CORNERS[x.targetCorner][1] - x.z) < 0.48) {
-              x.targetCorner = HALL_CORNERS[pH].includes(x.targetCorner)
-                ? -1
-                : ADJ_CORNERS[x.targetCorner].reduce(
-                    (best, c) =>
-                      Math.hypot(px - CORNERS[c][0], pz - CORNERS[c][1]) <
-                      Math.hypot(px - CORNERS[best][0], pz - CORNERS[best][1])
-                        ? c
-                        : best,
-                    ADJ_CORNERS[x.targetCorner][0]
-                  );
-            }
+            x.targetCorner = advanceCorner(x.targetCorner, xH, pH, x.x, x.z, px, pz);
             if (x.targetCorner >= 0) [tx, tz] = CORNERS[x.targetCorner];
           }
           const dx = tx - x.x,
@@ -441,7 +396,7 @@ export function XenomorphPool() {
             while (diff > Math.PI) diff -= Math.PI * 2;
             while (diff < -Math.PI) diff += Math.PI * 2;
             x.yaw += diff * Math.min(1, dt * 12);
-            [x.x, x.z] = constrainToCorridor(x.x + (dx / dT) * x.speed * dt, x.z + (dz / dT) * x.speed * dt, 0.24);
+            moveConstrained(x, x.x + (dx / dT) * x.speed * dt, x.z + (dz / dT) * x.speed * dt, 0.24);
           }
         }
       } else if (x.state === 'LEAPING') {
@@ -449,7 +404,7 @@ export function XenomorphPool() {
         const u = 1.0 - Math.max(0, x.stateTimer / 0.78);
         x.y = Math.sin(u * Math.PI) * 0.96;
         pitchTilt = Math.cos(u * Math.PI) * -0.52;
-        [x.x, x.z] = constrainToCorridor(x.x + x.leapVx * dt, x.z + x.leapVz * dt, 0.24);
+        moveConstrained(x, x.x + x.leapVx * dt, x.z + x.leapVz * dt, 0.24);
         if (distToPlayer <= 1.65) {
           x.y = 0.0;
           pitchTilt = 0;

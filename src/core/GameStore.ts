@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
+import { incomingDamage } from '../systems/combatMath';
 import { loadSettings, saveSettings, loadRecordKills, commitRecord } from './Persistence';
 import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../data/balance';
 import {
@@ -146,10 +147,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = get();
     if (s.status !== 'PLAYING') return;
     Haptics.damage();
-    const effectiveAmount =
-      isAcid && s.activeUpgrades.includes('acid_proofing')
-        ? amount * UPGRADE_EFFECTS.acid_proofing.acidDamageMult
-        : amount;
+    const effectiveAmount = incomingDamage(amount, isAcid, s.activeUpgrades);
     const nextHp = Math.max(0, s.hp - effectiveAmount);
     const recordKills = nextHp <= 0 ? commitRecord(s.kills, s.recordKills) : s.recordKills;
     set({

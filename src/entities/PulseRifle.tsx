@@ -7,6 +7,7 @@ import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { CombatSystem, DamageSpec } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
+import { weaponDamage } from '../systems/combatMath';
 import { Haptics } from '../core/Haptics';
 import { xrControllerState } from '../core/XRControllerState';
 import { getMuzzleStarTexture } from '../core/MuzzleTexture';
@@ -188,7 +189,7 @@ export function PulseRifle() {
           _rayDir.y += (Math.random() - 0.5) * spread;
           _rayDir.normalize();
           const hasAp = state.activeUpgrades.includes('ap_ammo');
-          _dmg.amount = BALANCE.WEAPON.BASE_DAMAGE * (hasAp ? BALANCE.WEAPON.AP_MULTIPLIER : 1);
+          _dmg.amount = weaponDamage(hasAp);
           const outcome = CombatSystem.resolveShot(_rayOrigin, _rayDir, _dmg);
           if (outcome.kind === 'target') state.registerHit();
           else if (outcome.kind === 'wall') {

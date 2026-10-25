@@ -2,10 +2,11 @@ import { useRef, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { constrainToCorridor } from '../core/CorridorNav';
+import { constrainToCorridor, constrainToCorridorInto } from '../core/CorridorNav';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
 
+const _gibXZ = { x: 0, z: 0 };
 const PARTICLE_COUNT = 64,
   GIB_POOL_SIZE = 12,
   PUDDLE_POOL_SIZE = 16;
@@ -323,8 +324,8 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
         if (!g.active) continue;
         const m = grp.children[i] as THREE.Mesh;
         if (!g.settled) {
-          const [nx, nz] = constrainToCorridor(m.position.x + g.vx * dt, m.position.z + g.vz * dt, 0.22);
-          m.position.set(nx, m.position.y + g.vy * dt, nz);
+          constrainToCorridorInto(m.position.x + g.vx * dt, m.position.z + g.vz * dt, 0.22, _gibXZ);
+          m.position.set(_gibXZ.x, m.position.y + g.vy * dt, _gibXZ.z);
           g.vy -= 11.5 * dt;
           m.rotation.x = THREE.MathUtils.lerp(m.rotation.x, 0, dt * 4);
           m.rotation.y += g.ry * dt;
