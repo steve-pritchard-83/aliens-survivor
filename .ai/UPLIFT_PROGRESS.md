@@ -6,12 +6,12 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P0.0 (cd96aeb) Progress tracker
 - [x] P0.1 (c5cedb3) Mechanical reformat
 - [x] P0.2 (1f2dcb4) Run identity / isSimulationFrozen (C5, H2)
-- [ ] P0.3 Hit query vs damage separation (C1, C2)
-- [ ] P0.4 Boss once per phase (H1)
-- [ ] P0.5 VR level-up selection (C3)
-- [ ] P0.6 Adaptive quality tiers (C4)
-- [ ] P0.7 Settings and record persistence
-- [ ] P0.8 Phase close
+- [x] P0.3 (9866bcd) Hit query vs damage separation (C1, C2)
+- [x] P0.4 (642acd7) Boss once per phase (H1)
+- [x] P0.5 (2862960) VR level-up selection (C3)
+- [x] P0.6 (5e02bec) Adaptive quality tiers (C4)
+- [x] P0.7 (6923f33) Settings and record persistence
+- [x] P0.8 Phase close — gate green: 38 tests, build ok
 
 ## Phase 1 — Code health
 - [ ] P1.1 Lint + verify pipeline
@@ -64,4 +64,13 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - Phase boundaries: user instructed "execute all phases", so phases proceed without waiting for approval between them. Manual checklists are still recorded per phase.
 
 ## Manual Test Checklists
-(filled at each phase close)
+
+### Phase 0 (branch uplift/p0-stabilise) — needs device testing
+- [ ] Mobile/touch: aim at a drone without firing; it must not die instantly (auto-aim probe no longer damages).
+- [ ] Desktop: shoot at a drone standing behind a corridor corner; wall sparks and ricochet only, no damage.
+- [ ] Quest: reach level 2 with aliens alive — they must still be there after choosing a card, Bishop must not teleport.
+- [ ] Quest: level-up card picking: hold the trigger while levelling, nothing selects; stick left/right moves the highlight; trigger confirms; card 3 reachable.
+- [ ] Quest: right stick pushes during the level-up screen do not turn the view after resuming.
+- [ ] Phase 3 and 4 each spawn exactly one Praetorian.
+- [ ] Quest : tier readout drops in heavy fights and recovers; no framebuffer-scale console warnings.
+- [ ] Reload the page: snap-turn/flash/handedness persist; BEST kills shows on menu and end screens (2D and VR).
