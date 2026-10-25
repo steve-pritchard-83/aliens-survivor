@@ -27,7 +27,15 @@ export function App() {
 
   return (
     <div
-      style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#030507' }}
+      style={{
+        width: '100vw',
+        height: '100vh',
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#030507',
+        // Pinch-zoom stays available on menus; during play touches belong to the game
+        touchAction: status === 'PLAYING' ? 'none' : 'manipulation'
+      }}
       onClick={() => {
         if (
           status === 'PLAYING' &&

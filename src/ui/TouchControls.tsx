@@ -11,7 +11,8 @@ const zoneStyle: React.CSSProperties = {
   top: 0,
   width: '50%',
   height: '100%',
-  pointerEvents: 'auto'
+  pointerEvents: 'auto',
+  touchAction: 'none'
 };
 
 /** Dual-zone touch controls: left half is a floating move stick, right half is look (with auto-fire). */

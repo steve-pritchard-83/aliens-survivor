@@ -75,3 +75,21 @@ test('settings changes apply immediately and persist across a reload', async ({ 
   expect(after.invertY).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('the status bar shows health, ammo and phase and can be switched off', async ({ page }) => {
+  const errors: string[] = [];
+  await startMission(page, errors);
+  const bar = page.getByRole('group', { name: 'Mission status' });
+  await expect(bar).toBeVisible();
+  await expect(bar).toContainText('HP 100');
+  await expect(bar).toContainText('99 / 99');
+  await expect(bar).toContainText('PHASE 1');
+
+  await page.keyboard.press('KeyP');
+  await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED');
+  await page.getByRole('switch', { name: 'Show status bar' }).click();
+  await page.getByRole('button', { name: 'RESUME MISSION' }).click();
+  await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
+  await expect(bar).toBeHidden();
+  expect(errors).toEqual([]);
+});

@@ -12,6 +12,7 @@ import { PwaInstallPrompt, BeforeInstallEvent } from './PwaInstallPrompt';
 import { pwaInstallMode, readPwaDismissed, writePwaDismissed } from './pwaInstall';
 import { VictoryScreen } from './VictoryScreen';
 import { MainMenu } from './MainMenu';
+import { StatusBar } from './StatusBar';
 import { GREEN, INK, solidButton } from './uiStyles';
 
 function isDesktopPointer(inputMode: InputMode): boolean {
@@ -22,6 +23,7 @@ export function HUD() {
   const status = useGameStore((s) => s.status);
   const timeRemaining = useGameStore((s) => (s.status !== 'PLAYING' ? s.timeRemaining : 0));
   const recordKills = useGameStore((s) => s.recordKills);
+  const showStatusBar = useGameStore((s) => s.settings.showHud2D);
   const kills = useGameStore((s) => s.kills),
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
@@ -135,6 +137,7 @@ export function HUD() {
           <div style={{ width: 4, height: 4, background: GREEN, borderRadius: '50%' }} />
         </div>
       )}
+      {status === 'PLAYING' && showStatusBar && inputMode !== 'XR' && !isQuest && <StatusBar />}
       {status === 'PLAYING' && inputMode === 'TOUCH' && !isQuest && <TouchControls onPause={pauseGame} />}
       {status === 'PLAYING' && !isVrApp && isQuest && inputMode !== 'XR' && (
         <button
