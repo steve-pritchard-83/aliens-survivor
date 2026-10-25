@@ -34,16 +34,16 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P2.7 Phase close — gate green: 128 tests, 86% lines, 3 e2e, budgets ok
 
 ## Phase 3 — UX
-- [ ] P3.1 Settings model
-- [ ] P3.2 2D settings panel
-- [ ] P3.3 VR pause menu
-- [ ] P3.4 Comfort vignette
-- [ ] P3.5 Head-centred turn, clamp
-- [ ] P3.6 Haptics handedness
-- [ ] P3.7 VR menu and end screens
-- [ ] P3.8 PWA prompt
-- [ ] P3.9 HUD and viewport
-- [ ] P3.10 Phase close
+- [x] P3.1 (97f7dc2) Settings model
+- [x] P3.2 (1084784) 2D settings panel
+- [x] P3.3 (169bd75) VR pause menu
+- [x] P3.4 (3d6cc6b) Comfort vignette
+- [x] P3.5 (1b79242) Head-centred turn, clamp
+- [x] P3.6 (0794bb7) Haptics handedness
+- [x] P3.7 (d473922) VR menu and end screens
+- [x] P3.8 (ab28042) PWA prompt
+- [x] P3.9 (a7d2721) HUD and viewport
+- [x] P3.10 Phase close — gate green: 176 tests, 15 e2e, budgets ok
 
 ## Phase 4 — Docs and governance
 - [ ] P4.1 HANDOFF rewrite
@@ -87,3 +87,14 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] Push the branch (or open a PR) and confirm the GitHub Actions CI run is green: `verify` job and the Linux `e2e` job (software WebGL on ubuntu-latest has not been run here).
 - [ ] Locally: `npm run e2e` passes on your machine (it passed here on Windows with Chromium).
 - [ ] Skim the coverage table from `npm run test:coverage` and confirm the excluded files list in vitest.config.ts is acceptable.
+
+### Phase 3 (branch uplift/p3-ux) — needs device testing (Quest 2/3, phone, desktop)
+- [ ] **Movement speed decision:** movement is now frame-rate independent at 1.2 m/s (it previously varied: ~1.2 on Quest, 1.4 at 60 fps, 2.8 at 30 fps, never the 4.2 claimed). Walk the corridor on Quest and confirm the pace feels right; change `BALANCE.PLAYER.MOVE_SPEED` if not.
+- [ ] Quest: the mission now waits in an in-headset menu; a fresh trigger press deploys. Check the menu is readable and the trigger doesn't fire a shot on deploy.
+- [ ] Quest: pause menu (B/Y): stick up/down selects, left/right adjusts, trigger on Resume resumes. Volumes audibly change music and effects. Check text size/legibility.
+- [ ] Quest: comfort vignette during smooth turning and walking at Off/Low/High; snap-turn pulse; confirm it feels comfortable and isn't distracting.
+- [ ] Quest: snap turn pivots about your head (no sideways swing); seated mode raises you correctly; walking physically into a wall pushes you back.
+- [ ] Quest: left-handed mode swaps weapon/tracker hands for both controls AND haptics.
+- [ ] Quest: take the headset off / open the system menu: game pauses and resumes only if you hadn't paused. Defeat/victory screens wait for a trigger press (no auto-restart).
+- [ ] Phone (Android Chrome and iOS Safari): install prompt is optional; "Play in browser" works; dismissal persists; pinch-zoom works on menus but not during play; touch status bar readable.
+- [ ] Desktop: mouse sensitivity and invert-Y take effect; status bar toggle; settings persist after reload.
