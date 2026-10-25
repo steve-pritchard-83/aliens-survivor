@@ -12,7 +12,7 @@ class HapticsController {
         /* vibrate unsupported or blocked: non-fatal */
       }
     }
-    xrControllerState.triggerHaptic('right', 0.85, 45);
+    xrControllerState.triggerHaptic('weapon', 0.85, 45);
   }
 
   public hit(): void {
@@ -23,7 +23,7 @@ class HapticsController {
         /* vibrate unsupported or blocked: non-fatal */
       }
     }
-    xrControllerState.triggerHaptic('right', 0.65, 35);
+    xrControllerState.triggerHaptic('weapon', 0.65, 35);
   }
 
   public kill(): void {
@@ -56,7 +56,7 @@ class HapticsController {
         /* vibrate unsupported or blocked: non-fatal */
       }
     }
-    xrControllerState.triggerHaptic('right', 0.7, 90);
+    xrControllerState.triggerHaptic('weapon', 0.7, 90);
   }
 
   public trackerPing(): void {
@@ -67,7 +67,7 @@ class HapticsController {
         /* vibrate unsupported or blocked: non-fatal */
       }
     }
-    xrControllerState.triggerHaptic('left', 0.45, 30);
+    xrControllerState.triggerHaptic('tracker', 0.45, 30);
   }
 }
 

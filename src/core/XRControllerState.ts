@@ -7,6 +7,8 @@ export interface XRHandPose {
   hapticActuator: GamepadHapticActuator | null;
 }
 
+export type HapticHand = 'weapon' | 'tracker' | 'both';
+
 export const xrControllerState = {
   rightHand: {
     active: false,
@@ -20,14 +22,16 @@ export const xrControllerState = {
     quaternion: new THREE.Quaternion(),
     hapticActuator: null as GamepadHapticActuator | null
   },
-  triggerHaptic(hand: 'right' | 'left' | 'both', intensity = 0.85, durationMs = 50): void {
+  /** Left-handed mode swaps the weapon and tracker hands (set from settings). */
+  leftHanded: false,
+  /** Pulses the weapon hand, the tracker (wrist) hand or both; the physical hand follows handedness. */
+  triggerHaptic(hand: HapticHand, intensity = 0.85, durationMs = 50): void {
     try {
-      if (hand === 'right' || hand === 'both') {
-        xrControllerState.rightHand.hapticActuator?.pulse(intensity, durationMs);
-      }
-      if (hand === 'left' || hand === 'both') {
-        xrControllerState.leftHand.hapticActuator?.pulse(intensity, durationMs);
-      }
+      const weaponLeft = xrControllerState.leftHanded;
+      const left = hand === 'both' || (hand === 'weapon' ? weaponLeft : !weaponLeft);
+      const right = hand === 'both' || (hand === 'weapon' ? !weaponLeft : weaponLeft);
+      if (right) xrControllerState.rightHand.hapticActuator?.pulse(intensity, durationMs);
+      if (left) xrControllerState.leftHand.hapticActuator?.pulse(intensity, durationMs);
     } catch {
       /* ignore browser without haptics */
     }
