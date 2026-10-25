@@ -21,7 +21,7 @@
 | Rule | Enforced by |
 |---|---|
 | No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
-| At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, muzzle flash in the rifle; the torch was removed, so one slot is free). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
+| At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, the pale end-of-corridor glow in `EndGlow`, muzzle flash in the rifle; the budget is now full). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
 | Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 48 MB | `scripts/check-budgets.mjs` |
 | Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
 | `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |

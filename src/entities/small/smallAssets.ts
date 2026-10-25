@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { buildFaceRig, buildWormRig, groundModel } from '../SmallAlienAnim';
+import { applyRim } from '../fx/rimLight';
+import { registerWet } from '../fx/wetEnv';
 
 /** Clone one creature, tint its materials and return the cloned scene with its material list. */
 function prepareCreature(
@@ -16,8 +18,10 @@ function prepareCreature(
     if (!(ch as THREE.Mesh).isMesh) return;
     const m = ch as THREE.Mesh,
       mat = (m.material as THREE.MeshStandardMaterial).clone();
-    mat.roughness = 0.34;
-    mat.metalness = 0.15;
+    mat.roughness = 0.26;
+    mat.metalness = 0.2;
+    applyRim(mat, 0.22, 3.4);
+    registerWet(mat, 0.3);
     mat.color.setRGB(color[0], color[1], color[2]);
     mat.emissive.setHex(emissive);
     mat.emissiveIntensity = 0;
