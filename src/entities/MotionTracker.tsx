@@ -16,6 +16,7 @@ import {
   drawFooter,
   setRadarView
 } from './tracker/trackerCanvas';
+import { drawCrtNoise } from './tracker/trackerNoise';
 
 const MAX_RANGE: number = BALANCE.TRACKER.BASE_RANGE;
 const DRAW_HZ = 20;
@@ -141,6 +142,7 @@ export function MotionTracker() {
         if (state.smallThreat) drawThreat(ctx, state.smallThreat, px, pz, maxRange, sweepProgressRef.current);
         drawFooter(ctx, contacts, closest, MAX_RANGE);
       }
+      drawCrtNoise(ctx);
       publish();
     }
     if (!playing) return;

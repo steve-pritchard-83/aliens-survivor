@@ -79,9 +79,9 @@ export function CorridorLevel() {
 
   return (
     <group name="SulacoSector">
-      <fog attach="fog" args={['#04070a', 9, 40]} />
-      <ambientLight intensity={ambientIntensity} color={phase === 1 ? '#86a2be' : '#5e3232'} />
-      <hemisphereLight args={['#6e94b8', '#1a2634', hemiIntensity]} />
+      <fog attach="fog" args={['#0b2b34', 1.5, 15]} />
+      <ambientLight intensity={ambientIntensity} color={phase === 1 ? '#7db6c6' : '#5e3232'} />
+      <hemisphereLight args={['#62aab8', '#12262c', hemiIntensity]} />
 
       {/* Optimized Single Bulkhead Sector Key Light */}
       <pointLight

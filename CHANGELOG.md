@@ -12,6 +12,9 @@
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
 - Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
+### Changed (look)
+- Faint blue-teal grade over the picture, thick close teal fog (1.5 to 15 m), and a light teal-blue M314 tracker with a fuzzy CRT effect (grain, scanlines, rolling band, glitch lines).
+
 ### Removed
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
 

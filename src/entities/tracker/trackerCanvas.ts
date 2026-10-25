@@ -47,7 +47,7 @@ const FONT = '"AlienLeague", monospace';
 const _p: RadarPoint = { x: 0, y: 0 };
 
 export function drawDefeat(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#03120c';
+  ctx.fillStyle = '#04141b';
   ctx.fillRect(0, 0, 256, 256);
   ctx.strokeStyle = '#ff2222';
   ctx.lineWidth = 3;
@@ -66,8 +66,8 @@ function drawMap(ctx: CanvasRenderingContext2D): void {
   ctx.beginPath();
   ctx.rect(4, 32, 248, 188);
   ctx.clip();
-  ctx.strokeStyle = 'rgba(0, 255, 160, 0.34)';
-  ctx.fillStyle = 'rgba(0, 120, 75, 0.16)';
+  ctx.strokeStyle = 'rgba(110, 215, 255, 0.34)';
+  ctx.fillStyle = 'rgba(40, 110, 140, 0.18)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   const outline = getActiveLevel().radarOutline;
@@ -83,34 +83,34 @@ function drawMap(ctx: CanvasRenderingContext2D): void {
   ctx.fill('evenodd');
   ctx.stroke();
   ctx.restore();
-  ctx.strokeStyle = '#00cc77';
+  ctx.strokeStyle = '#58c4e0';
   ctx.lineWidth = 2;
   ctx.strokeRect(3, 3, 250, 250);
 }
 
 function drawHeader(ctx: CanvasRenderingContext2D, timeRemaining: number, hp: number): void {
-  ctx.fillStyle = '#02100a';
+  ctx.fillStyle = '#03111a';
   ctx.fillRect(4, 4, 248, 26);
-  ctx.strokeStyle = 'rgba(0, 255, 160, 0.45)';
+  ctx.strokeStyle = 'rgba(120, 220, 255, 0.45)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(4, 30);
   ctx.lineTo(252, 30);
   ctx.stroke();
   ctx.font = `bold 14px ${FONT}`;
-  ctx.fillStyle = timeRemaining <= 60 ? '#ff3333' : '#00ffaa';
+  ctx.fillStyle = timeRemaining <= 60 ? '#ff3333' : '#9aeaff';
   ctx.textAlign = 'left';
   const m = Math.floor(timeRemaining / 60),
     s = Math.floor(timeRemaining % 60),
     ms = Math.floor((timeRemaining % 1) * 10);
   ctx.fillText(`EVAC ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`, 12, 22);
   ctx.textAlign = 'right';
-  ctx.fillStyle = hp <= 30 ? '#ff3333' : '#00ffaa';
+  ctx.fillStyle = hp <= 30 ? '#ff3333' : '#9aeaff';
   ctx.fillText(`HLTH ${Math.ceil(hp)}%`, 244, 22);
 }
 
 function drawRings(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = 'rgba(0, 210, 120, 0.45)';
+  ctx.strokeStyle = 'rgba(100, 200, 235, 0.45)';
   ctx.lineWidth = 1.5;
   for (let i = 0; i < RING_FRACTIONS.length; i++) {
     ctx.beginPath();
@@ -131,7 +131,7 @@ function drawRings(ctx: CanvasRenderingContext2D): void {
 }
 
 function drawPlayerMarker(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#00ff99';
+  ctx.fillStyle = '#a8ecff';
   ctx.beginPath();
   ctx.moveTo(CX, CY - 6);
   ctx.lineTo(CX - 5, CY + 5);
@@ -142,7 +142,7 @@ function drawPlayerMarker(ctx: CanvasRenderingContext2D): void {
 
 /** Static radar face: map, header, range rings, player marker. */
 export function drawRadarBase(ctx: CanvasRenderingContext2D, timeRemaining: number, hp: number): void {
-  ctx.fillStyle = '#03160e';
+  ctx.fillStyle = '#04141b';
   ctx.fillRect(0, 0, 256, 256);
   drawMap(ctx);
   drawHeader(ctx, timeRemaining, hp);
@@ -151,7 +151,7 @@ export function drawRadarBase(ctx: CanvasRenderingContext2D, timeRemaining: numb
 }
 
 export function drawStandby(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = '#00ffaa';
+  ctx.fillStyle = '#9aeaff';
   ctx.font = `bold 15px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.fillText('M314 STANDBY', 128, 238);
@@ -161,9 +161,9 @@ export function drawStandby(ctx: CanvasRenderingContext2D): void {
 export function drawSweep(ctx: CanvasRenderingContext2D, progress: number): void {
   const sweepRadius = progress * RADIUS_PX;
   const grad = ctx.createRadialGradient(CX, CY, Math.max(1, sweepRadius - 22), CX, CY, sweepRadius + 2);
-  grad.addColorStop(0, 'rgba(0, 255, 160, 0.0)');
-  grad.addColorStop(0.85, 'rgba(0, 255, 170, 0.35)');
-  grad.addColorStop(1, 'rgba(160, 255, 220, 0.95)');
+  grad.addColorStop(0, 'rgba(90, 210, 255, 0.0)');
+  grad.addColorStop(0.85, 'rgba(110, 225, 255, 0.35)');
+  grad.addColorStop(1, 'rgba(200, 242, 255, 0.95)');
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.arc(CX, CY, sweepRadius, Math.PI, 2 * Math.PI);
@@ -178,24 +178,24 @@ export function drawContact(ctx: CanvasRenderingContext2D, wx: number, wz: numbe
   const bx = Math.max(14, Math.min(242, _p.x)),
     by = Math.max(14, Math.min(212, _p.y));
   const lit = Math.abs(sweep - Math.min(1.0, dist / radarView.maxRange)) < 0.28;
-  ctx.fillStyle = lit ? 'rgba(140, 255, 250, 0.5)' : 'rgba(0, 255, 180, 0.25)';
+  ctx.fillStyle = lit ? 'rgba(170, 240, 255, 0.5)' : 'rgba(100, 215, 255, 0.25)';
   ctx.beginPath();
   ctx.arc(bx, by, lit ? 11 : 7, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = lit ? '#ffffff' : '#66ffee';
+  ctx.fillStyle = lit ? '#ffffff' : '#a6dff2';
   ctx.beginPath();
   ctx.arc(bx, by, lit ? 5.5 : 4.0, 0, Math.PI * 2);
   ctx.fill();
 }
 
 export function drawFooter(ctx: CanvasRenderingContext2D, contacts: number, closest: number, maxRange: number): void {
-  ctx.fillStyle = '#02100a';
+  ctx.fillStyle = '#03111a';
   ctx.fillRect(4, 222, 248, 28);
-  ctx.fillStyle = '#00ffaa';
+  ctx.fillStyle = '#9aeaff';
   ctx.font = `bold 15px ${FONT}`;
   ctx.textAlign = 'left';
   ctx.fillText(`CONTACTS: ${contacts}`, 12, 241);
   ctx.textAlign = 'right';
-  ctx.fillStyle = closest < 6 ? '#ff4444' : '#66ffee';
+  ctx.fillStyle = closest < 6 ? '#ff4444' : '#a6dff2';
   ctx.fillText(closest <= maxRange ? `RNG ${closest.toFixed(1)}M` : 'NO SIGNAL', 244, 241);
 }
