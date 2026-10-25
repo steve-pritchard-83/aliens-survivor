@@ -98,7 +98,7 @@ function buildActualLimbTemplates(scene: THREE.Group): { geos: THREE.BufferGeome
 
 export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
   const { scene } = useGLTF('/models/xenomorph.glb');
-  const acidPointsRef = useRef<THREE.Points>(null), hitLightRef = useRef<THREE.PointLight>(null);
+  const acidPointsRef = useRef<THREE.Points>(null);
   const gibGroupRef = useRef<THREE.Group>(null), puddleGroupRef = useRef<THREE.Group>(null);
   const impactTimerRef = useRef(0), nextGibIdxRef = useRef(0), nextPuddleIdxRef = useRef(0);
 
@@ -142,7 +142,6 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
         }
         posAttr.needsUpdate = true; acidPointsRef.current.visible = true;
       }
-      if (hitLightRef.current) { hitLightRef.current.position.copy(point); hitLightRef.current.intensity = isKill ? 9.5 : 5.0; }
       impactTimerRef.current = 0.34;
     },
     triggerAcidPool(x, z, size = 1.05) { spawnPuddle(x, z, size); },
@@ -182,10 +181,8 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
         }
         posAttr.needsUpdate = true;
       }
-      if (hitLightRef.current) hitLightRef.current.intensity = Math.max(0, hitLightRef.current.intensity - dt * 28);
-      if (impactTimerRef.current <= 0) {
-        if (acidPointsRef.current) acidPointsRef.current.visible = false;
-        if (hitLightRef.current) hitLightRef.current.intensity = 0;
+      if (impactTimerRef.current <= 0 && acidPointsRef.current) {
+        acidPointsRef.current.visible = false;
       }
     }
 
@@ -237,7 +234,6 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
       </points>
       <group ref={puddleGroupRef}>{Array.from({ length: PUDDLE_POOL_SIZE }, (_, i) => <mesh key={i} visible={false}><planeGeometry args={[0.95, 0.95]} /><meshBasicMaterial map={puddleTex} transparent opacity={0.88} depthWrite={false} /></mesh>)}</group>
       <group ref={gibGroupRef}>{Array.from({ length: GIB_POOL_SIZE }, (_, i) => <mesh key={i} geometry={limbGeos[0]} material={limbMat} visible={false} />)}</group>
-      <pointLight ref={hitLightRef} color="#88ff00" intensity={0} distance={3.8} decay={2} />
     </group>
   );
 });

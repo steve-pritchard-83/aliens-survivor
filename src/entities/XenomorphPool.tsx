@@ -97,7 +97,8 @@ export function XenomorphPool() {
         const ap = useGameStore.getState().activeUpgrades.includes('ap_ammo') ? 1.4 : 1.0;
         const isKill = (t.hp -= (t.state === 'SPAWNING' ? 18 : 24) * ap * (t.isBoss ? 0.65 : 1.0)) <= 0;
         fxRef.current?.triggerImpact(closestPoint, origin, dir, isKill);
-        t.hitFlashTimer = 0.14; t.materials.forEach((m) => { m.emissive.setHex(0x55ff00); m.emissiveIntensity = 1.6; });
+        const flashIntensity = useGameStore.getState().settings.reducedFlash ? 0.22 : 0.45;
+        t.hitFlashTimer = 0.12; t.materials.forEach((m) => { m.emissive.setHex(0xffffff); m.emissiveIntensity = flashIntensity; });
         [t.x, t.z] = constrainToCorridor(t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
         const severSlot = (slot: number) => {
           const bone = t.limbBones[slot]; if (t.severedLimbs[slot] || !bone) return;

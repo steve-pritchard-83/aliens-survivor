@@ -1,0 +1,131 @@
+import { UpgradeCard } from '../data/balance';
+
+export type VRPanelStatus = 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
+
+function fmtTime(sec: number): string {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+export function drawVRStatusPanel(
+  canvas: HTMLCanvasElement,
+  status: VRPanelStatus,
+  kills: number,
+  shotsFired: number,
+  shotsHit: number,
+  timeRem: number,
+  pulse: number,
+  offered: UpgradeCard[]
+): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (status === 'PAUSED') {
+    ctx.clearRect(0, 0, 1024, 512);
+    ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
+    ctx.fillRect(20, 20, 984, 472);
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(20, 20, 984, 472);
+    ctx.fillStyle = '#88ffaa';
+    ctx.font = 'bold 24px Courier New, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK', 512, 80);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 52px Courier New, monospace';
+    ctx.fillText('MISSION PAUSED', 512, 170);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px Courier New, monospace';
+    ctx.fillText(`KILLS: ${kills}   |   TIME LEFT: ${fmtTime(timeRem)}`, 512, 245);
+    const ba = 0.75 + Math.sin(pulse * 6.0) * 0.25;
+    ctx.fillStyle = `rgba(0, 255, 136, ${ba * 0.25})`;
+    ctx.fillRect(162, 330, 700, 80);
+    ctx.strokeStyle = `rgba(0, 255, 136, ${ba})`;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(162, 330, 700, 80);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 28px Courier New, monospace';
+    ctx.fillText('PRESS [B] / [Y] / TRIGGER TO RESUME', 512, 380);
+    return;
+  }
+
+  if (status === 'LEVEL_UP') {
+    ctx.clearRect(0, 0, 1024, 512);
+    ctx.fillStyle = 'rgba(2, 14, 8, 0.96)';
+    ctx.fillRect(20, 20, 984, 472);
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(20, 20, 984, 472);
+    ctx.fillStyle = '#88ffaa';
+    ctx.font = 'bold 24px Courier New, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('WEYLAND-YUTANI // USCM FIELD PROMOTION', 512, 70);
+    const btnLabels = ['[TRIGGER / SELECT 1]', '[BUTTON A / SELECT 2]', '[BUTTON B / SELECT 3]'];
+    for (let i = 0; i < Math.min(3, offered.length); i++) {
+      const c = offered[i], cx = 80 + i * 300, cw = 265;
+      ctx.fillStyle = 'rgba(0, 32, 16, 0.85)';
+      ctx.fillRect(cx, 100, cw, 350);
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(cx, 100, cw, 350);
+      ctx.font = '40px monospace';
+      ctx.fillText(c.icon, cx + cw / 2, 165);
+      ctx.fillStyle = '#00ff88';
+      ctx.font = 'bold 18px Courier New, monospace';
+      ctx.fillText(c.title.slice(0, 18), cx + cw / 2, 215);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '13px Courier New, monospace';
+      ctx.fillText(c.desc.slice(0, 26), cx + cw / 2, 270);
+      ctx.fillStyle = 'rgba(0, 255, 136, 0.25)';
+      ctx.fillRect(cx + 15, 360, cw - 30, 60);
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx + 15, 360, cw - 30, 60);
+      ctx.fillStyle = '#aaffd4';
+      ctx.font = 'bold 15px Courier New, monospace';
+      ctx.fillText(btnLabels[i], cx + cw / 2, 396);
+    }
+    return;
+  }
+
+  const isDefeat = status === 'DEFEAT';
+  const mainColor = isDefeat ? '#ff3333' : '#00ff88';
+  const bgColor = isDefeat ? 'rgba(22, 6, 6, 0.94)' : 'rgba(4, 22, 12, 0.94)';
+  const acc = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+  const dur = isDefeat ? fmtTime(300 - timeRem) : '05:00';
+
+  ctx.clearRect(0, 0, 1024, 512);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(20, 20, 984, 472);
+  ctx.strokeStyle = mainColor;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(20, 20, 984, 472);
+
+  ctx.fillStyle = isDefeat ? '#ff8866' : '#88ffaa';
+  ctx.font = 'bold 22px Courier New, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK', 512, 80);
+
+  ctx.fillStyle = mainColor;
+  ctx.font = 'bold 50px Courier New, monospace';
+  ctx.fillText(isDefeat ? 'MIA // BIO-SIGNALS FLATLINED' : 'EXTRACTION SUCCESSFUL', 512, 160);
+
+  ctx.fillStyle = '#cceecc';
+  ctx.font = '24px Courier New, monospace';
+  ctx.fillText(isDefeat ? 'SECTOR 4 OVERRUN — CASUALTY CONFIRMED' : 'SECTOR 4 PURGED — DROPSHIP DOCKED', 512, 215);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 28px Courier New, monospace';
+  ctx.fillText(`SURVIVAL: ${dur}   |   KILLS: ${kills}   |   ACCURACY: ${acc}%`, 512, 290);
+
+  const btnAlpha = 0.75 + Math.sin(pulse * 6.0) * 0.25;
+  ctx.fillStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha * 0.25})` : `rgba(0, 255, 136, ${btnAlpha * 0.25})`;
+  ctx.fillRect(162, 350, 700, 80);
+  ctx.strokeStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha})` : `rgba(0, 255, 136, ${btnAlpha})`;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(162, 350, 700, 80);
+
+  ctx.fillStyle = isDefeat ? '#ff8888' : '#00ff88';
+  ctx.font = 'bold 32px Courier New, monospace';
+  ctx.fillText('▶ PULL TRIGGER TO REDEPLOY ◀', 512, 402);
+}

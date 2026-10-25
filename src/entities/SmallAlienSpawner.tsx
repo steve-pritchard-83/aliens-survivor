@@ -65,7 +65,7 @@ export function SmallAlienSpawner() {
       if (!_ray.intersectSphere(_sphere, _hitVec) || origin.distanceTo(_hitVec) > 32) return { hitXenoId: null, hitPoint: null };
       _closestHitPointSmall.copy(_hitVec); const pt = _closestHitPointSmall, isKill = (e.hp -= 30) <= 0;
       fxRef.current?.triggerImpact(pt, origin, dir, isKill);
-      e.hitFlashTimer = 0.14; (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => { m.emissive.setHex(0x55ff00); m.emissiveIntensity = 1.7; });
+      e.hitFlashTimer = 0.12; (e.kind === 'FACEHUGGER' ? fhMats : cbMats).forEach((m) => { m.emissive.setHex(0xffffff); m.emissiveIntensity = 0.45; });
       [e.x, e.z] = constrainToCorridor(e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
       AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
       AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);

@@ -8,11 +8,9 @@ import { AudioManager } from '../core/AudioManager';
 import { trackerCanvasState } from '../core/TrackerState';
 import { xrControllerState } from '../core/XRControllerState';
 
+import { drawVRStatusPanel, VRPanelStatus } from './VRStatusCanvas';
+
 const _camFwd = new THREE.Vector3(), _wristPos = new THREE.Vector3(), _camPos = new THREE.Vector3(), _camQuat = new THREE.Quaternion();
-function fmtTime(sec: number): string {
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
 
 export function VRHud() {
   const { session } = useXR();
@@ -21,6 +19,7 @@ export function VRHud() {
   const statusMeshRef = useRef<THREE.Mesh>(null);
   const snapTurnCoolRef = useRef(false);
   const defeatTimerRef = useRef(0);
+  const pauseCoolRef = useRef(0), lightCoolRef = useRef(0);
 
   const wristTexture = useMemo(() => {
     if (!trackerCanvasState.canvas) return null;
@@ -37,73 +36,14 @@ export function VRHud() {
     return { panelCanvas: canvas, panelTex: tex };
   }, []);
 
-  const drawPanel = (status: 'DEFEAT' | 'VICTORY' | 'LEVEL_UP', kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
-    const ctx = panelCanvas.getContext('2d');
-    if (!ctx) return;
-    if (status === 'LEVEL_UP') {
-      const offered = useGameStore.getState().offeredUpgrades;
-      ctx.clearRect(0, 0, 1024, 512); ctx.fillStyle = 'rgba(2, 14, 8, 0.96)'; ctx.fillRect(20, 20, 984, 472);
-      ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 6; ctx.strokeRect(20, 20, 984, 472);
-      ctx.fillStyle = '#88ffaa'; ctx.font = 'bold 24px Courier New, monospace'; ctx.textAlign = 'center';
-      ctx.fillText('WEYLAND-YUTANI // USCM FIELD PROMOTION', 512, 70);
-      const btnLabels = ['[TRIGGER / SELECT 1]', '[BUTTON A / SELECT 2]', '[BUTTON B / SELECT 3]'];
-      for (let i = 0; i < Math.min(3, offered.length); i++) {
-        const c = offered[i], cx = 80 + i * 300, cw = 265;
-        ctx.fillStyle = 'rgba(0, 32, 16, 0.85)'; ctx.fillRect(cx, 100, cw, 350);
-        ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 3; ctx.strokeRect(cx, 100, cw, 350);
-        ctx.font = '40px monospace'; ctx.fillText(c.icon, cx + cw / 2, 165);
-        ctx.fillStyle = '#00ff88'; ctx.font = 'bold 18px Courier New, monospace'; ctx.fillText(c.title.slice(0, 18), cx + cw / 2, 215);
-        ctx.fillStyle = '#ffffff'; ctx.font = '13px Courier New, monospace'; ctx.fillText(c.desc.slice(0, 26), cx + cw / 2, 270);
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.25)'; ctx.fillRect(cx + 15, 360, cw - 30, 60);
-        ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 2; ctx.strokeRect(cx + 15, 360, cw - 30, 60);
-        ctx.fillStyle = '#aaffd4'; ctx.font = 'bold 15px Courier New, monospace'; ctx.fillText(btnLabels[i], cx + cw / 2, 396);
-      }
-      panelTex.needsUpdate = true; return;
-    }
-    const isDefeat = status === 'DEFEAT';
-    const mainColor = isDefeat ? '#ff3333' : '#00ff88';
-    const bgColor = isDefeat ? 'rgba(22, 6, 6, 0.94)' : 'rgba(4, 22, 12, 0.94)';
-    const acc = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
-    const dur = isDefeat ? fmtTime(300 - timeRem) : '05:00';
-
-    ctx.clearRect(0, 0, 1024, 512);
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(20, 20, 984, 472);
-    ctx.strokeStyle = mainColor;
-    ctx.lineWidth = 6;
-    ctx.strokeRect(20, 20, 984, 472);
-
-    ctx.fillStyle = isDefeat ? '#ff8866' : '#88ffaa';
-    ctx.font = 'bold 22px Courier New, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('WEYLAND-YUTANI // USCM TACTICAL LINK', 512, 80);
-
-    ctx.fillStyle = mainColor;
-    ctx.font = 'bold 50px Courier New, monospace';
-    ctx.fillText(isDefeat ? 'MIA // BIO-SIGNALS FLATLINED' : 'EXTRACTION SUCCESSFUL', 512, 160);
-
-    ctx.fillStyle = '#cceecc';
-    ctx.font = '24px Courier New, monospace';
-    ctx.fillText(isDefeat ? 'SECTOR 4 OVERRUN — CASUALTY CONFIRMED' : 'SECTOR 4 PURGED — DROPSHIP DOCKED', 512, 215);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px Courier New, monospace';
-    ctx.fillText(`SURVIVAL: ${dur}   |   KILLS: ${kills}   |   ACCURACY: ${acc}%`, 512, 290);
-
-    const btnAlpha = 0.75 + Math.sin(pulse * 6.0) * 0.25;
-    ctx.fillStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha * 0.25})` : `rgba(0, 255, 136, ${btnAlpha * 0.25})`;
-    ctx.fillRect(162, 350, 700, 80);
-    ctx.strokeStyle = isDefeat ? `rgba(255, 51, 51, ${btnAlpha})` : `rgba(0, 255, 136, ${btnAlpha})`;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(162, 350, 700, 80);
-
-    ctx.fillStyle = isDefeat ? '#ff8888' : '#00ff88';
-    ctx.font = 'bold 32px Courier New, monospace';
-    ctx.fillText('▶ PULL TRIGGER TO REDEPLOY ◀', 512, 402);
+  const renderPanel = (status: VRPanelStatus, kills: number, shotsFired: number, shotsHit: number, timeRem: number, pulse: number) => {
+    drawVRStatusPanel(panelCanvas, status, kills, shotsFired, shotsHit, timeRem, pulse, useGameStore.getState().offeredUpgrades);
     panelTex.needsUpdate = true;
   };
 
   useFrame(({ clock }, dt, frame) => {
+    if (pauseCoolRef.current > 0) pauseCoolRef.current -= dt;
+    if (lightCoolRef.current > 0) lightCoolRef.current -= dt;
     const isPresenting = Boolean(session);
     if (!isPresenting) {
       if (InputManager.mode === 'XR') InputManager.setXRState(false);
@@ -120,6 +60,7 @@ export function VRHud() {
         if (!source.gamepad) continue;
         const axes = source.gamepad.axes, buttons = source.gamepad.buttons;
         if (buttons[0]?.pressed || buttons[1]?.pressed || buttons[4]?.pressed || buttons[5]?.pressed) anyButtonPressed = true;
+        let pauseTriggered = false;
 
         if (source.handedness === 'left') {
           xrControllerState.leftHand.hapticActuator = (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
@@ -133,7 +74,10 @@ export function VRHud() {
           }
           if (axes.length >= 4) { moveX = axes[2] || 0; moveZ = -(axes[3] || 0); }
           else if (axes.length >= 2) { moveX = axes[0] || 0; moveZ = -(axes[1] || 0); }
-          if (buttons[4]?.pressed || buttons[5]?.pressed) useGameStore.getState().toggleFlashlight();
+          if (buttons[4]?.pressed && lightCoolRef.current <= 0) {
+            lightCoolRef.current = 0.35; useGameStore.getState().toggleFlashlight();
+          }
+          if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
         } else if (source.handedness === 'right') {
           xrControllerState.rightHand.hapticActuator = (source.gamepad.hapticActuators?.[0] as GamepadHapticActuator) || null;
           if (frame && refSpace && (source.gripSpace || source.targetRaySpace)) {
@@ -146,6 +90,7 @@ export function VRHud() {
           }
           firing = Boolean(buttons[0]?.pressed);
           if (buttons[4]?.pressed) useGameStore.getState().startReload();
+          if (buttons[5]?.pressed || buttons[3]?.pressed) pauseTriggered = true;
           const turnAxis = axes.length >= 4 ? axes[2] : (axes.length >= 2 ? axes[0] : 0);
           const snap = useGameStore.getState().settings.snapAngle;
           if (snap > 0) {
@@ -157,19 +102,37 @@ export function VRHud() {
             InputManager.addSnapTurn(-turnAxis * dt * 2.2);
           }
         }
+        if (pauseTriggered && pauseCoolRef.current <= 0) {
+          pauseCoolRef.current = 0.45; const s = useGameStore.getState();
+          if (s.status === 'PLAYING') { AudioManager.play2D('ui_beep', 0.8); s.pauseGame(); }
+          else if (s.status === 'PAUSED') { AudioManager.play2D('ui_beep', 0.8); s.resumeGame(); }
+        }
       }
     }
 
     InputManager.setXRState(true, moveX, moveZ, firing);
 
     const st = useGameStore.getState();
+    if (st.status === 'PAUSED') {
+      if (statusMeshRef.current) {
+        statusMeshRef.current.visible = true;
+        camera.getWorldDirection(_camFwd); camera.getWorldPosition(_camPos); camera.getWorldQuaternion(_camQuat);
+        statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
+        statusMeshRef.current.quaternion.copy(_camQuat);
+        renderPanel('PAUSED', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+      }
+      if (pauseCoolRef.current <= 0 && (firing || anyButtonPressed)) {
+        pauseCoolRef.current = 0.45; AudioManager.play2D('ui_beep', 0.8); st.resumeGame();
+      }
+      return;
+    }
     if (st.status === 'LEVEL_UP') {
       if (statusMeshRef.current) {
         statusMeshRef.current.visible = true;
         camera.getWorldDirection(_camFwd); camera.getWorldPosition(_camPos); camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
-        drawPanel('LEVEL_UP', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+        renderPanel('LEVEL_UP', st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
       }
       if (st.offeredUpgrades.length > 0) {
         if (firing) st.chooseUpgrade(st.offeredUpgrades[0].id);
@@ -186,7 +149,7 @@ export function VRHud() {
         camera.getWorldQuaternion(_camQuat);
         statusMeshRef.current.position.copy(_camPos).addScaledVector(_camFwd, 1.7);
         statusMeshRef.current.quaternion.copy(_camQuat);
-        drawPanel(st.status, st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
+        renderPanel(st.status, st.kills, st.shotsFired, st.shotsHit, st.timeRemaining, clock.getElapsedTime());
       }
       if (defeatTimerRef.current > 0.6 && (firing || anyButtonPressed || defeatTimerRef.current > 9.0)) {
         defeatTimerRef.current = 0;
