@@ -6,6 +6,7 @@ A 300-second (5-minute) survival wave shooter set aboard the *USS Sulaco*, built
 
 ## Features
 
+- **Engineering Handoff & Technical Specifications**: See [`HANDOFF.md`](./HANDOFF.md) for architecture rules, light budgets, line limits, and developer cheat sheets.
 - **Cross-Platform Dual-Mode Input**:
   - **Meta Quest 2/3**: Stereoscopic 3D 6DoF with Touch Controller aiming, 45°/90°/smooth snap turn options, haptics, and wrist-mounted M314 Motion Tracker.
   - **Desktop Web**: First-person WASD corridor locomotion with mouse look and smooth recoil recovery.
