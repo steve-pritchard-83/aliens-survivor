@@ -20,7 +20,7 @@ function prepareCreature(
     mat.metalness = 0.15;
     mat.color.setRGB(color[0], color[1], color[2]);
     mat.emissive.setHex(emissive);
-    mat.emissiveIntensity = 0.12;
+    mat.emissiveIntensity = 0;
     m.material = mat;
     mats.push(mat);
   });

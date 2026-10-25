@@ -27,8 +27,8 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 
 const SMALL_ALIEN_ID = 99;
-const FH_EMISSIVE = { hex: 0x221808, intensity: 0.12 };
-const CB_EMISSIVE = { hex: 0x28100c, intensity: 0.12 };
+const FH_EMISSIVE = { hex: 0x221808, intensity: 0 };
+const CB_EMISSIVE = { hex: 0x28100c, intensity: 0 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
 const _events: SmallEvents = { playerDamage: 0, leapHit: false, died: false };
 // Reused threat record published to the store (read via getState by Bishop, tracker and auto-aim)
@@ -178,11 +178,6 @@ export function SmallAlienSpawner() {
     if (e.state === 'DEAD' && _pose.melt > 0.3) {
       const k = (_pose.melt - 0.3) / 0.7;
       r.scale.set(1 + k * 0.2, Math.max(0.05, 1 - k * 0.92), 1 + k * 0.2);
-      const mats = e.kind === 'FACEHUGGER' ? fhMats : cbMats;
-      for (let i = 0; i < mats.length; i++) {
-        mats[i].emissive.setHex(0x185510);
-        mats[i].emissiveIntensity = 0.85 * (1 - k * 0.5);
-      }
     }
 
     r.position.set(e.x, e.y, e.z);

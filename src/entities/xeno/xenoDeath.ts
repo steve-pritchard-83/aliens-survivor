@@ -19,10 +19,6 @@ export function stepXenoDeath(x: PooledXenomorph, dt: number, pose: XenoPose): b
     const k = (meltProg - 0.32) / 0.68;
     x.y = -k * 0.42;
     x.root.scale.set(1 + k * 0.18, Math.max(0.04, 1 - k * 0.92), 1 + k * 0.18);
-    for (let i = 0; i < x.materials.length; i++) {
-      x.materials[i].emissive.setHex(0x185510);
-      x.materials[i].emissiveIntensity = 0.85 * (1 - k * 0.5);
-    }
   }
   if (x.stateTimer > 0) return false;
   x.active = false;
