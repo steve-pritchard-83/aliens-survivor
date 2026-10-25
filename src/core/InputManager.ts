@@ -31,6 +31,9 @@ export class InputManagerController {
   public pauseToggleFlag = false;
   public pointerLocked = false;
   public gyroEnabled = false;
+  /** Look options applied from settings (see SettingsBinding). */
+  public mouseSensitivity = 1;
+  public invertY = false;
   public onPointerUnlockCallback: (() => void) | null = null;
   private initialized = false;
   private ignoreMouseUntil = 0;
@@ -112,8 +115,9 @@ export class InputManagerController {
     if (Math.abs(e.movementX) > 80 || Math.abs(e.movementY) > 80) return;
     const mx = Math.max(-45, Math.min(45, e.movementX));
     const my = Math.max(-45, Math.min(45, e.movementY));
-    this.lookDX += mx * 0.0022;
-    this.lookDY += my * 0.0022;
+    const k = 0.0022 * this.mouseSensitivity;
+    this.lookDX += mx * k;
+    this.lookDY += my * k * (this.invertY ? -1 : 1);
   };
 
   private onPointerLockChange = () => {
@@ -168,7 +172,7 @@ export class InputManagerController {
   public addTouchLook(dx: number, dy: number): void {
     this.mode = 'TOUCH';
     this.lookDX += dx;
-    this.lookDY += dy;
+    this.lookDY += dy * (this.invertY ? -1 : 1);
   }
 
   public setTouchFire(firing: boolean): void {

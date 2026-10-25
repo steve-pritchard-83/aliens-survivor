@@ -1,27 +1,59 @@
-import type { GameSettings } from './GameTypes';
+import type { GameSettings, VignetteLevel } from './GameTypes';
 
 export const SETTINGS_KEY = 'uscm_settings_v1';
 export const RECORD_KEY = 'uscm_record_kills';
 
 export const SNAP_ANGLE_OPTIONS = [Math.PI / 6, Math.PI / 4, Math.PI / 2, 0] as const;
+export const VIGNETTE_OPTIONS: readonly VignetteLevel[] = ['off', 'low', 'high'];
+export const MOUSE_SENSITIVITY_RANGE = { min: 0.3, max: 3 } as const;
 
 export const DEFAULT_SETTINGS: GameSettings = {
   snapAngle: Math.PI / 2,
   reducedFlash: false,
-  leftHanded: false
+  leftHanded: false,
+  masterVolume: 1,
+  musicVolume: 0.8,
+  sfxVolume: 1,
+  vignette: 'low',
+  mouseSensitivity: 1,
+  invertY: false,
+  showHud2D: true,
+  seatedMode: false
 };
 
 function isSnapAngle(v: unknown): v is number {
   return typeof v === 'number' && SNAP_ANGLE_OPTIONS.some((a) => Math.abs(a - v) < 0.01);
 }
 
+function bool(v: unknown, fallback: boolean): boolean {
+  return typeof v === 'boolean' ? v : fallback;
+}
+
+function ranged(v: unknown, min: number, max: number, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : fallback;
+}
+
 /** Pure: coerces unknown stored data into valid settings, falling back per field. */
 export function sanitizeSettings(raw: unknown): GameSettings {
   const o = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+  const d = DEFAULT_SETTINGS;
   return {
-    snapAngle: isSnapAngle(o.snapAngle) ? o.snapAngle : DEFAULT_SETTINGS.snapAngle,
-    reducedFlash: typeof o.reducedFlash === 'boolean' ? o.reducedFlash : DEFAULT_SETTINGS.reducedFlash,
-    leftHanded: typeof o.leftHanded === 'boolean' ? o.leftHanded : DEFAULT_SETTINGS.leftHanded
+    snapAngle: isSnapAngle(o.snapAngle) ? o.snapAngle : d.snapAngle,
+    reducedFlash: bool(o.reducedFlash, d.reducedFlash),
+    leftHanded: bool(o.leftHanded, d.leftHanded),
+    masterVolume: ranged(o.masterVolume, 0, 1, d.masterVolume),
+    musicVolume: ranged(o.musicVolume, 0, 1, d.musicVolume),
+    sfxVolume: ranged(o.sfxVolume, 0, 1, d.sfxVolume),
+    vignette: VIGNETTE_OPTIONS.includes(o.vignette as VignetteLevel) ? (o.vignette as VignetteLevel) : d.vignette,
+    mouseSensitivity: ranged(
+      o.mouseSensitivity,
+      MOUSE_SENSITIVITY_RANGE.min,
+      MOUSE_SENSITIVITY_RANGE.max,
+      d.mouseSensitivity
+    ),
+    invertY: bool(o.invertY, d.invertY),
+    showHud2D: bool(o.showHud2D, d.showHud2D),
+    seatedMode: bool(o.seatedMode, d.seatedMode)
   };
 }
 

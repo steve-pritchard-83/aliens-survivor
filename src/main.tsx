@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { useGameStore } from './core/GameStore';
 import { xrStore } from './core/XRStore';
+import { bindSettings } from './core/SettingsBinding';
 
 // Register Workbox Service Worker for offline Mobile PWA & Meta Quest 2 asset caching
 registerSW({ immediate: true });
@@ -20,6 +21,8 @@ if (import.meta.env.VITE_E2E_XR === '1' && new URLSearchParams(window.location.s
     window.__xrDevice = m.installEmulatedHeadset();
   });
 }
+
+bindSettings();
 
 const rootEl = document.getElementById('root');
 if (rootEl) {

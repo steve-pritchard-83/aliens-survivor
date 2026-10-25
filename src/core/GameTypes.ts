@@ -12,10 +12,20 @@ export interface ActiveThreat {
   isBoss?: boolean;
 }
 
+export type VignetteLevel = 'off' | 'low' | 'high';
+
 export interface GameSettings {
   snapAngle: number;
   reducedFlash: boolean;
   leftHanded: boolean;
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+  vignette: VignetteLevel;
+  mouseSensitivity: number;
+  invertY: boolean;
+  showHud2D: boolean;
+  seatedMode: boolean;
 }
 
 export interface GameState {

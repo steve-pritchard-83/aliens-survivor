@@ -28,10 +28,39 @@ describe('Persistence', () => {
 
   it('round-trips settings and survives corrupted JSON', async () => {
     const { saveSettings, loadSettings, SETTINGS_KEY, DEFAULT_SETTINGS } = await import('../src/core/Persistence');
-    saveSettings({ snapAngle: 0, reducedFlash: true, leftHanded: true });
-    expect(loadSettings()).toEqual({ snapAngle: 0, reducedFlash: true, leftHanded: true });
+    const custom = {
+      ...DEFAULT_SETTINGS,
+      snapAngle: 0,
+      reducedFlash: true,
+      leftHanded: true,
+      masterVolume: 0.4,
+      vignette: 'high' as const,
+      mouseSensitivity: 2,
+      invertY: true,
+      showHud2D: false,
+      seatedMode: true
+    };
+    saveSettings(custom);
+    expect(loadSettings()).toEqual(custom);
     localStorage.setItem(SETTINGS_KEY, '{not json');
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('clamps numeric ranges and rejects unknown enum values', async () => {
+    const { sanitizeSettings, DEFAULT_SETTINGS } = await import('../src/core/Persistence');
+    const s = sanitizeSettings({
+      masterVolume: 5,
+      sfxVolume: -1,
+      musicVolume: 'loud',
+      mouseSensitivity: 99,
+      vignette: 'extreme'
+    });
+    expect(s.masterVolume).toBe(1);
+    expect(s.sfxVolume).toBe(0);
+    expect(s.musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
+    expect(s.mouseSensitivity).toBe(3);
+    expect(s.vignette).toBe(DEFAULT_SETTINGS.vignette);
+    expect(sanitizeSettings({ mouseSensitivity: 0.01 }).mouseSensitivity).toBe(0.3);
   });
 
   it('commitRecord only raises the record', async () => {
