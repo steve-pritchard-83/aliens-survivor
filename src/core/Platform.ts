@@ -3,6 +3,17 @@ export const Platform = {
     return typeof navigator !== 'undefined' && /OculusBrowser|Quest/i.test(navigator.userAgent);
   },
 
+  /** ?debug=1 (or a session flag) enables the telemetry overlay. */
+  get isDebug(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      return new URLSearchParams(window.location.search).has('debug') || sessionStorage.getItem('uscm_debug') === '1';
+    } catch {
+      /* sessionStorage unavailable: fall back to the query string only */
+      return new URLSearchParams(window.location.search).has('debug');
+    }
+  },
+
   get isQuest3(): boolean {
     return typeof navigator !== 'undefined' && /Quest 3/i.test(navigator.userAgent);
   },

@@ -28,6 +28,22 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          // Normalise Windows separators so the patterns below work on every platform
+          const path = id.replace(/\\/g, '/');
+          if (!path.includes('/node_modules/')) return undefined;
+          if (/\/node_modules\/(three|three-stdlib|three-mesh-bvh)\//.test(path)) return 'three';
+          if (/\/node_modules\/(@react-three\/xr|@pmndrs)\//.test(path)) return 'xr';
+          if (/\/node_modules\/@react-three\//.test(path)) return 'r3f';
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(path)) return 'react';
+          return undefined;
+        }
+      }
+    }
+  },
   server: {
     host: true,
     port: 5173

@@ -3,16 +3,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { quality } from '../core/QualityState';
+import { Platform } from '../core/Platform';
 
 const _vPos = new THREE.Vector3(),
   _vFwd = new THREE.Vector3(),
   _vQuat = new THREE.Quaternion();
 
 export function DebugTelemetry() {
-  const isDebug = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return new URLSearchParams(window.location.search).has('debug') || sessionStorage.getItem('uscm_debug') === '1';
-  }, []);
+  const isDebug = Platform.isDebug;
 
   const { session } = useXR();
   const { gl, camera } = useThree();
