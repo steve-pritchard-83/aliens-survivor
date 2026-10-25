@@ -48,6 +48,13 @@ npm run build
 
 ---
 
+## Automated CI/CD & Build Pipelines
+
+- **CI Pipeline (`.github/workflows/ci.yml`)**: Automated Node 22 TypeScript type-checking, Vitest suite execution, and production Vite compilation on every commit and PR to `main`.
+- **Quest APK Pipeline (`.github/workflows/build-quest-apk.yml`)**: Automated Gradle compilation for Meta Quest Horizon OS APKs on release tags.
+
+---
+
 ## Deployment & Quest Sideloading
 
 - **Production URL**: `https://aliens-survivor.vercel.app`
