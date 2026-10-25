@@ -72,5 +72,5 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] Quest: level-up card picking: hold the trigger while levelling, nothing selects; stick left/right moves the highlight; trigger confirms; card 3 reachable.
 - [ ] Quest: right stick pushes during the level-up screen do not turn the view after resuming.
 - [ ] Phase 3 and 4 each spawn exactly one Praetorian.
-- [ ] Quest : tier readout drops in heavy fights and recovers; no framebuffer-scale console warnings.
+- [ ] Quest with the debug flag on (add ?debug=1 to the URL): tier readout drops in heavy fights and recovers; no framebuffer-scale console warnings.
 - [ ] Reload the page: snap-turn/flash/handedness persist; BEST kills shows on menu and end screens (2D and VR).
