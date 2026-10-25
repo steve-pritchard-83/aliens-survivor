@@ -20,7 +20,9 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && npm run preview -- --port 4173 --strictPort',
     url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    // The build includes the IWER headset emulator for e2e/vr.spec.ts (a build-time flag, absent from normal builds)
+    env: { VITE_E2E_XR: '1' },
+    reuseExistingServer: false,
     timeout: 180_000
   }
 });

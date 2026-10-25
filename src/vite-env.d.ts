@@ -4,4 +4,12 @@
 interface Window {
   /** Zustand store exposed for the Playwright smoke test (see main.tsx). */
   __game?: typeof import('./core/GameStore').useGameStore;
+  /** XR store, exposed for e2e (see main.tsx). */
+  __xr?: typeof import('./core/XRStore').xrStore;
+  /** Emulated Quest 3 (IWER), installed only in e2e builds with ?iwer=1. */
+  __xrDevice?: import('iwer').XRDevice;
+}
+
+interface ImportMetaEnv {
+  readonly VITE_E2E_XR?: string;
 }
