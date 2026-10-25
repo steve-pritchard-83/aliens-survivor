@@ -190,7 +190,14 @@ export function PlayerController() {
     wasXrRef.current = xrOrigin !== null;
     const yaw = yawRef.current;
     const moveMag = Math.hypot(snap.moveX, snap.moveZ);
-    velocityDelta(snap.moveX, snap.moveZ, yaw, dt, _delta);
+    velocityDelta(
+      snap.moveX,
+      snap.moveZ,
+      yaw,
+      dt,
+      _delta,
+      xrOrigin ? BALANCE.PLAYER.XR_MOVE_SPEED : BALANCE.PLAYER.MOVE_SPEED
+    );
     const pos = posRef.current;
     if (xrOrigin) {
       // VR: the head is the player; walking into a wall (by stick or by room-scale) is clamped and pushed back

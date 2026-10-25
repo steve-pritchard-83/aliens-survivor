@@ -108,7 +108,7 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] Skim the coverage table from `npm run test:coverage` and confirm the excluded files list in vitest.config.ts is acceptable.
 
 ### Phase 3 (branch uplift/p3-ux) — needs device testing (Quest 2/3, phone, desktop)
-- [ ] **Movement speed decision:** movement is now frame-rate independent at 1.2 m/s (it previously varied: ~1.2 on Quest, 1.4 at 60 fps, 2.8 at 30 fps, never the 4.2 claimed). Walk the corridor on Quest and confirm the pace feels right; change `BALANCE.PLAYER.MOVE_SPEED` if not.
+- [ ] **Movement speed decision:** movement is now 3.0 m/s on desktop and touch and 1.8 m/s in VR (1.2 was too slow). Walk the corridor on Quest and desktop and change `BALANCE.PLAYER.MOVE_SPEED` / `XR_MOVE_SPEED` if the pace is wrong.
 - [ ] Quest: the mission now waits in an in-headset menu; a fresh trigger press deploys. Check the menu is readable and the trigger doesn't fire a shot on deploy.
 - [ ] Quest: pause menu (B/Y): stick up/down selects, left/right adjusts, trigger on Resume resumes. Volumes audibly change music and effects. Check text size/legibility.
 - [ ] Quest: comfort vignette during smooth turning and walking at Off/Low/High; snap-turn pulse; confirm it feels comfortable and isn't distracting.

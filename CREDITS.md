@@ -8,8 +8,7 @@ Regenerate the model rows with `node scripts/list-asset-metadata.mjs`.
 
 All nine shipped models carry their Sketchfab attribution in the glTF `asset.extras`, and all are licensed
 **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/). That licence **requires visible attribution** to
-the author, a link to the licence and a note of any changes. The files were later compressed with meshopt and
-WebP textures (`glTF-Transform`), which counts as a change.
+the author, a link to the licence and a note of any changes. The files are shipped as authored.
 
 | File | Title | Author | Source |
 |---|---|---|---|

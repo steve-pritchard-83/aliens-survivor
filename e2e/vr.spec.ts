@@ -17,7 +17,8 @@ const leftStick = (page: Page, x: number, y: number) =>
 /** Loads the app as a Quest, waits for the VR session and the in-headset start menu. */
 async function openVrMenu(page: Page): Promise<void> {
   await page.goto('/?e2e=1&iwer=1');
-  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
+  // Generous: the emulated session starts slowly on CI runners without a GPU
+  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 60_000 });
   await page.waitForTimeout(HOLD); // the menu ignores input while arming
 }
 
@@ -207,15 +208,19 @@ test('VR mission starts with the head on the start position and walks at the con
   expect(start.x).toBeCloseTo(-0.32, 1);
   expect(start.z).toBeCloseTo(13.0, 1);
 
-  // Speed is measured against the game's own clock, which is what movement integrates against
+  // Speed is measured against the game's own clock, which is what movement integrates against.
+  // Measurement starts once the head is actually moving, so input latency on a slow (software-rendered) runner
+  // is not counted as time spent standing still.
+  const zStart = (await headXZ(page)).z;
+  await leftStick(page, 0, -1);
+  await page.waitForFunction((z) => Math.abs(window.__headPosition!().z - z) > 0.1, zStart, { timeout: 60_000 });
   const t0 = await page.evaluate(() => window.__game!.getState().timeRemaining);
   const z0 = (await headXZ(page)).z;
-  await leftStick(page, 0, -1);
   await page.waitForFunction((t) => t - window.__game!.getState().timeRemaining > 4, t0, { timeout: 60_000 });
   const t1 = await page.evaluate(() => window.__game!.getState().timeRemaining);
   const z1 = (await headXZ(page)).z;
   await leftStick(page, 0, 0);
   const speed = Math.abs(z1 - z0) / (t0 - t1);
-  expect(speed).toBeGreaterThan(1.0);
-  expect(speed).toBeLessThan(1.3);
+  expect(speed).toBeGreaterThan(1.5);
+  expect(speed).toBeLessThan(2.1);
 });

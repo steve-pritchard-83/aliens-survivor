@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
+    // Store tests re-import the game modules per test, which is slow under coverage instrumentation and on CI
+    testTimeout: 30_000,
     coverage: {
       provider: 'v8',
       // Logic layers only: React/three adapters and the Web Audio graph are covered by the browser smoke test

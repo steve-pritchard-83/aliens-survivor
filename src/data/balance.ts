@@ -3,11 +3,13 @@ export const BALANCE = {
   PLAYER: {
     MAX_HP: 100,
     /**
-     * Walking speed in m/s. Movement used to integrate from a position that was only refreshed every 50 ms, so the
-     * real speed depended on frame rate (about 1.2 m/s on Quest at 72 Hz, 1.4 at 60 fps, 2.8 at 30 fps) and was
-     * never the 4.2 this constant claimed. Now frame-rate independent, set to the Quest feel players know.
+     * Walking speed in m/s on desktop and touch. Movement used to integrate from a position that was only refreshed
+     * every 50 ms, so the real speed depended on frame rate (about 1.4 m/s at 60 fps, 2.8 at 30 fps). Now frame-rate
+     * independent; 1.2 proved too slow on desktop, so this is a brisk walk.
      */
-    MOVE_SPEED: 1.2,
+    MOVE_SPEED: 3.0,
+    /** Walking speed in m/s in VR, kept lower than flat-screen play for comfort. */
+    XR_MOVE_SPEED: 1.8,
     /** Raises the XR origin for seated play (headset sits lower than when standing), metres. */
     SEATED_HEIGHT_OFFSET: 0.45,
     /** Keep-out distance from corridor walls for the headset, so the view cannot poke through geometry. */

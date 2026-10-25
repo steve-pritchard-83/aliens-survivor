@@ -20,7 +20,7 @@
 - Player start `(-0.32, 13.0)` facing +Z. In VR the head (XR viewer pose) is the player position.
 
 ## 4. Quest 2 performance rules
-Dynamic light cap, fixed alien pool, allocation-free frame loops, frozen static transforms, throttled store updates, a precache of at most 11 MB and the chunk budgets are described and enforced as listed in `HANDOFF.md` section 2 and the ADRs in `docs/adr/`.
+Dynamic light cap, fixed alien pool, allocation-free frame loops, frozen static transforms, throttled store updates, a precache of at most 48 MB and the chunk budgets are described and enforced as listed in `HANDOFF.md` section 2 and the ADRs in `docs/adr/`.
 
 ## 5. Mission phases (300-second wave director)
 Phase boundaries come from `BALANCE.PHASES`; spawn intervals, speeds and HP per phase come from `BALANCE.XENO_POOL`. Roughly: phase 1 *Awakening* (lone drones), phase 2 *The Swarm* (faster drones plus facehuggers/chestbursters), phase 3 *Hull Breach* (one Praetorian boss), phase 4 *Extraction* (one more Praetorian, fastest spawns until the timer reaches 0:00). A Praetorian appears at most once per phase (`shouldSpawnBoss`).

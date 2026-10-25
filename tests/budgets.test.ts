@@ -41,7 +41,7 @@ describe('bundle budgets', () => {
   });
 
   it('reports each breached budget', () => {
-    const stats = { largestChunk: { name: 'assets/x.js', bytes: 2 * MB }, totalJs: 3 * MB, precache: 20 * MB };
+    const stats = { largestChunk: { name: 'assets/x.js', bytes: 2 * MB }, totalJs: 3 * MB, precache: 60 * MB };
     const lights = Array.from({ length: 5 }, () => ({ file: 'f', light: 'pointLight' }));
     expect(evaluate(stats, lights)).toHaveLength(4);
     expect(evaluate({ largestChunk: { name: '', bytes: 1 }, totalJs: 1, precache: 1 }, [])).toEqual([]);

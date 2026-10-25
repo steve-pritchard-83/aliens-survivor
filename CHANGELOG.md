@@ -13,6 +13,7 @@
 - Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
 ### Fixed
+- **Models:** restored the original GLB files. The compressed set (flattened, merged and simplified by `gltf-transform optimize`) made the xenomorph invisible and Bishop show only his lower half.
 - Touch auto-aim no longer damages aliens just by looking at them, and bullets from the player and Bishop no longer pass through walls.
 - Level-ups no longer wipe live aliens or teleport Bishop; AI and effects freeze while you choose an upgrade.
 - VR level-up: a held trigger can no longer auto-pick a card, and all three cards are reachable.
@@ -23,9 +24,9 @@
 - Mobile: the PWA install screen is optional, menus can be pinch-zoomed, and the manifest describes the real 5-minute game.
 
 ### Changed
-- **Walking speed is now frame-rate independent at 1.2 m/s.** It used to integrate from a position refreshed only every 50 ms, so the real speed varied with frame rate (about 1.2 m/s on Quest at 72 Hz, 1.4 at 60 fps, 2.8 at 30 fps) and was never the 4.2 the constant claimed. 1.2 keeps the Quest feel; change `BALANCE.PLAYER.MOVE_SPEED` for a different pace.
+- **Walking speed is now frame-rate independent:** 3.0 m/s on desktop and touch, 1.8 m/s in VR (`BALANCE.PLAYER.MOVE_SPEED`, `XR_MOVE_SPEED`). It used to integrate from a position refreshed only every 50 ms, so the real speed varied with frame rate (about 1.4 m/s at 60 fps, 2.8 at 30 fps). A first attempt at 1.2 m/s was too slow.
 - Facehugger and chestburster kills now award 15 XP (previously 25, the same as a drone).
 - `balance.ts` is the single source of truth for combat numbers (values unchanged unless listed here).
-- Sound effects and music are AAC; the offline cache dropped from 15.9 MB to 10.6 MB and the largest script chunk from 1.44 MB to 834 kB.
+- Sound effects and music are AAC and the largest script chunk dropped from 1.44 MB to 834 kB. Models are back to their original uncompressed files, so the offline cache is about 46 MB.
 - Wall hit tests use a BVH and no longer allocate per shot; the motion tracker redraws at 20 Hz.
 - The Quest APK workflow now signs from repository secrets and fails clearly if they are missing; no credentials are stored in the repository.

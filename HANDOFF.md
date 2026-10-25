@@ -22,7 +22,7 @@
 |---|---|
 | No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
 | At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, flashlight + muzzle in the rifle). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
-| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 11 MB | `scripts/check-budgets.mjs` |
+| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 48 MB | `scripts/check-budgets.mjs` |
 | Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
 | `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |
 
@@ -35,7 +35,7 @@ Rules that tooling cannot fully check, so reviewers must:
 5. **Combat:** `CombatSystem.queryTarget` is side-effect free (auto-aim probes); `CombatSystem.resolveShot` applies damage and wall impacts. Walls occlude targets. Never apply damage inside a query.
 6. **Frame-rate independence:** integrate movement and timers with `dt`, never from throttled store values.
 7. **All input flows through `src/core/InputManager.ts`** (desktop, touch, XR) or the VR controller poll (`src/ui/vrControllers.ts`).
-8. **Assets:** models are meshopt+WebP compressed (`scripts/compress-models.mjs`); SFX are AAC `.m4a` except gunfire and UI cues (`scripts/compress-audio.mjs`). Update `CREDITS.md` when adding assets.
+8. **Assets:** models ship uncompressed as authored (a gltf-transform optimize pass broke the skinned models, see ADR 0004); SFX are AAC `.m4a` except gunfire and UI cues (`scripts/compress-audio.mjs`). Update `CREDITS.md` when adding assets.
 9. **Line endings are LF** (`.gitattributes`, Prettier). Run `npm run format` before committing.
 
 ## 3. Commands
@@ -91,7 +91,7 @@ src/
     └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
 tests/   Vitest suites (logic, systems, UI models, budgets, credits)
 e2e/     Playwright (smoke, mobile, vr)
-scripts/ compress-models, compress-audio, check-budgets, list-asset-metadata, tick-progress
+scripts/ compress-audio, check-budgets, list-asset-metadata, tick-progress
 docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 .ai/     Context, conventions, asset manifest, uplift plan and progress
 ```
@@ -130,7 +130,7 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 1. **`@pmndrs/xr` emulator stub.** `vite.config.ts` aliases the library's `emulate.js` to `src/core/emulate-stub.js`; it otherwise adds ~6 MB. Keep the alias.
 2. **No impact lights.** Alien hits use an emissive flash and particle sparks; do not add lights for impacts.
 3. **Static meshes are frozen** (`matrixAutoUpdate = false`) in `CorridorLevel`; update world matrices before freezing if you change geometry.
-4. **Walking speed is 1.2 m/s** (`BALANCE.PLAYER.MOVE_SPEED`). It was previously frame-rate dependent (roughly 1.2 m/s on Quest at 72 Hz) and never the 4.2 the old constant claimed. 1.2 preserves the Quest feel; change the constant for a different pace.
+4. **Walking speed** is frame-rate independent: 3.0 m/s on desktop and touch (`BALANCE.PLAYER.MOVE_SPEED`) and 1.8 m/s in VR (`XR_MOVE_SPEED`). 1.2 m/s was tried and judged too slow; both values are untuned guesses until tested on a headset.
 5. **three-mesh-bvh is pinned to 0.8.x** to match drei's copy (two versions cause duplicate type declarations).
 6. **e2e builds include the IWER headset emulator** (`VITE_E2E_XR=1`, set by `playwright.config.ts`); production builds do not. IWER spoofs a Quest user agent, so the app auto-enters VR in those tests. Software-rendered XR runs at a few frames per second, so VR tests hold inputs for about a second.
 7. **PowerShell:** do not chain with `&&`; use `;`. Bash tool and npm scripts are fine.
