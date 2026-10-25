@@ -1,178 +1,131 @@
-# Aliens Survivor — Engineering Handoff
+# Aliens Survivor: Engineering Handoff
 
-> **Target Audience:** Incoming AI Coding Assistant / Engineering Lead.  
-> **Last Updated:** 25 Oct 2026 · Commit `fe1312b` · Production: [https://aliens-survivor.vercel.app](https://aliens-survivor.vercel.app)
-
----
-
-## 1. Quick Reference & Core Facts
-
-- **App:** 300-second (5-minute) survival wave shooter set aboard the *USS Sulaco*.
-- **Tech Stack:** Vite 6, React 19, TypeScript, Three.js, React Three Fiber (`@react-three/fiber`), `@react-three/drei`, `@react-three/xr` v6, Zustand 5, Vitest.
-- **Platforms:**
-  - **Meta Quest 2 & 3:** WebXR Immersive VR via Horizon OS TWA APK or Quest Browser.
-  - **Desktop Web:** WASD locomotion, Pointer Lock mouse look, recoil recovery.
-  - **Mobile PWA:** Dual virtual touch thumbsticks with install prompt.
-- **Hardware Connected:** Meta Quest 2 (Serial `1WMHH831BS0504`) connected via ADB at `C:\RSL\platform-tools\adb.exe`.
-- **Git Repo:** `https://github.com/steve-pritchard-83/aliens-survivor.git` (`main` branch).
-- **Audit & Roadmap Scorecard:** Saved at `C:\Users\steve_tzmi3fh\.gemini\antigravity\brain\5a957c35-ad36-4bd3-98b3-b6b20c237f44\audit_and_roadmap.md` (Current verified score: **~76 / 100**, up from baseline 38/100).
+> **Audience:** the next engineer or AI coding assistant.
+> **Verified against code at commit `61eeb0d`** (end of uplift phase 4). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
+> Machine-specific details (headset serial, ADB paths, keystore location) live in `HANDOFF.local.md`, which is gitignored.
 
 ---
 
-## 2. Hard Non-Negotiable Rules & Constraints
+## 1. Quick reference
 
-You **MUST** respect the following architectural invariants at all times:
+- **App:** a 300-second first-person survival wave shooter aboard the *USS Sulaco*.
+- **Stack:** Vite 6, React 19, TypeScript 5.7 (strict), three.js 0.174, React Three Fiber 9, drei 10, `@react-three/xr` 6, Zustand 5, three-mesh-bvh, Vitest 5, Playwright.
+- **Platforms:** Meta Quest 2/3 (WebXR, via the Quest Browser or the Horizon OS TWA APK), desktop web (WASD + pointer lock), mobile PWA (dual touch zones).
+- **Repo:** `https://github.com/steve-pritchard-83/aliens-survivor` (`main`). **Production:** `https://aliens-survivor.vercel.app`.
+- **Caution:** pushing `main` triggers a Vercel production deploy. Work on branches and open PRs.
 
-1. **Strict File Length Limit (`<= 250` LOC):**
-   - **No source file in `src/**/*.{ts,tsx}` may exceed 250 lines.**
-   - Do **NOT** pack or cram multiple statements onto single lines to beat this limit.
-   - Extract cleanly into dedicated modules (e.g. types in `*Types.ts`, canvas draw helpers in `*Canvas.ts`, balance in `balance.ts`).
-2. **Meta Quest 2 Mobile GPU Light Budget (Strictly `<= 4` Dynamic Lights):**
-   - Forward rendering on the mobile Adreno 650 evaluates dynamic lights per fragment per eye.
-   - Total point and spot lights in the entire scene must stay `<= 4`:
-     1. Sector Key PointLight (`CorridorLevel.tsx`)
-     2. Emergency Beacon PointLight (`CorridorLevel.tsx`)
-     3. Pulse Rifle Flashlight SpotLight (`PulseRifle.tsx`)
-     4. Momentary Rifle Muzzle PointLight (`PulseRifle.tsx`)
-   - **Never dynamically mount/unmount lights at runtime** (causes a visible Three.js WebGL shader re-compilation hitch). Use `visible={false}` or `intensity = 0`.
-3. **Zero Frame-Loop Allocations:**
-   - Never call `new THREE.Vector3()`, `new THREE.Quaternion()`, or `.clone()` inside `useFrame` callbacks or frequent event handlers.
-   - Declare scratch vectors at module scope with an underscore prefix (e.g. `_camPos`, `_hitVec`).
-4. **Compressed 3D Asset Pipeline (Meshopt + WebP):**
-   - All models in `public/models/` are pre-compressed with `npx @gltf-transform/cli optimize --compress meshopt --texture-compress webp` (reduced from 40.5 MB down to 6.3 MB).
-   - `@react-three/drei`'s `useGLTF` automatically decodes Meshopt and Draco. Do not commit uncompressed 10MB+ raw GLBs.
-5. **Centralized Data & Types:**
-   - All balance constants, mission durations, damage values, weapon parameters, and upgrade catalogs reside in `src/data/balance.ts`.
-   - Zustand state interfaces reside in `src/core/GameTypes.ts`.
-6. **Automated Vitest Coverage:**
-   - Always run `npm test` before committing. Ensure all test suites pass.
+## 2. Invariants (enforced by `npm run verify`)
 
----
+`npm run verify` runs lint, format check, type-check, tests with coverage, a production build and the budget gate. CI runs the same command, plus the Playwright suite in a separate job. A change is done only when `verify` passes.
 
-## 3. Directory Layout & Module Responsibilities
+| Rule | Enforced by |
+|---|---|
+| No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
+| At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, flashlight + muzzle in the rifle). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
+| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 11 MB | `scripts/check-budgets.mjs` |
+| Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
+| `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |
+
+Rules that tooling cannot fully check, so reviewers must:
+
+1. **No allocations in frame loops.** Never create `THREE.Vector3`/`Quaternion`/arrays/closures inside `useFrame` or per-shot code. Use module-scope scratch objects (prefix `_`), reused result records and index loops.
+2. **`src/data/balance.ts` is the only source of game numbers** (damage, speeds, HP, timings, upgrade effects). Entities import from it.
+3. **Pure logic lives in `src/systems/` and the `*Sim`/`*AI` modules** and must not import React. Components are thin adapters (simulation to three.js objects, events to audio).
+4. **Simulation freezing:** use `isSimulationFrozen(status)` (PAUSED and LEVEL_UP). Reset entities when `state.runId` changes, **not** on status edges (level-ups must not wipe the field).
+5. **Combat:** `CombatSystem.queryTarget` is side-effect free (auto-aim probes); `CombatSystem.resolveShot` applies damage and wall impacts. Walls occlude targets. Never apply damage inside a query.
+6. **Frame-rate independence:** integrate movement and timers with `dt`, never from throttled store values.
+7. **All input flows through `src/core/InputManager.ts`** (desktop, touch, XR) or the VR controller poll (`src/ui/vrControllers.ts`).
+8. **Assets:** models are meshopt+WebP compressed (`scripts/compress-models.mjs`); SFX are AAC `.m4a` except gunfire and UI cues (`scripts/compress-audio.mjs`). Update `CREDITS.md` when adding assets.
+9. **Line endings are LF** (`.gitattributes`, Prettier). Run `npm run format` before committing.
+
+## 3. Commands
+
+```bash
+npm run dev            # Vite dev server
+npm run verify         # the full gate (use before every commit)
+npm test               # unit tests (npm run test:coverage adds the coverage gate)
+npm run e2e            # Playwright: desktop, mobile (Pixel 7 emulation) and emulated-Quest VR tests
+npm run lint | typecheck | format | format:check
+npm run build          # tsc -b && vite build
+node scripts/list-asset-metadata.mjs   # provenance embedded in the shipped GLBs
+```
+
+URL flags: `?debug=1` shows FPS, draw calls, triangles and the quality tier; `?vr=1` forces the Quest flow; `?e2e=1` exposes test hooks (`window.__game`, `__xr`, `__headPosition`).
+
+## 4. Layout
 
 ```
 src/
-├── core/
-│   ├── AdaptiveQuality.tsx   # Dynamic foveation (1.0) & framebuffer scale (0.58-0.80) for 72 FPS
-│   ├── AudioManager.ts       # 44 Web Audio sound effects with buffer caching & 3D spatial panning
-│   ├── CombatEvents.ts       # Central raycast bus between weapons and enemy collision spheres
-│   ├── CorridorNav.ts        # Sulaco figure-8 corridor bounding boxes, hall IDs & corner waypoints
-│   ├── GameStore.ts          # Zustand store (tick, fireRound, reload, damage, XP, level, upgrades)
-│   ├── GameTypes.ts          # State interfaces, threat structures, and WavePhase definitions
-│   ├── Haptics.ts            # WebXR controller dual-frequency vibration pulses
-│   ├── InputManager.ts       # Unified aggregator for Desktop, Touch PWA, and WebXR gamepad input
-│   ├── Platform.ts           # Browser, Quest, and PWA detection utilities
-│   ├── TrackerState.ts       # Canvas buffer reference for the M314 Motion Tracker display
-│   ├── XRControllerState.ts  # Tracked 6DoF controller positions, rotations, and haptic actuators
-│   └── XRStore.ts            # @react-three/xr store (72 FPS, foveation, custom local-floor init)
-├── data/
-│   └── balance.ts            # Single source of truth for game constants, phases, and 6 upgrade cards
-├── entities/
-│   ├── AdaptiveQuality.tsx   # Dynamic resolution controller
-│   ├── AlienEggs.tsx         # Static Ovomorph egg hazards with frozen matrices
-│   ├── BishopCompanion.tsx   # Autonomous synthetic companion with procedural walking & covering fire
-│   ├── BishopRig.ts          # Procedural bone-rigging and inverse kinematics for Bishop
-│   ├── CorridorAtmosphereFX.tsx # Ceiling electrical spark showers (additive particles)
-│   ├── CorridorLevel.tsx     # Static figure-8 level geometry with matrixAutoUpdate=false
-│   ├── MotionTracker.tsx     # 3D wrist-mounted CRT radar with 180°/360° sweep shader & audio pings
-│   ├── PlayerController.tsx  # First-person character controller with corridor wall clamping
-│   ├── PulseRifle.tsx        # M41A viewmodel with recoil, LED ammo readout, flashlight, and hitscan
-│   ├── SmallAlienSpawner.tsx # Facehugger / Chestburster procedural crawling swarmers
-│   ├── WallImpactFX.tsx      # Additive ricochet sparks and fading bullet hole decals
-│   ├── XenomorphImpactFX.tsx # Acid blood droplet bursts, limb gibs, and melting acid floor pools
-│   ├── XenomorphPool.tsx     # 6-slot object pool of Xenomorph Drones and Phase 3 Praetorian Boss
-│   └── XenoTypes.ts          # Xenomorph pool interfaces, bone identifiers, and animation helpers
-├── ui/
-│   ├── DebugTelemetry.tsx    # Real-time ?debug=1 HUD (FPS, frame time, draw calls, triangles, memory)
-│   ├── HUD.tsx               # 2D screen overlay for desktop/mobile (crosshair, health, touch sticks)
-│   ├── LevelUpModal.tsx      # 2D tactical 3-card Field Promotion selection modal
-│   ├── SettingsPanel.tsx     # 2D pause and accessibility modal
-│   ├── VRAutoLauncher.tsx    # Auto-entry into WebXR on Quest launch
-│   ├── VRHud.tsx             # 3D world-space floating UI (health, ammo, pause, level-up choices)
-│   └── VRStatusCanvas.ts     # 2D canvas drawing routine for floating holographic VR panels
-scripts/
-└── compress-models.mjs       # gltf-transform optimization runner for all GLBs in public/models/
-tests/
-└── balance_and_store.test.ts # Vitest unit tests verifying corridor math, store state, XP, and weapons
+├── main.tsx, App.tsx          Entry, canvas + XR + scene composition
+├── core/                      Engine services and state
+│   ├── GameStore.ts / GameTypes.ts   Zustand store, status machine, runId, settings
+│   ├── Persistence.ts         Validated localStorage for settings and best kills
+│   ├── SettingsBinding.ts     Pushes settings into audio, input and haptics
+│   ├── MissionLauncher.ts     launchMission(): start a run and bring up audio
+│   ├── CombatEvents.ts        Target providers, queryTarget / resolveShot, wall impacts
+│   ├── CorridorNav.ts         Hall rectangles, corners, spawn nodes, allocation-free clamping
+│   ├── InputManager.ts        Keyboard, mouse, touch and XR input aggregation
+│   ├── AudioManager.ts / AudioCatalog.ts / AmbienceLoop.ts   Web Audio buses, voice cap, sound table
+│   ├── AdaptiveQuality.tsx / QualityState.ts   FPS governor and effect tiers (0..2)
+│   ├── XRStore.ts, XRControllerState.ts, Haptics.ts, ComfortState.ts   XR session and controllers
+│   └── Platform.ts, e2e.ts, iwerHarness.ts, TrackerState.ts, MuzzleTexture.ts, SevenSegment.ts
+├── data/balance.ts            All balance numbers and upgrade catalogue/effects
+├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort
+├── entities/                  three.js / R3F world objects
+│   ├── XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool}.ts
+│   ├── SmallAlienSpawner.tsx + small/{smallSim,smallAssets}.ts
+│   ├── PulseRifle.tsx + rifle/{RifleState,rifleFiring,rifleViewmodel,autoTarget}.ts
+│   ├── PlayerController.tsx + player/{playerMotion,xrRig}.ts
+│   ├── CorridorLevel.tsx + level/{envRaycast,trimSectorWalls}.ts
+│   ├── MotionTracker.tsx + tracker/trackerCanvas.ts
+│   ├── BishopCompanion.tsx, BishopRig.ts, ComfortVignette.tsx, AlienEggs.tsx
+│   └── WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
+└── ui/                        2D overlays and VR menus
+    ├── HUD.tsx → MainMenu, VictoryScreen, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
+    └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
+tests/   Vitest suites (logic, systems, UI models, budgets, credits)
+e2e/     Playwright (smoke, mobile, vr)
+scripts/ compress-models, compress-audio, check-budgets, list-asset-metadata, tick-progress
+docs/    AUDIT.md, IP_REVIEW.md, adr/
+.ai/     Context, conventions, asset manifest, uplift plan and progress
 ```
 
----
+## 5. Controls
 
-## 4. Key Gameplay & Controls Mapping
+| Platform | Controls |
+|---|---|
+| Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, F flashlight, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
+| Touch | Left half: move stick. Right half: look; the rifle auto-fires when a threat is in the crosshair. PAUSE button |
+| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · X flashlight · B/Y or stick click pause · look at the left wrist for the tracker |
 
-### Meta Quest 2 / 3 Controllers
-| Action | Right Hand Controller | Left Hand Controller |
-|---|---|---|
-| **Fire M41A Rifle** | Index Trigger (`buttons[0]`) | — |
-| **Steady Aim / Grip** | Hand Grip (`buttons[1]`) | Hand Grip (`buttons[1]`) |
-| **Reload (2.5s cycle)** | Button [A] (`buttons[4]`) | — |
-| **Locomotion** | — | Left Thumbstick (Axes 0, 1) |
-| **Turning** | Right Thumbstick (Snap / Smooth) | — |
-| **Flashlight Toggle** | — | Button [X] (`buttons[4]`) |
-| **Motion Tracker** | — | Look at Left Wrist (swaps if left-handed) |
-| **Pause / Resume** | Button [B] (`buttons[5]`) OR Stick Click (`buttons[3]`) | Button [Y] (`buttons[5]`) OR Stick Click (`buttons[3]`) |
+**VR menus.** On entering VR the mission waits in a start menu: a fresh trigger press deploys. **Pause (B/Y):** right or left stick up/down selects a row, left/right adjusts (snap turn, comfort vignette, reduced flash, handedness, seated mode, master/music/effects volume), trigger on *Resume* resumes. **Level-up:** stick left/right selects a card, trigger confirms (input is ignored for 0.6 s and until the trigger has been released). **Defeat/victory:** a fresh trigger press redeploys; nothing restarts automatically.
 
-### In-VR Pause Menu Controls
-When paused, a holographic panel appears 1.7m in front of the player:
-- **Button [A]**: Cycle Snap Turn (`30° → 45° → 90° → Smooth Continuous`).
-- **Button [X]**: Toggle Reduced Flash Mode (`ON / OFF`).
-- **Squeeze [Grip]**: Toggle Handedness (`Right-Handed / Left-Handed`).
-- **Pull Trigger OR Press [B]/[Y]**: Resume Mission.
+## 6. Architecture notes
 
----
+- **Status machine:** `MENU → PLAYING ⇄ PAUSED / LEVEL_UP → VICTORY | DEFEAT`. `startGame()` increments `runId`; pools and companions reset when they see a new `runId` while PLAYING.
+- **Frame ownership:** `PlayerController` ticks the store (`tick(dt, now)`) each frame and integrates movement into a local position ref; the store copy of the player position is throttled to 20 Hz for other systems.
+- **VR rig:** the head (XR viewer pose) is the player. Turns pivot about the head, locomotion and room-scale movement are clamped to the corridor with a 15 cm margin, and seated mode raises the origin. See `entities/player/xrRig.ts`.
+- **Quality:** `XRStore` picks the framebuffer scale once per device class (three.js ignores scale changes mid-session). `AdaptiveQuality` then adjusts effect tiers from measured FPS (sparks, decals, droplets, eggs).
+- **Audio:** master/SFX gain buses, a 24-voice cap (gunfire, damage and UI are exempt), HRTF only for key cues, music through an `<audio>` element.
+- **Settings:** stored under `uscm_settings_v1` (validated per field); `SettingsBinding` applies them live.
 
-## 5. Developer Cheat Sheet & Commands
+## 7. Release and deployment
 
-### Running Development Server
-```bash
-npm run dev
-```
+- **Web:** Vercel builds `main`. Run `npm run verify` and `npm run e2e` before merging.
+- **Quest APK:** `.github/workflows/build-quest-apk.yml` (tag `v*` or manual run) builds the signed TWA wrapper in `quest-build/`. It needs four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The signing certificate fingerprint must match `public/.well-known/assetlinks.json`. Back up the keystore and passwords somewhere safe: if they are lost the installed app can never be updated.
+- **Local APK builds** read the same environment variables (see `quest-build/app/build.gradle`).
 
-### Running Automated Tests
-```bash
-npm test
-```
+## 8. Gotchas and decisions
 
-### Building for Production
-```bash
-npm run build
-```
-*(Notice: PWA precache should remain under ~16 MB).*
+1. **`@pmndrs/xr` emulator stub.** `vite.config.ts` aliases the library's `emulate.js` to `src/core/emulate-stub.js`; it otherwise adds ~6 MB. Keep the alias.
+2. **No impact lights.** Alien hits use an emissive flash and particle sparks; do not add lights for impacts.
+3. **Static meshes are frozen** (`matrixAutoUpdate = false`) in `CorridorLevel`; update world matrices before freezing if you change geometry.
+4. **Walking speed is 1.2 m/s** (`BALANCE.PLAYER.MOVE_SPEED`). It was previously frame-rate dependent (roughly 1.2 m/s on Quest at 72 Hz) and never the 4.2 the old constant claimed. 1.2 preserves the Quest feel; change the constant for a different pace.
+5. **three-mesh-bvh is pinned to 0.8.x** to match drei's copy (two versions cause duplicate type declarations).
+6. **e2e builds include the IWER headset emulator** (`VITE_E2E_XR=1`, set by `playwright.config.ts`); production builds do not. IWER spoofs a Quest user agent, so the app auto-enters VR in those tests. Software-rendered XR runs at a few frames per second, so VR tests hold inputs for about a second.
+7. **PowerShell:** do not chain with `&&`; use `;`. Bash tool and npm scripts are fine.
+8. **Provenance and IP:** see `CREDITS.md` (CC BY attribution is required for all models and is not yet shown in the app) and `docs/IP_REVIEW.md` (owner decisions pending).
 
-### Enforcing the `<= 250` Line Rule
-Run this snippet to check if any file exceeds 250 lines:
-```bash
-node -e "const fs = require('fs'), path = require('path'); function walk(d){let r=[];for(const f of fs.readdirSync(d)){const p=path.join(d,f);if(fs.statSync(p).isDirectory())r=r.concat(walk(p));else if(f.endsWith('.ts')||f.endsWith('.tsx'))r.push(p);}return r;} const bad=walk('src').map(f=>({f,l:fs.readFileSync(f,'utf8').split('\n').length})).filter(x=>x.l>250); console.log(bad.length?'VIOLATIONS:':'ALL OK (<= 250 lines)', bad);"
-```
+## 9. Open items
 
-### Verifying Dynamic Light Count (`<= 4`)
-```powershell
-Select-String -Path src\**\*.tsx -Pattern "<pointLight|<spotLight|<directionalLight" | ForEach-Object { "$($_.Filename):$($_.LineNumber) $($_.Line.Trim())" }
-```
-
-### Deploying & Relaunching on Meta Quest 2 via ADB
-```powershell
-# Sideload / Relaunch PWA on Quest 2 (Serial: 1WMHH831BS0504)
-& "C:\RSL\platform-tools\adb.exe" -s 1WMHH831BS0504 shell am force-stop app.vercel.aliens_survivor.twa
-& "C:\RSL\platform-tools\adb.exe" -s 1WMHH831BS0504 shell am force-stop com.oculus.browser
-& "C:\RSL\platform-tools\adb.exe" -s 1WMHH831BS0504 shell am start -n app.vercel.aliens_survivor.twa/.LauncherActivity
-```
-
----
-
-## 6. Known Gotchas & Historical Context
-
-1. **Powershell Syntax:** When executing commands in this workspace environment, do NOT use `&&`. Use `;` or `; if ($LASTEXITCODE -eq 0) { ... }`.
-2. **`@pmndrs/xr` Emulator Stub:** `@pmndrs/xr` contains large default 3D room environments that bloated the bundle by 6 MB. `vite.config.ts` aliases `/.*\/emulate\.js$/` to `/src/core/emulate-stub.js`. Keep this alias intact.
-3. **Bullet Impact Light:** Never re-introduce dynamic point lights on bullet impacts or alien hits. Alien hits use a subtle white emissive flash (`0xffffff` @ 0.45) in `XenomorphPool.tsx` and particle sparks in `WallImpactFX.tsx`.
-4. **Static Mesh Freezing:** `CorridorLevel.tsx` loops through static meshes and sets `child.matrixAutoUpdate = false` and `child.updateMatrix()`. If modifying corridor geometry, ensure world matrices are updated before disabling auto updates.
-
----
-
-## 7. Open Roadmap Items (Recommended Next Priorities)
-
-1. **Comfort Vignette (FOV Reduction):** Implement dynamic camera peripheral darkening during high-speed smooth turning for motion sickness reduction.
-2. **Additional Weapons:** Smartgun with auto-tracking gimbal and flamethrower secondary fire.
-3. **Audio Sliders in VR Menu:** Volume sliders for BGM, SFX, and Voice inside `VRStatusCanvas.ts`.
-4. **Second Level / Colony Ops:** Expanding beyond the Sulaco into an LV-426 colony map using the existing `CorridorNav` pathing graph.
+See `.ai/UPLIFT_PROGRESS.md` for the status of the uplift programme and the manual device checklists, and `docs/AUDIT.md` for remaining findings.
