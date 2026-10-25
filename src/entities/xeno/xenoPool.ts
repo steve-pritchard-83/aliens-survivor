@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { BALANCE } from '../../data/balance';
 import { POOL_SIZE, LIMB_NAMES, PooledXenomorph, playClip, CLIP_IDLE } from '../XenoTypes';
+import { restoreMelt } from '../fx/meltTint';
 
 export const XENO_BASE_EMISSIVE = { hex: 0x101c22, intensity: 0 };
 const BOSS_EMISSIVE_HEX = 0x331010;
@@ -116,6 +117,7 @@ export function spawnXeno(x: PooledXenomorph, p: SpawnParams): void {
   x.root.scale.set(1, 1, 1);
   x.clonedMeshGroup.scale.setScalar(p.scale);
   x.clonedMeshGroup.position.set(0.09, -0.24, 0);
+  restoreMelt(x.materials);
   for (let i = 0; i < x.materials.length; i++) {
     x.materials[i].emissive.setHex(p.isBoss ? BOSS_EMISSIVE_HEX : XENO_BASE_EMISSIVE.hex);
     x.materials[i].emissiveIntensity = XENO_BASE_EMISSIVE.intensity;

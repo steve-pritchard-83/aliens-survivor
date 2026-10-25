@@ -12,6 +12,7 @@ import { pickSpawnNode } from '../systems/waveDirector';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { animateFace, animateWorm, AnimMode } from './SmallAlienAnim';
 import { buildSmallAlienAssets } from './small/smallAssets';
+import { meltScale, restoreMelt, tintMelt } from './fx/meltTint';
 import {
   createSmallSim,
   spawnSmall,
@@ -31,6 +32,7 @@ const FH_EMISSIVE = { hex: 0x221808, intensity: 0 };
 const CB_EMISSIVE = { hex: 0x28100c, intensity: 0 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
 const _events: SmallEvents = { playerDamage: 0, leapHit: false, died: false };
+const _meltScale = { x: 1, y: 1, z: 1 };
 // Reused threat record published to the store (read via getState by Bishop, tracker and auto-aim)
 const _threat: ActiveThreat = { id: SMALL_ALIEN_ID, x: 0, z: 0, state: 'PURSUING' };
 
@@ -39,6 +41,7 @@ function clearSmallThreat(state: GameState): void {
 }
 
 function resetMaterials(mats: THREE.MeshStandardMaterial[], e: { hex: number; intensity: number }): void {
+  restoreMelt(mats);
   for (let i = 0; i < mats.length; i++) {
     mats[i].emissive.setHex(e.hex);
     mats[i].emissiveIntensity = e.intensity;
@@ -177,7 +180,9 @@ export function SmallAlienSpawner() {
     }
     if (e.state === 'DEAD' && _pose.melt > 0.3) {
       const k = (_pose.melt - 0.3) / 0.7;
-      r.scale.set(1 + k * 0.2, Math.max(0.05, 1 - k * 0.92), 1 + k * 0.2);
+      meltScale(k, _meltScale);
+      r.scale.set(_meltScale.x, _meltScale.y, _meltScale.z);
+      tintMelt(e.kind === 'FACEHUGGER' ? fhMats : cbMats, Math.min(1, k * 1.8));
     }
 
     r.position.set(e.x, e.y, e.z);

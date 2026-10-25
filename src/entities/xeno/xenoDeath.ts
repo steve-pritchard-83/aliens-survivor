@@ -1,5 +1,8 @@
 import { PooledXenomorph } from '../XenoTypes';
 import type { XenoPose } from './xenoAI';
+import { meltScale, tintMelt } from '../fx/meltTint';
+
+const _scale = { x: 1, y: 1, z: 1 };
 
 export const XENO_DEATH_SECONDS = 2.8;
 
@@ -17,8 +20,10 @@ export function stepXenoDeath(x: PooledXenomorph, dt: number, pose: XenoPose): b
   pose.roll = v === 3 ? c * 0.48 : v === 1 ? c * -0.32 : 0;
   if (meltProg > 0.32) {
     const k = (meltProg - 0.32) / 0.68;
-    x.y = -k * 0.42;
-    x.root.scale.set(1 + k * 0.18, Math.max(0.04, 1 - k * 0.92), 1 + k * 0.18);
+    x.y = -k * k * (3 - 2 * k) * 0.42;
+    meltScale(k, _scale);
+    x.root.scale.set(_scale.x, _scale.y, _scale.z);
+    tintMelt(x.materials, Math.min(1, k * 1.8));
   }
   if (x.stateTimer > 0) return false;
   x.active = false;
