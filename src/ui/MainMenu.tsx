@@ -129,6 +129,7 @@ export function MainMenu({
             </button>
           </>
         )}
+        <div style={{ marginTop: 18, fontSize: 10, letterSpacing: 2, opacity: 0.45 }}>BUILD {__BUILD_ID__}</div>
       </div>
     </div>
   );

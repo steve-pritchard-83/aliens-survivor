@@ -2,7 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Shown on the main menu so it is obvious which build a device is running (UTC time, plus the commit when known)
+const sha = (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7);
+const BUILD_ID = `${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC${sha ? ' · ' + sha : ''}`;
+
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   resolve: {
     alias: [
       {

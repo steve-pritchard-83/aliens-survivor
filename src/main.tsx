@@ -7,8 +7,25 @@ import { xrStore } from './core/XRStore';
 import { bindSettings } from './core/SettingsBinding';
 import { isE2E } from './core/e2e';
 
-// Register Workbox Service Worker for offline Mobile PWA & Meta Quest 2 asset caching
-registerSW({ immediate: true });
+// Register Workbox Service Worker for offline Mobile PWA & Meta Quest 2 asset caching.
+// A browser only looks for a new service worker when a page loads, and a Quest tab is usually resumed rather than
+// reloaded, so check on a timer and whenever the page becomes visible again. Never in the middle of a mission:
+// an update reloads the page.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (!registration) return;
+    const check = () => {
+      const status = useGameStore.getState().status;
+      if (status === 'PLAYING' || status === 'LEVEL_UP' || status === 'PAUSED') return;
+      registration.update().catch(() => undefined);
+    };
+    window.setInterval(check, 120_000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') check();
+    });
+  }
+});
 
 // Test hook for the browser smoke test (?e2e=1 or dev server); inert in normal play
 if (isE2E()) {
