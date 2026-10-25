@@ -21,8 +21,8 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P1.5 (1f33f20) BVH environment raycast — three-mesh-bvh 0.8.x (matches drei) instead of 0.9
 - [x] P1.6 (cf0e928) Audio rework
 - [x] P1.7 (600d404) Canvas texture throttling — tracker 20 Hz + wrist texture version gate; status panel redraw left per frame while paused (see below)
-- [ ] P1.8 Code splitting
-- [ ] P1.9 Phase close
+- [x] P1.8 (9442a80) Code splitting
+- [x] P1.9 Phase close — gate green: 77 tests, build ok, precache 10.6 MB, largest chunk 854 kB
 
 ## Phase 2 — Tests and gates
 - [ ] P2.1 Pure AI step functions
@@ -74,3 +74,11 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [ ] Phase 3 and 4 each spawn exactly one Praetorian.
 - [ ] Quest with the debug flag on (add ?debug=1 to the URL): tier readout drops in heavy fights and recovers; no framebuffer-scale console warnings.
 - [ ] Reload the page: snap-turn/flash/handedness persist; BEST kills shows on menu and end screens (2D and VR).
+
+### Phase 1 (branch uplift/p1-code-health) — needs device testing
+- [ ] Quest, iOS Safari, desktop: converted AAC sounds play with no clipped starts (reload, flesh hits, xeno hiss, marine pain); BGM (.m4a) starts and loops; BGM loudness feels unchanged.
+- [ ] Quest with the debug flag on (add ?debug=1 to the URL): record frame time while firing continuously in phase 4 and compare with the earlier build (wall raycasts are now BVH-accelerated); note any hitch at level load while the corridor BVHs build.
+- [ ] Motion tracker (wrist and desktop) still animates smoothly at its new 20 Hz redraw; pings and haptics still fire on each sweep.
+- [ ] Preview build (`npm run preview`): menu, play, pause, resume, level-up, victory video all work (vendor chunk split sanity check).
+- [ ] Aliens still pursue around corners, leap, and slash on cadence; facehugger/chestburster kills award 15 XP.
+- [ ] Settings screens and touch controls look and behave the same after the HUD split (phone and desktop).
