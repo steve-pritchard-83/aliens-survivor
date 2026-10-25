@@ -6,6 +6,7 @@ import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { trimSectorWalls } from './level/trimSectorWalls';
 import { registerEnvironmentRaycast } from './level/envRaycast';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
+import { MistFX } from './MistFX';
 import { AlienEggs } from './AlienEggs';
 
 export function CorridorLevel() {
@@ -108,6 +109,7 @@ export function CorridorLevel() {
       </group>
 
       <CorridorAtmosphereFX />
+      <MistFX />
     </group>
   );
 }
