@@ -84,6 +84,12 @@ test('the status bar shows health, ammo and phase and can be switched off', asyn
   await expect(bar).toContainText('HP 100');
   await expect(bar).toContainText('99 / 99');
   await expect(bar).toContainText('PHASE 1');
+  await expect(bar).toContainText('M41A');
+  // Weapon cycling is wired to Q; with only the M41A registered it must be a harmless no-op
+  await page.keyboard.press('KeyQ');
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__game!.getState().activeWeapon)).toBe('m41a');
+  expect(await page.evaluate(() => window.__game!.getState().isReloading)).toBe(false);
 
   await page.keyboard.press('KeyP');
   await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED');

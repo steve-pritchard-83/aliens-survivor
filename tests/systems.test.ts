@@ -3,11 +3,13 @@ import { weaponDamage, damageAgainstXeno, incomingDamage } from '../src/systems/
 import { spawnInterval, droneBaseSpeed, droneMaxHp, pickSpawnNode } from '../src/systems/waveDirector';
 import { CORRIDOR_SPAWN_NODES, isSpawnVisibleToPlayer } from '../src/core/CorridorNav';
 import { BALANCE } from '../src/data/balance';
+import { WEAPONS } from '../src/data/weapons';
 
 describe('combatMath', () => {
   it('applies the armor-piercing multiplier to weapon damage', () => {
-    expect(weaponDamage(false)).toBe(BALANCE.WEAPON.BASE_DAMAGE);
-    expect(weaponDamage(true)).toBeCloseTo(BALANCE.WEAPON.BASE_DAMAGE * BALANCE.WEAPON.AP_MULTIPLIER);
+    expect(weaponDamage(WEAPONS.m41a, false)).toBe(WEAPONS.m41a.damage);
+    expect(weaponDamage(WEAPONS.m41a, true)).toBeCloseTo(WEAPONS.m41a.damage * BALANCE.WEAPON.AP_MULTIPLIER);
+    expect(weaponDamage({ damage: 100 }, true)).toBeCloseTo(100 * BALANCE.WEAPON.AP_MULTIPLIER);
   });
 
   it('boss takes reduced damage and emerging aliens take less', () => {

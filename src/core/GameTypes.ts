@@ -1,6 +1,7 @@
 import { UpgradeCard, BALANCE } from '../data/balance';
 import type { DifficultyId, GameRules } from '../data/difficulty';
 import type { ScoreEntry } from '../systems/scoring';
+import type { WeaponId } from '../data/weapons';
 import type { Leaderboard } from './Persistence';
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'DEFEAT' | 'LEVEL_UP';
@@ -42,6 +43,7 @@ export interface GameState {
   status: GameStatus;
   runId: number;
   rules: GameRules;
+  activeWeapon: WeaponId;
   timeRemaining: number;
   phase: WavePhase;
   hp: number;
@@ -82,6 +84,7 @@ export interface GameState {
   tick: (dt: number, now: number) => void;
   fireRound: () => boolean;
   startReload: () => void;
+  cycleWeapon: (order?: readonly WeaponId[]) => void;
   takeDamage: (amount: number, now: number, isAcid?: boolean) => void;
   addScreenShake: (intensity: number) => void;
   registerKill: (kind?: KillKind) => void;

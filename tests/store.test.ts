@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../src/core/GameStore';
 import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../src/data/balance';
+import { WEAPONS } from '../src/data/weapons';
 
 const s = () => useGameStore.getState();
 
@@ -66,9 +67,9 @@ describe('store: weapon', () => {
     expect(s().fireRound()).toBe(true);
     expect(s().ammo).toBe(0);
     expect(s().isReloading).toBe(true);
-    s().tick(BALANCE.WEAPON.RELOAD_TIME / 2, 1);
+    s().tick(WEAPONS.m41a.reloadTime / 2, 1);
     expect(s().isReloading).toBe(true);
-    s().tick(BALANCE.WEAPON.RELOAD_TIME, 2);
+    s().tick(WEAPONS.m41a.reloadTime, 2);
     expect(s().isReloading).toBe(false);
     expect(s().ammo).toBe(s().maxAmmo);
   });
@@ -79,7 +80,7 @@ describe('store: weapon', () => {
     useGameStore.setState({ isJammed: true });
     s().startReload();
     expect(s().isReloading).toBe(true);
-    s().tick(BALANCE.WEAPON.RELOAD_TIME + 0.1, 1);
+    s().tick(WEAPONS.m41a.reloadTime + 0.1, 1);
     expect(s().isJammed).toBe(false);
   });
 
@@ -129,10 +130,10 @@ describe('store: progression and upgrades', () => {
     expect(s().maxHp).toBe(BALANCE.PLAYER.MAX_HP + UPGRADE_EFFECTS.armor_boost.maxHpBonus);
     expect(s().hp).toBe(s().maxHp);
     s().chooseUpgrade('fire_rate');
-    expect(s().fireInterval).toBe(BALANCE.WEAPON.FIRE_INTERVAL_OVERCLOCKED);
+    expect(s().fireInterval).toBe(WEAPONS.m41a.overclockedFireInterval);
     s().chooseUpgrade('extended_mag');
-    expect(s().maxAmmo).toBe(BALANCE.WEAPON.MAGAZINE_EXTENDED);
-    expect(s().ammo).toBe(BALANCE.WEAPON.MAGAZINE_EXTENDED);
+    expect(s().maxAmmo).toBe(WEAPONS.m41a.extendedMagazine);
+    expect(s().ammo).toBe(WEAPONS.m41a.extendedMagazine);
   });
 
   it('a new run resets progression', () => {

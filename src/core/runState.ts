@@ -1,5 +1,6 @@
 import { BALANCE } from '../data/balance';
 import { resolveRules, GameRules } from '../data/difficulty';
+import { WEAPONS, DEFAULT_WEAPON, WeaponId } from '../data/weapons';
 import type { GameSettings } from './GameTypes';
 
 /**
@@ -13,9 +14,10 @@ export function freshRunState(settings: GameSettings) {
     hp: BALANCE.PLAYER.MAX_HP as number,
     maxHp: BALANCE.PLAYER.MAX_HP as number,
     lastDamageTime: 0,
-    ammo: BALANCE.WEAPON.MAGAZINE_DEFAULT as number,
-    maxAmmo: BALANCE.WEAPON.MAGAZINE_DEFAULT as number,
-    fireInterval: BALANCE.WEAPON.FIRE_INTERVAL_DEFAULT as number,
+    activeWeapon: DEFAULT_WEAPON as WeaponId,
+    ammo: WEAPONS[DEFAULT_WEAPON].magazine,
+    maxAmmo: WEAPONS[DEFAULT_WEAPON].magazine,
+    fireInterval: WEAPONS[DEFAULT_WEAPON].fireInterval,
     isReloading: false,
     reloadProgress: 0,
     continuousFireTime: 0,

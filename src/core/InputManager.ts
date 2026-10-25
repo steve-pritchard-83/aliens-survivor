@@ -28,6 +28,7 @@ export class InputManagerController {
   private reloadFlag = false;
   public trackerToggleFlag = false;
   public flashlightToggleFlag = false;
+  public weaponCycleFlag = false;
   public pauseToggleFlag = false;
   public pointerLocked = false;
   public gyroEnabled = false;
@@ -86,6 +87,8 @@ export class InputManagerController {
       this.trackerToggleFlag = true;
     } else if (e.code === 'KeyF') {
       this.flashlightToggleFlag = true;
+    } else if (e.code === 'KeyQ') {
+      this.weaponCycleFlag = true;
     } else if (e.code === 'KeyP' || e.code === 'Escape') {
       this.pauseToggleFlag = true;
     }

@@ -17,6 +17,7 @@ export interface VRControllerInput {
 
 /** Latches and cooldowns that persist between frames. */
 export interface VRControllerLatches {
+  weaponCooldown: number;
   snapTurnLatched: boolean;
   pauseCooldown: number;
   lightCooldown: number;
@@ -27,7 +28,7 @@ export function createVRControllerInput(): VRControllerInput {
 }
 
 export function createVRControllerLatches(): VRControllerLatches {
-  return { snapTurnLatched: false, pauseCooldown: 0, lightCooldown: 0 };
+  return { weaponCooldown: 0, snapTurnLatched: false, pauseCooldown: 0, lightCooldown: 0 };
 }
 
 const SNAP_PRESS = 0.65;
@@ -125,6 +126,11 @@ export function pollControllers(
       updateHandPose(xrControllerState.leftHand, source, frame, refSpace);
       out.moveX = sx;
       out.moveZ = -sy;
+      // Left grip cycles weapons (the right grip is reserved for steadying the rifle)
+      if (buttons[BTN_GRIP]?.pressed && latches.weaponCooldown <= 0) {
+        latches.weaponCooldown = 0.5;
+        InputManager.weaponCycleFlag = true;
+      }
       if (buttons[BTN_PRIMARY]?.pressed && latches.lightCooldown <= 0) {
         latches.lightCooldown = 0.35;
         useGameStore.getState().toggleFlashlight();

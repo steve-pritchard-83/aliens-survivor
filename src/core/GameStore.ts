@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
 import { freshRunState } from './runState';
+import { WEAPONS, WEAPON_ORDER, nextWeapon } from '../data/weapons';
 import { incomingDamage } from '../systems/combatMath';
 import { loadSettings, saveSettings, loadRecordKills, loadLeaderboard } from './Persistence';
 import { endRunPatch } from './runSummary';
@@ -60,7 +61,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammo = s.ammo,
       isJammed = s.isJammed,
       continuousFireTime = s.continuousFireTime;
-    if (isReloading && (reloadProgress += dt / BALANCE.WEAPON.RELOAD_TIME) >= 1.0) {
+    if (isReloading && (reloadProgress += dt / WEAPONS[s.activeWeapon].reloadTime) >= 1.0) {
       isReloading = false;
       reloadProgress = 0;
       ammo = s.maxAmmo;
@@ -97,6 +98,26 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = get();
     if (s.status !== 'PLAYING' || s.isReloading || (s.ammo === s.maxAmmo && !s.isJammed)) return;
     set({ isReloading: true, reloadProgress: 0 });
+  },
+
+  // Switching weapons costs a reload cycle, so it cannot be used to refill a magazine instantly
+  cycleWeapon: (order = WEAPON_ORDER) => {
+    const s = get();
+    if (s.status !== 'PLAYING') return;
+    const next = nextWeapon(s.activeWeapon, order);
+    // Widened to string: with a single registered weapon TypeScript would otherwise narrow `next` to never
+    if ((next as string) === s.activeWeapon) return;
+    const w = WEAPONS[next];
+    const owned = (id: string) => s.activeUpgrades.includes(id);
+    set({
+      activeWeapon: next,
+      maxAmmo: owned('extended_mag') ? w.extendedMagazine : w.magazine,
+      fireInterval: owned('fire_rate') ? w.overclockedFireInterval : w.fireInterval,
+      isReloading: true,
+      reloadProgress: 0,
+      isJammed: false,
+      continuousFireTime: 0
+    });
   },
 
   takeDamage: (amount, now, isAcid = false) => {
@@ -162,7 +183,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       fireInterval = s.fireInterval;
 
     if (id === 'extended_mag') {
-      maxAmmo = BALANCE.WEAPON.MAGAZINE_EXTENDED;
+      maxAmmo = WEAPONS[s.activeWeapon].extendedMagazine;
       ammo = maxAmmo;
     }
     if (id === 'armor_boost') {
@@ -170,7 +191,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       hp = maxHp;
     }
     if (id === 'fire_rate') {
-      fireInterval = BALANCE.WEAPON.FIRE_INTERVAL_OVERCLOCKED;
+      fireInterval = WEAPONS[s.activeWeapon].overclockedFireInterval;
     }
 
     set({ activeUpgrades: active, maxAmmo, ammo, maxHp, hp, fireInterval, status: 'PLAYING', offeredUpgrades: [] });

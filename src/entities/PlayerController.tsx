@@ -145,6 +145,10 @@ export function PlayerController() {
       state.toggleTracker();
       AudioManager.play2D('ui_beep', 0.45);
     }
+    if (InputManager.weaponCycleFlag) {
+      InputManager.weaponCycleFlag = false;
+      state.cycleWeapon();
+    }
     if (InputManager.flashlightToggleFlag) {
       InputManager.flashlightToggleFlag = false;
       const nextState = !state.flashlightOn;

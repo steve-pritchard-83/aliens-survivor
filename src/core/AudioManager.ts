@@ -158,7 +158,7 @@ class WebAudioController {
   }
 
   // Monophonic Pulse Rifle Burst Controller: prevents overlapping multi-shot comb-filtering echo
-  public playPulseShot(): void {
+  public playPulseShot(keys: readonly SoundKey[] = PULSE_VARIANTS): void {
     if (!this.ctx || !this.sfxGain || this.defeatMute) return;
     const now = this.ctx.currentTime;
     if (this.activeTailSrc) {
@@ -178,7 +178,7 @@ class WebAudioController {
         /* source already stopped: non-fatal */
       }
     }
-    const buf = this.buffers.get(PULSE_VARIANTS[Math.floor(Math.random() * PULSE_VARIANTS.length)]);
+    const buf = this.buffers.get(keys[Math.floor(Math.random() * keys.length)]);
     if (!buf) return;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;

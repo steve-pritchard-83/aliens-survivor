@@ -1,5 +1,6 @@
 import { useGameStore, PHASE_NAMES } from '../core/GameStore';
 import { formatTimer, GREEN, RED } from './uiStyles';
+import { WEAPONS } from '../data/weapons';
 
 const barTrack = { height: 8, background: 'rgba(0, 255, 136, 0.15)', borderRadius: 4, overflow: 'hidden' } as const;
 
@@ -17,6 +18,7 @@ export function StatusBar() {
   const seconds = useGameStore((s) => Math.ceil(s.timeRemaining));
   const phase = useGameStore((s) => s.phase);
   const level = useGameStore((s) => s.level);
+  const weapon = useGameStore((s) => WEAPONS[s.activeWeapon].shortLabel);
 
   const low = hp <= maxHp * 0.3;
   const ammoLabel = isJammed ? 'JAMMED' : isReloading ? 'RELOADING' : `${ammo} / ${maxAmmo}`;
@@ -63,7 +65,9 @@ export function StatusBar() {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
         <span>HP {hp}</span>
-        <span style={{ color: isJammed ? RED : GREEN }}>{ammoLabel}</span>
+        <span style={{ color: isJammed ? RED : GREEN }}>
+          {weapon} {ammoLabel}
+        </span>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { AudioManager } from '../../core/AudioManager';
 import { CombatSystem, DamageSpec } from '../../core/CombatEvents';
 import { Haptics } from '../../core/Haptics';
 import { xrControllerState } from '../../core/XRControllerState';
-import { BALANCE } from '../../data/balance';
+import { WEAPONS, WeaponProfile } from '../../data/weapons';
 import { weaponDamage } from '../../systems/combatMath';
 import { RifleState, MUZZLE_FLASH_SECONDS } from './RifleState';
 
@@ -52,7 +52,7 @@ function stopBurstAudio(rs: RifleState, withTail: boolean): void {
   rs.wasFiring = false;
 }
 
-function aimRay(state: GameState, ctx: FireContext, heat: number): void {
+function aimRay(state: GameState, ctx: FireContext, heat: number, weapon: WeaponProfile): void {
   const handActive = state.settings.leftHanded ? xrControllerState.leftHand.active : xrControllerState.rightHand.active;
   if (handActive && ctx.muzzle && ctx.weapon) {
     ctx.muzzle.getWorldPosition(_origin);
@@ -61,13 +61,13 @@ function aimRay(state: GameState, ctx: FireContext, heat: number): void {
     ctx.camera.getWorldPosition(_origin);
     ctx.camera.getWorldDirection(_dir);
   }
-  const spread = Math.min(BALANCE.WEAPON.SPREAD_MAX, heat * BALANCE.WEAPON.SPREAD_PER_SEC);
+  const spread = Math.min(weapon.spreadMax, heat * weapon.spreadPerSecond);
   _dir.x += (Math.random() - 0.5) * spread;
   _dir.y += (Math.random() - 0.5) * spread;
   _dir.normalize();
 }
 
-function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext): void {
+function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext, weapon: WeaponProfile): void {
   rs.fireCooldown = state.fireInterval;
   rs.wasFiring = true;
   rs.recoilOffset = 0.058 + Math.random() * 0.015;
@@ -76,15 +76,15 @@ function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext): void 
   rs.recoilRoll = (Math.random() - 0.5) * 0.065;
   rs.boltKick = 1.0;
   rs.muzzleTimer = MUZZLE_FLASH_SECONDS;
-  AudioManager.playPulseShot();
+  AudioManager.playPulseShot(weapon.shotSounds);
   Haptics.fire();
   if (ctx.muzzle) {
     ctx.muzzle.rotation.z = Math.random() * Math.PI * 2;
     ctx.muzzle.scale.setScalar(0.85 + Math.random() * 0.35);
   }
-  aimRay(state, ctx, rs.continuousFire);
-  _dmg.amount = weaponDamage(state.activeUpgrades.includes('ap_ammo'));
-  const outcome = CombatSystem.resolveShot(_origin, _dir, _dmg);
+  aimRay(state, ctx, rs.continuousFire, weapon);
+  _dmg.amount = weaponDamage(weapon, state.activeUpgrades.includes('ap_ammo'));
+  const outcome = CombatSystem.resolveShot(_origin, _dir, _dmg, weapon.maxRange);
   if (outcome.kind === 'target') state.registerHit();
   else if (outcome.kind === 'wall') {
     AudioManager.play2D(Math.random() > 0.5 ? 'ricochet1' : 'ricochet2', 0.45, 0.9 + Math.random() * 0.2);
@@ -94,6 +94,7 @@ function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext): void 
 
 /** Trigger logic: jam heat, fire-rate cooldown, dry-fire reload, and burst audio tail on release. */
 export function updateFiring(rs: RifleState, state: GameState, isFiring: boolean, dt: number, ctx: FireContext): void {
+  const weapon = WEAPONS[state.activeWeapon];
   rs.fireCooldown = Math.max(0, rs.fireCooldown - dt);
   if (!isFiring || state.isReloading || state.isJammed) {
     stopBurstAudio(rs, true);
@@ -101,7 +102,7 @@ export function updateFiring(rs: RifleState, state: GameState, isFiring: boolean
     return;
   }
   rs.continuousFire += dt;
-  if (rs.continuousFire > BALANCE.WEAPON.JAM_THRESHOLD_SECONDS) {
+  if (rs.continuousFire > weapon.jamThresholdSeconds) {
     stopBurstAudio(rs, false);
     useGameStore.setState({ isJammed: true });
     AudioManager.play2D('empty_click', 0.85);
@@ -110,7 +111,7 @@ export function updateFiring(rs: RifleState, state: GameState, isFiring: boolean
   }
   if (rs.fireCooldown > 0) return;
   if (state.ammo > 0 && state.fireRound()) {
-    fireOneRound(rs, state, ctx);
+    fireOneRound(rs, state, ctx, weapon);
   } else if (state.ammo <= 0) {
     stopBurstAudio(rs, true);
     rs.fireCooldown = 0.25;

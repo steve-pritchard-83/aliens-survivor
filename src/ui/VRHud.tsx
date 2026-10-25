@@ -63,6 +63,7 @@ export function VRHud() {
     const latches = latchesRef.current;
     if (latches.pauseCooldown > 0) latches.pauseCooldown -= dt;
     if (latches.lightCooldown > 0) latches.lightCooldown -= dt;
+    if (latches.weaponCooldown > 0) latches.weaponCooldown -= dt;
     const isPresenting = Boolean(session);
     if (!isPresenting) {
       comfort.turnRate = comfort.move = comfort.snapPulse = 0;

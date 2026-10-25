@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import { useGameStore } from '../src/core/GameStore';
 import { CombatSystem, TargetProvider } from '../src/core/CombatEvents';
-import { BALANCE } from '../src/data/balance';
+import { WEAPONS } from '../src/data/weapons';
 import { createRifleState, MUZZLE_FLASH_SECONDS } from '../src/entities/rifle/RifleState';
 import { updateFiring, updateReloadStages, FireContext } from '../src/entities/rifle/rifleFiring';
 import { computeReloadPose, stepRecoil, ReloadPose } from '../src/entities/rifle/rifleViewmodel';
@@ -39,16 +39,16 @@ describe('rifle firing', () => {
     CombatSystem.registerProvider('xeno', targetAhead(6));
     const rs = createRifleState();
     updateFiring(rs, s(), true, 0.016, ctx);
-    expect(s().ammo).toBe(BALANCE.WEAPON.MAGAZINE_DEFAULT - 1);
+    expect(s().ammo).toBe(WEAPONS.m41a.magazine - 1);
     expect(s().shotsHit).toBe(1);
     expect(rs.muzzleTimer).toBe(MUZZLE_FLASH_SECONDS);
     expect(rs.wasFiring).toBe(true);
     // Cooldown blocks the very next frame
     updateFiring(rs, s(), true, 0.016, ctx);
-    expect(s().ammo).toBe(BALANCE.WEAPON.MAGAZINE_DEFAULT - 1);
+    expect(s().ammo).toBe(WEAPONS.m41a.magazine - 1);
     // After the fire interval it fires again
     updateFiring(rs, s(), true, s().fireInterval, ctx);
-    expect(s().ammo).toBe(BALANCE.WEAPON.MAGAZINE_DEFAULT - 2);
+    expect(s().ammo).toBe(WEAPONS.m41a.magazine - 2);
   });
 
   it('shots into empty space use ammo but never count as hits', () => {
@@ -68,7 +68,7 @@ describe('rifle firing', () => {
 
   it('jams after sustained fire and starts a reload', () => {
     const rs = createRifleState();
-    rs.continuousFire = BALANCE.WEAPON.JAM_THRESHOLD_SECONDS;
+    rs.continuousFire = WEAPONS.m41a.jamThresholdSeconds;
     updateFiring(rs, s(), true, 0.1, ctx);
     expect(s().isJammed).toBe(true);
     expect(s().isReloading).toBe(true);

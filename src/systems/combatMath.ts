@@ -1,8 +1,8 @@
 import { BALANCE, UPGRADE_EFFECTS } from '../data/balance';
 
-/** Per-shot weapon damage before any target modifiers. */
-export function weaponDamage(hasArmorPiercing: boolean): number {
-  return BALANCE.WEAPON.BASE_DAMAGE * (hasArmorPiercing ? BALANCE.WEAPON.AP_MULTIPLIER : 1);
+/** Per-shot damage of a weapon before target modifiers (the armor-piercing upgrade applies to every weapon). */
+export function weaponDamage(weapon: { damage: number }, hasArmorPiercing: boolean): number {
+  return weapon.damage * (hasArmorPiercing ? BALANCE.WEAPON.AP_MULTIPLIER : 1);
 }
 
 /** Damage a drone or boss actually takes from a shot of `amount`. */

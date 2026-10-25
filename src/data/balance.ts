@@ -15,20 +15,11 @@ export const BALANCE = {
     REGEN_DELAY: 8.0,
     REGEN_RATE: 2.0
   },
+  /** Weapon-agnostic damage rules. Per-weapon numbers (damage, magazine, reload...) live in data/weapons.ts. */
   WEAPON: {
-    MAGAZINE_DEFAULT: 99,
-    MAGAZINE_EXTENDED: 150,
-    FIRE_INTERVAL_DEFAULT: 0.085,
-    FIRE_INTERVAL_OVERCLOCKED: 0.065,
-    RELOAD_TIME: 2.5,
-    JAM_THRESHOLD_SECONDS: 5.0,
-    BASE_DAMAGE: 24,
     AP_MULTIPLIER: 1.4,
     /** Damage scale against aliens still emerging from vents (18 / 24). */
-    SPAWNING_TARGET_DAMAGE_SCALE: 0.75,
-    SPREAD_PER_SEC: 0.007,
-    SPREAD_MAX: 0.03,
-    MAX_RANGE: 32
+    SPAWNING_TARGET_DAMAGE_SCALE: 0.75
   },
   BISHOP: {
     DAMAGE: 24,
