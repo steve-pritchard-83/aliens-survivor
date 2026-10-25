@@ -23,8 +23,5 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Unit Tests
-        run: npm test
-
-      - name: Verify TypeScript & Build Bundle
-        run: npm run build
+      - name: Verify (lint, format, types, tests, build, budgets)
+        run: npm run verify

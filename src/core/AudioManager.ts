@@ -124,8 +124,8 @@ class WebAudioController {
           const res = await fetch(url);
           const arr = await res.arrayBuffer();
           if (this.ctx) this.buffers.set(key, await this.ctx.decodeAudioData(arr));
-        } catch {
-          /* ignore */
+        } catch (e) {
+          console.warn('[AudioManager] failed to load', key, e);
         }
       })
     );
@@ -137,7 +137,7 @@ class WebAudioController {
       this.bgmAudio.loop = true;
       this.bgmAudio.volume = 0.32;
     }
-    this.bgmAudio.play().catch(() => {});
+    this.bgmAudio.play().catch((e) => console.warn('[AudioManager] BGM play blocked', e));
   }
 
   public pauseBGM(): void {
@@ -146,7 +146,7 @@ class WebAudioController {
   }
 
   public resumeBGM(): void {
-    this.bgmAudio?.play().catch(() => {});
+    this.bgmAudio?.play().catch((e) => console.warn('[AudioManager] BGM resume blocked', e));
   }
 
   public stopBGM(): void {
@@ -204,7 +204,7 @@ class WebAudioController {
       try {
         this.activeTailSrc.stop();
       } catch {
-        /* ignore */
+        /* source already stopped: non-fatal */
       }
       this.activeTailSrc = null;
     }
@@ -214,7 +214,7 @@ class WebAudioController {
         this.activePulseGain.gain.linearRampToValueAtTime(0.001, now + 0.012);
         this.activePulseSrc.stop(now + 0.014);
       } catch {
-        /* ignore */
+        /* source already stopped: non-fatal */
       }
     }
     const variants: SoundKey[] = ['pulse_shot', 'pulse_shot2', 'pulse_shot3', 'pulse_shot4'];
@@ -244,7 +244,7 @@ class WebAudioController {
       this.activePulseGain?.gain.linearRampToValueAtTime(0.001, now + 0.025);
       this.activePulseSrc.stop(now + 0.028);
     } catch {
-      /* ignore */
+      /* source already stopped: non-fatal */
     }
     this.activePulseSrc = null;
     this.activePulseGain = null;
@@ -299,7 +299,7 @@ class WebAudioController {
         s.stop();
         s.disconnect();
       } catch {
-        /* ignore */
+        /* source already stopped: non-fatal */
       }
     });
     this.activeSources.clear();

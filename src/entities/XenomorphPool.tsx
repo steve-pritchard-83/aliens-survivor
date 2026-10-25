@@ -34,8 +34,7 @@ import {
 const _sphere = new THREE.Sphere(),
   _ray = new THREE.Ray(),
   _hitVec = new THREE.Vector3(),
-  _jointPos = new THREE.Vector3(),
-  _closestHitPoint = new THREE.Vector3();
+  _jointPos = new THREE.Vector3();
 
 export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');

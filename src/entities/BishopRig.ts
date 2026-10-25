@@ -110,7 +110,6 @@ export function buildBishopRig(source: THREE.Object3D): BishopRig {
   return { group, bones, rifleMount };
 }
 
-const _X = new THREE.Vector3(1, 0, 0);
 const _S = new THREE.Vector3(),
   _E0 = new THREE.Vector3(),
   _W0 = new THREE.Vector3(),

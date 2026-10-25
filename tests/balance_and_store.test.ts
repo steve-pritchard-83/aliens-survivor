@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, computePhase } from '../src/core/GameStore';
-import { BALANCE } from '../src/data/balance';
 import { constrainToCorridor, getHallId } from '../src/core/CorridorNav';
 
 describe('Corridor Navigation & Hall Math', () => {

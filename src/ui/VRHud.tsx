@@ -282,7 +282,7 @@ export function VRHud() {
             AudioManager.startBGM();
             AudioManager.setKlaxonActive(true);
           })
-          .catch(() => {});
+          .catch((e) => console.warn('[VRHud] audio unlock failed', e));
         st.startGame();
       }
     } else {

@@ -8,8 +8,7 @@ import { quality } from '../core/QualityState';
 const MAX_DECAL_COUNT = 48;
 const MAX_SPARK_COUNT = 160;
 const _unitZ = new THREE.Vector3(0, 0, 1),
-  _refl = new THREE.Vector3(),
-  _normMat = new THREE.Matrix3();
+  _refl = new THREE.Vector3();
 
 interface DecalState {
   active: boolean;

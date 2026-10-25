@@ -22,7 +22,7 @@ export function VRAutoLauncher() {
           AudioManager.startBGM();
           AudioManager.setKlaxonActive(true);
         })
-        .catch(() => {});
+        .catch((e) => console.warn('[VRAutoLauncher] audio unlock failed', e));
       useGameStore.getState().startGame();
     };
 
@@ -38,7 +38,7 @@ export function VRAutoLauncher() {
               try {
                 sessionStorage.setItem('uscm_last_xr_vis', info);
               } catch {
-                /* ignore */
+                /* storage unavailable: diagnostics only */
               }
               const st = useGameStore.getState();
               if (session.visibilityState !== 'visible' && st.status === 'PLAYING') {
@@ -53,7 +53,7 @@ export function VRAutoLauncher() {
               try {
                 localStorage.setItem('uscm_last_xr_session_end', info);
               } catch {
-                /* ignore */
+                /* storage unavailable: diagnostics only */
               }
             });
           }

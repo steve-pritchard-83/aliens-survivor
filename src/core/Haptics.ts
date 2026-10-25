@@ -9,7 +9,7 @@ class HapticsController {
       try {
         navigator.vibrate(14);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('right', 0.85, 45);
@@ -20,7 +20,7 @@ class HapticsController {
       try {
         navigator.vibrate(28);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('right', 0.65, 35);
@@ -31,7 +31,7 @@ class HapticsController {
       try {
         navigator.vibrate([40, 20, 35]);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('both', 0.95, 80);
@@ -42,7 +42,7 @@ class HapticsController {
       try {
         navigator.vibrate([60, 30, 80]);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('both', 1.0, 140);
@@ -53,7 +53,7 @@ class HapticsController {
       try {
         navigator.vibrate([16, 45, 20]);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('right', 0.7, 90);
@@ -64,7 +64,7 @@ class HapticsController {
       try {
         navigator.vibrate(10);
       } catch {
-        /* ignore */
+        /* vibrate unsupported or blocked: non-fatal */
       }
     }
     xrControllerState.triggerHaptic('left', 0.45, 30);

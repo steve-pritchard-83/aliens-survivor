@@ -88,7 +88,7 @@ export function HUD() {
       window.removeEventListener('beforeinstallprompt', handlePrompt);
       window.removeEventListener('appinstalled', handleInstalled);
     };
-  }, []);
+  }, [isQuest]);
 
   useEffect(() => {
     if (status === 'DEFEAT' && prevStatusRef.current !== 'DEFEAT') {
@@ -104,12 +104,12 @@ export function HUD() {
     try {
       sessionStorage.setItem('uscm_pwa_ack', 'true');
     } catch {
-      /* ignore */
+      /* sessionStorage unavailable: non-fatal */
     }
     setPwaDismissed(true);
     setVictoryVideoEnded(false);
     startGame();
-    if (mode === 'VR') xrStore.enterVR().catch(() => {});
+    if (mode === 'VR') xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e));
     AudioManager.resetAudio();
     AudioManager.unlock()
       .then(() => {
@@ -117,11 +117,11 @@ export function HUD() {
         AudioManager.startBGM();
         AudioManager.setKlaxonActive(true);
       })
-      .catch(() => {});
+      .catch((e) => console.warn('[HUD] audio unlock failed', e));
     try {
       await navigator.wakeLock?.request('screen');
     } catch {
-      /* ignore */
+      /* wake lock unsupported or denied: non-fatal */
     }
     if (mode !== 'VR' && inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0) {
       InputManager.requestPointerLock();
@@ -203,7 +203,7 @@ export function HUD() {
     try {
       sessionStorage.setItem('uscm_pwa_ack', 'true');
     } catch {
-      /* ignore */
+      /* sessionStorage unavailable: non-fatal */
     }
     setPwaDismissed(true);
     if (deferredPrompt) {
@@ -350,7 +350,7 @@ export function HUD() {
       )}
       {status === 'PLAYING' && !isVrApp && isQuest && inputMode !== 'XR' && (
         <button
-          onClick={() => xrStore.enterVR().catch(() => {})}
+          onClick={() => xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e))}
           style={{
             position: 'absolute',
             top: 20,
@@ -459,7 +459,7 @@ export function HUD() {
                 try {
                   sessionStorage.setItem('uscm_pwa_ack', 'true');
                 } catch {
-                  /* ignore */
+                  /* sessionStorage unavailable: non-fatal */
                 }
                 setPwaDismissed(true);
                 window.location.href = '/?source=pwa';

@@ -1,5 +1,4 @@
 import { useGameStore } from '../core/GameStore';
-import { AudioManager } from '../core/AudioManager';
 
 function formatTimer(sec: number): string {
   const m = Math.floor(sec / 60),

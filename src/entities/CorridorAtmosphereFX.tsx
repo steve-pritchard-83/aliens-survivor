@@ -35,7 +35,7 @@ export function CorridorAtmosphereFX() {
     return geo;
   }, []);
 
-  useFrame(({ clock }, dt) => {
+  useFrame((_, dt) => {
     const state = useGameStore.getState();
     if (isSimulationFrozen(state.status)) return;
 
@@ -77,9 +77,9 @@ export function CorridorAtmosphereFX() {
       if (sparkPointsRef.current) {
         const posAttr = sparkPointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
         for (let i = 0; i < SPARKS_PER_BURST; i++) {
-          let px = posAttr.getX(i) + sparkVel[i * 3] * dt;
+          const px = posAttr.getX(i) + sparkVel[i * 3] * dt;
           let py = posAttr.getY(i) + sparkVel[i * 3 + 1] * dt;
-          let pz = posAttr.getZ(i) + sparkVel[i * 3 + 2] * dt;
+          const pz = posAttr.getZ(i) + sparkVel[i * 3 + 2] * dt;
           sparkVel[i * 3 + 1] -= 11.5 * dt;
 
           if (py <= 0.02) {
