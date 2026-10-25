@@ -36,8 +36,14 @@ Thumbs.db
 .vercel
 .env*
 
-# Quest build artifacts
-quest-build/
+# Quest build artifacts (the Android wrapper project is tracked; outputs and secrets are not)
+quest-build/**/build/
+quest-build/build/
+quest-build/.gradle/
+quest-build/local.properties
+quest-build/*.keystore
+quest-build/*.jks
+quest-build/*.apk
 *.idsig
 *.apk
 

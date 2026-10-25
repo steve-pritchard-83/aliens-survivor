@@ -1,4 +1,12 @@
-name: Build Meta Quest 2 APK
+name: Build Meta Quest APK
+
+# Builds the signed Trusted Web Activity wrapper in quest-build/ around the deployed web app.
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64    base64 of the release keystore file
+#   ANDROID_KEYSTORE_PASSWORD  keystore password
+#   ANDROID_KEY_ALIAS          key alias inside the keystore
+#   ANDROID_KEY_PASSWORD       key password
+# The signing certificate's SHA-256 fingerprint must match public/.well-known/assetlinks.json.
 
 on:
   workflow_dispatch:
@@ -7,7 +15,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-apk:
@@ -29,26 +37,50 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Install & Build Web Assets
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Verify web app (lint, types, tests, build, budgets)
         run: |
           npm ci
-          npm test
-          npm run build
+          npm run verify
 
-      - name: Generate Quest APK Project
+      - name: Check signing secrets are configured
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "Packaging WebXR TWA Project for Horizon OS..."
-          cd quest-build
-          chmod +x gradlew || true
+          missing=0
+          for name in KEYSTORE_B64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret for $name is not set (see the header of this workflow)"
+              missing=1
+            fi
+          done
+          exit $missing
 
-      - name: Assemble Release APK
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      - name: Assemble signed release APK
         working-directory: quest-build
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: aliens-survivor-quest2-apk
-          path: quest-build/app/build/outputs/apk/**/*.apk
+          name: aliens-survivor-quest-apk
+          path: quest-build/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
           retention-days: 30
