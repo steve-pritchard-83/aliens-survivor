@@ -21,6 +21,7 @@ function formatTimer(sec: number): string {
 export function HUD() {
   const status = useGameStore((s) => s.status);
   const timeRemaining = useGameStore((s) => (s.status !== 'PLAYING' ? s.timeRemaining : 0));
+  const recordKills = useGameStore((s) => s.recordKills);
   const kills = useGameStore((s) => s.kills),
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
@@ -574,7 +575,7 @@ export function HUD() {
             }}
           >
             <span style={{ color: '#aaffd4', fontSize: 13, letterSpacing: 1.5 }}>
-              SURVIVAL TIME: 05:00.0 | KILLS: {kills} | ACC: {accuracy}%
+              SURVIVAL TIME: 05:00.0 | KILLS: {kills} | ACC: {accuracy}% | BEST: {Math.max(recordKills, kills)}
             </span>
             <button
               onClick={() => handleLaunch('STANDARD')}
@@ -637,8 +638,13 @@ export function HUD() {
               ? isQuest || isVrApp
                 ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready.'
                 : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.'
-              : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}%`}
+              : `SURVIVAL TIME: ${formatTimer(300 - timeRemaining)} | XENOMORPHS ELIMINATED: ${kills} | ACCURACY: ${accuracy}% | BEST: ${Math.max(recordKills, kills)}`}
           </p>
+          {status === 'MENU' && recordKills > 0 && (
+            <p style={{ color: '#ffcc66', letterSpacing: 3, fontSize: 14, marginBottom: 18 }}>
+              BEST: {recordKills} KILLS
+            </p>
+          )}
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             {isQuest || isVrApp ? (
               <button

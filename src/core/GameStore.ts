@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Haptics } from './Haptics';
+import { loadSettings, saveSettings, loadRecordKills, commitRecord } from './Persistence';
 import { BALANCE, UPGRADE_CATALOG } from '../data/balance';
 import {
   GameStatus,
@@ -14,14 +15,6 @@ import {
 
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase, isSimulationFrozen };
-
-function loadRecordKills(): number {
-  try {
-    return parseInt(localStorage.getItem('uscm_record_kills') || '0', 10);
-  } catch {
-    return 0;
-  }
-}
 
 export const useGameStore = create<GameState>((set, get) => ({
   status: 'MENU',
@@ -54,7 +47,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   nextLevelXp: BALANCE.XP.LEVEL_THRESHOLDS[0],
   offeredUpgrades: [],
   activeUpgrades: [],
-  settings: { snapAngle: Math.PI / 2, reducedFlash: false, leftHanded: false },
+  settings: loadSettings(),
   recordKills: loadRecordKills(),
 
   startGame: () =>
@@ -128,6 +121,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammo,
       isJammed,
       continuousFireTime,
+      recordKills: nextStatus === 'VICTORY' ? commitRecord(s.kills, s.recordKills) : s.recordKills,
       damageFlash: Math.max(0, s.damageFlash - dt * 2.5),
       screenShake: Math.max(0, s.screenShake - dt * 4.2)
     });
@@ -154,15 +148,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     Haptics.damage();
     const effectiveAmount = isAcid && s.activeUpgrades.includes('acid_proofing') ? amount * 0.5 : amount;
     const nextHp = Math.max(0, s.hp - effectiveAmount);
-    if (nextHp <= 0) {
-      try {
-        const curBest = Math.max(s.kills, s.recordKills);
-        localStorage.setItem('uscm_record_kills', curBest.toString());
-      } catch {
-        /* ignore */
-      }
-    }
+    const recordKills = nextHp <= 0 ? commitRecord(s.kills, s.recordKills) : s.recordKills;
     set({
+      recordKills,
       hp: nextHp,
       lastDamageTime: now,
       damageFlash: s.settings.reducedFlash ? 0.25 : 1.0,
@@ -229,7 +217,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ activeUpgrades: active, maxAmmo, ammo, maxHp, hp, fireInterval, status: 'PLAYING', offeredUpgrades: [] });
   },
 
-  updateSettings: (partial) => set((s) => ({ settings: { ...s.settings, ...partial } })),
+  updateSettings: (partial) =>
+    set((s) => {
+      const settings = { ...s.settings, ...partial };
+      saveSettings(settings);
+      return { settings };
+    }),
   registerHit: () => {
     Haptics.hit();
     set((s) => ({ shotsHit: s.shotsHit + 1 }));
