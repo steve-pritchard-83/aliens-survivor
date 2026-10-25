@@ -6,6 +6,7 @@ import { useGameStore } from '../core/GameStore';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { trackerCanvasState } from '../core/TrackerState';
+import { comfort } from '../core/ComfortState';
 import { xrControllerState } from '../core/XRControllerState';
 
 import { VRStatusPanel } from './VRStatusPanel';
@@ -52,6 +53,7 @@ export function VRHud() {
     if (latches.lightCooldown > 0) latches.lightCooldown -= dt;
     const isPresenting = Boolean(session);
     if (!isPresenting) {
+      comfort.turnRate = comfort.move = comfort.snapPulse = 0;
       if (InputManager.mode === 'XR') InputManager.setXRState(false);
       xrControllerState.rightHand.active = false;
       xrControllerState.leftHand.active = false;

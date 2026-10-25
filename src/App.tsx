@@ -12,6 +12,7 @@ import { WallImpactFX } from './entities/WallImpactFX';
 import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
 import { VRHud } from './ui/VRHud';
+import { ComfortVignette } from './entities/ComfortVignette';
 import { VRAutoLauncher } from './ui/VRAutoLauncher';
 import { AdaptiveQuality } from './core/AdaptiveQuality';
 import { InputManager } from './core/InputManager';
@@ -59,6 +60,7 @@ export function App() {
             <XenomorphPool />
             <SmallAlienSpawner />
             <VRHud />
+            <ComfortVignette />
             {Platform.isDebug && <DebugTelemetry />}
           </Suspense>
         </XR>

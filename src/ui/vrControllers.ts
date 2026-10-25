@@ -2,6 +2,7 @@ import { useGameStore } from '../core/GameStore';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { xrControllerState } from '../core/XRControllerState';
+import { comfort, SNAP_PULSE_SECONDS } from '../core/ComfortState';
 import type { XRHandPose } from '../core/XRControllerState';
 
 /** Controller state gathered this frame (reused every frame). */
@@ -60,6 +61,7 @@ function stickAxes(axes: readonly number[]): [number, number] {
 
 function applyTurn(turnAxis: number, dt: number, latches: VRControllerLatches): void {
   const state = useGameStore.getState();
+  comfort.turnRate = 0;
   // Turning only applies during play; otherwise the stick drives menus and must not queue turns
   if (state.status !== 'PLAYING') {
     latches.snapTurnLatched = Math.abs(turnAxis) > SNAP_RELEASE;
@@ -69,9 +71,11 @@ function applyTurn(turnAxis: number, dt: number, latches: VRControllerLatches): 
   if (snap > 0) {
     if (Math.abs(turnAxis) > SNAP_PRESS && !latches.snapTurnLatched) {
       latches.snapTurnLatched = true;
+      comfort.snapPulse = SNAP_PULSE_SECONDS;
       InputManager.addSnapTurn(turnAxis > 0 ? -snap : snap);
     } else if (Math.abs(turnAxis) < SNAP_RELEASE) latches.snapTurnLatched = false;
   } else if (Math.abs(turnAxis) > SMOOTH_DEADZONE) {
+    comfort.turnRate = Math.abs(turnAxis) * SMOOTH_TURN_RATE;
     InputManager.addSnapTurn(-turnAxis * dt * SMOOTH_TURN_RATE);
   }
 }
@@ -136,4 +140,5 @@ export function pollControllers(
     }
     if (pausePressed && latches.pauseCooldown <= 0) togglePause(latches);
   }
+  comfort.move = Math.min(1, Math.hypot(out.moveX, out.moveZ));
 }

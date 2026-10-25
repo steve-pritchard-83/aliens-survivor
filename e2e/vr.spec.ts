@@ -78,3 +78,24 @@ test('VR pause menu: B opens it, the stick moves rows and adjusts, the trigger r
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING', undefined, { timeout: 30_000 });
   expect(errors).toEqual([]);
 });
+
+test('VR locomotion brings up the comfort vignette without shader errors', async ({ page }) => {
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && /shader|WebGLProgram|GLSL/i.test(m.text())) problems.push(m.text());
+  });
+  await page.goto('/?e2e=1&iwer=1');
+  await page.waitForFunction(() => !!window.__xr?.getState().session, undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => (window.__game?.getState().timeRemaining ?? 300) < 299.5, undefined, {
+    timeout: 45_000
+  });
+  const z0 = await page.evaluate(() => window.__game!.getState().playerPos[2]);
+  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, -0.9));
+  await page.waitForFunction((start) => Math.abs(window.__game!.getState().playerPos[2] - start) > 0.3, z0, {
+    timeout: 30_000
+  });
+  await page.waitForTimeout(1500); // frames rendered with the vignette visible
+  await page.evaluate(() => window.__xrDevice!.controllers.left!.updateAxes('thumbstick', 0, 0));
+  expect(problems).toEqual([]);
+});
