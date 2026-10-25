@@ -216,12 +216,8 @@ export function PulseRifle() {
         <primitive object={clonedRifle} />
       </group>
       <pointLight ref={muzzleLightRef} position={[0, 0.06, -0.47]} color="#ffaa33" intensity={0} distance={18} decay={1.2} />
-      {flashlightOn && (
-        <>
-          <spotLight ref={spotLightRef} position={[0, 0.02, -0.40]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={78} distance={38} decay={1.0} color="#eef8ff" />
-          <pointLight position={[0, 0.05, -0.52]} color="#d6ebff" intensity={12} distance={22} decay={1.2} />
-        </>
-      )}
+      <spotLight ref={spotLightRef} position={[0, 0.02, -0.40]} target={flashLightTarget} angle={0.68} penumbra={0.35} intensity={flashlightOn ? 78 : 0} distance={38} decay={1.0} color="#eef8ff" visible={flashlightOn} />
+      <pointLight position={[0, 0.05, -0.52]} color="#d6ebff" intensity={flashlightOn ? 12 : 0} distance={22} decay={1.2} visible={flashlightOn} />
       <group ref={muzzleGroupRef} position={[0, 0.06, -0.47]} visible={false}>
         <mesh><planeGeometry args={[0.38, 0.38]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
         <mesh position={[0, 0, -0.12]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[0.42, 0.24]} /><meshBasicMaterial map={muzzleTexture} transparent blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>

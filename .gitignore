@@ -39,3 +39,4 @@ Thumbs.db
 # Quest build artifacts
 quest-build/
 *.idsig
+*.apk

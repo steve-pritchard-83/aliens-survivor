@@ -34,12 +34,20 @@ export function VRAutoLauncher() {
           startMission();
           if (session) {
             session.addEventListener('visibilitychange', () => {
+              const info = `visibilitychange:${session.visibilityState}@${new Date().toISOString()}`;
+              console.log('[WebXR]', info);
+              try { sessionStorage.setItem('uscm_last_xr_vis', info); } catch { /* ignore */ }
               const st = useGameStore.getState();
               if (session.visibilityState !== 'visible' && st.status === 'PLAYING') {
                 st.pauseGame();
               } else if (session.visibilityState === 'visible' && st.status === 'PAUSED') {
                 st.resumeGame();
               }
+            });
+            session.addEventListener('end', (e) => {
+              const info = `sessionend@${new Date().toISOString()}`;
+              console.warn('[WebXR Session Ended]', info, e);
+              try { localStorage.setItem('uscm_last_xr_session_end', info); } catch { /* ignore */ }
             });
           }
         })

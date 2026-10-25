@@ -15,7 +15,8 @@ function formatTimer(sec: number): string {
 }
 
 export function HUD() {
-  const status = useGameStore((s) => s.status), timeRemaining = useGameStore((s) => s.timeRemaining);
+  const status = useGameStore((s) => s.status);
+  const timeRemaining = useGameStore((s) => s.status !== 'PLAYING' ? s.timeRemaining : 0);
   const kills = useGameStore((s) => s.kills), shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit), damageFlash = useGameStore((s) => s.damageFlash);
   const startGame = useGameStore((s) => s.startGame), pauseGame = useGameStore((s) => s.pauseGame), resumeGame = useGameStore((s) => s.resumeGame);
@@ -142,6 +143,8 @@ export function HUD() {
   };
 
   const accuracy = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
+
+  if (isVrApp && status === 'PLAYING') return null;
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>

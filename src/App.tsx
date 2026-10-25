@@ -13,6 +13,7 @@ import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
 import { VRHud } from './ui/VRHud';
 import { VRAutoLauncher } from './ui/VRAutoLauncher';
+import { DebugTelemetry } from './ui/DebugTelemetry';
 import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 
@@ -48,6 +49,7 @@ export function App() {
             <XenomorphPool />
             <SmallAlienSpawner />
             <VRHud />
+            <DebugTelemetry />
           </Suspense>
         </XR>
       </Canvas>

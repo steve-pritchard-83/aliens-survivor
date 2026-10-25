@@ -3,6 +3,18 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  resolve: {
+    alias: [
+      {
+        find: /@pmndrs\/xr\/dist\/emulate\.js$/,
+        replacement: '/src/core/emulate-stub.js'
+      },
+      {
+        find: /^\.\/emulate\.js$/,
+        replacement: '/src/core/emulate-stub.js'
+      }
+    ]
+  },
   plugins: [
     react(),
     VitePWA({
@@ -11,7 +23,8 @@ export default defineConfig({
       manifest: false, // Using public/manifest.json directly per PRD structure
       workbox: {
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,glb,wav,mp3,otf,json}']
+        globPatterns: ['**/*.{js,css,html,glb,wav,mp3,otf,json}'],
+        globIgnores: ['**/emulate*', '**/*room*', '**/office_*']
       }
     })
   ],
