@@ -37,12 +37,7 @@ export function App() {
         touchAction: status === 'PLAYING' ? 'none' : 'manipulation'
       }}
       onClick={() => {
-        if (
-          status === 'PLAYING' &&
-          InputManager.mode === 'DESKTOP' &&
-          !('ontouchstart' in window) &&
-          navigator.maxTouchPoints === 0
-        ) {
+        if (status === 'PLAYING' && InputManager.mode === 'DESKTOP' && Platform.hasMouse) {
           InputManager.requestPointerLock();
         }
       }}

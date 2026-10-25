@@ -95,7 +95,8 @@ export function buildBishopRig(source: THREE.Object3D): BishopRig {
     mat.roughness = 0.5;
     mat.metalness = 0.1;
     mat.emissive.setHex(0x10161c);
-    mat.emissiveIntensity = 0.3;
+    mat.emissiveIntensity = 0.1;
+    mat.color.multiplyScalar(0.55); // his white suit otherwise glares against the dark corridor
     const sm = new THREE.SkinnedMesh(geo, mat);
     sm.frustumCulled = false;
     group.add(sm);

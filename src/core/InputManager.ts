@@ -1,3 +1,5 @@
+import { Platform } from './Platform';
+
 export type InputMode = 'DESKTOP' | 'TOUCH' | 'XR';
 
 export interface InputSnapshot {
@@ -57,9 +59,8 @@ export class InputManagerController {
     if (this.initialized || typeof window === 'undefined') return;
     this.initialized = true;
 
-    const isTouch =
-      'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia?.('(pointer: coarse)').matches;
-    if (isTouch) {
+    // A touchscreen laptop still has a mouse: start in touch mode only when there is none
+    if (!Platform.hasMouse) {
       this.setMode('TOUCH');
     }
 
@@ -158,8 +159,7 @@ export class InputManagerController {
 
   public requestPointerLock(): void {
     if (typeof window === 'undefined') return;
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || this.mode === 'TOUCH';
-    if (isTouch) return;
+    if (!Platform.hasMouse || this.mode === 'TOUCH') return;
     const canvas = document.querySelector('canvas');
     if (canvas && !this.pointerLocked && this.mode === 'DESKTOP') {
       canvas.requestPointerLock?.();

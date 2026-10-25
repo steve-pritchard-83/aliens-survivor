@@ -16,20 +16,24 @@ if (isE2E()) {
   window.__xr = xrStore;
 }
 
-// Emulated headset for the WebXR smoke test; the flag is a build-time constant, so normal builds drop this branch
-if (import.meta.env.VITE_E2E_XR === '1' && new URLSearchParams(window.location.search).has('iwer')) {
-  void import('./core/iwerHarness').then((m) => {
-    window.__xrDevice = m.installEmulatedHeadset();
-  });
-}
+// Emulated headset for the WebXR smoke test; the flag is a build-time constant, so normal builds drop this branch.
+// The app mounts only once the emulator is installed, because it enters VR on load and would otherwise race it.
+const emulatorReady: Promise<void> =
+  import.meta.env.VITE_E2E_XR === '1' && new URLSearchParams(window.location.search).has('iwer')
+    ? import('./core/iwerHarness').then((m) => {
+        window.__xrDevice = m.installEmulatedHeadset();
+      })
+    : Promise.resolve();
 
 bindSettings();
 
 const rootEl = document.getElementById('root');
 if (rootEl) {
-  createRoot(rootEl).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
+  void emulatorReady.then(() => {
+    createRoot(rootEl).render(
+      <StrictMode>
+        <App />
+      </StrictMode>
+    );
+  });
 }

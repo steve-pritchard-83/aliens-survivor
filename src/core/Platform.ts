@@ -43,6 +43,16 @@ export const Platform = {
     );
   },
 
+  /**
+   * True when a mouse or trackpad is attached, even on a touchscreen laptop (where maxTouchPoints is above zero
+   * but the primary pointer is still fine). Phones and tablets without a mouse report false.
+   */
+  get hasMouse(): boolean {
+    if (typeof window === 'undefined') return false;
+    if (typeof window.matchMedia !== 'function') return !this.isTouch;
+    return window.matchMedia('(any-pointer: fine)').matches;
+  },
+
   get isTouch(): boolean {
     if (typeof window === 'undefined') return false;
     return 'ontouchstart' in window || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);

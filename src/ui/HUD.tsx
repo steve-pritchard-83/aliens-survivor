@@ -16,7 +16,7 @@ import { StatusBar } from './StatusBar';
 import { GREEN, INK, solidButton } from './uiStyles';
 
 function isDesktopPointer(inputMode: InputMode): boolean {
-  return inputMode === 'DESKTOP' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
+  return inputMode === 'DESKTOP' && Platform.hasMouse;
 }
 
 export function HUD() {

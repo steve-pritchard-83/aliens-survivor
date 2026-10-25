@@ -8,6 +8,8 @@ interface Window {
   __xr?: typeof import('./core/XRStore').xrStore;
   /** World position of the player's head/camera, exposed for e2e (see PlayerController). */
   __headPosition?: () => { x: number; y: number; z: number };
+  /** Selected row of the VR pause menu, exposed for e2e (see vrPauseMenu). */
+  __vrMenuRow?: number;
   /** Emulated Quest 3 (IWER), installed only in e2e builds with ?iwer=1. */
   __xrDevice?: import('iwer').XRDevice;
 }

@@ -3,6 +3,7 @@ import { AudioManager } from '../core/AudioManager';
 import type { VRControllerInput } from './vrControllers';
 import type { VRMenuNav } from './VRMenuNav';
 import { VR_MENU_ROWS, adjustRow } from './vrMenuModel';
+import { isE2E } from '../core/e2e';
 
 const ARM_SECONDS = 0.4;
 
@@ -29,6 +30,7 @@ export function stepPauseMenu(
   const rows = VR_MENU_ROWS.length;
   if (nav.consumeUp()) selected.current = (selected.current - 1 + rows) % rows;
   if (nav.consumeDown()) selected.current = (selected.current + 1) % rows;
+  if (isE2E()) window.__vrMenuRow = selected.current;
   const dir = nav.consumeLeft() ? -1 : nav.consumeRight() ? 1 : nav.consumeConfirm() ? 0 : null;
   if (dir === null) return;
   const result = adjustRow(VR_MENU_ROWS[selected.current], dir, st.settings);

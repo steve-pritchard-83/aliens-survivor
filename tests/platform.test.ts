@@ -34,6 +34,19 @@ describe('Platform detection', () => {
     expect(Platform.isQuest).toBe(true);
   });
 
+  it('reports a mouse on a touchscreen laptop but not on a phone', () => {
+    // Touchscreen laptop: touch points present, but a fine pointer (mouse/trackpad) too
+    stubBrowser('Mozilla/5.0 (Windows NT 10.0) Chrome/120', '', {
+      matchMedia: (q: string) => ({ matches: q === '(any-pointer: fine)' })
+    });
+    (navigator as unknown as { maxTouchPoints: number }).maxTouchPoints = 2;
+    expect(Platform.isTouch).toBe(true);
+    expect(Platform.hasMouse).toBe(true);
+    // Phone: coarse pointer only
+    stubBrowser('Mozilla/5.0 (Linux; Android 14) Mobile Chrome/120', '', { matchMedia: () => ({ matches: false }) });
+    expect(Platform.hasMouse).toBe(false);
+  });
+
   it('treats ?vr=1 as a VR app on any browser', () => {
     stubBrowser('Mozilla/5.0 Chrome/120', '?vr=1');
     expect(Platform.isQuest).toBe(false);

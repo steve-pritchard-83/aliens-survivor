@@ -3,7 +3,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { BALANCE } from '../../data/balance';
 import { POOL_SIZE, LIMB_NAMES, PooledXenomorph, playClip, CLIP_IDLE } from '../XenoTypes';
 
-export const XENO_BASE_EMISSIVE = { hex: 0x101c22, intensity: 0.42 };
+export const XENO_BASE_EMISSIVE = { hex: 0x101c22, intensity: 0.12 };
 const BOSS_EMISSIVE_HEX = 0x331010;
 
 /** Builds the fixed pool of drones once (cloned skeleton, tinted materials, animation mixer each). */

@@ -22,6 +22,21 @@ async function openVrMenu(page: Page): Promise<void> {
   await page.waitForTimeout(HOLD); // the menu ignores input while arming
 }
 
+/**
+ * Holds the right stick until `done` is true, then releases it. The menu reacts to a push on a single frame, and on a
+ * slow software-rendered runner a fixed-length pulse can fall between two frames and be missed.
+ */
+async function pushUntil(page: Page, x: number, y: number, done: () => boolean): Promise<void> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await rightStick(page, x, y);
+    await page.waitForFunction(done, undefined, { timeout: 6_000 }).catch(() => undefined);
+    await rightStick(page, 0, 0);
+    await page.waitForTimeout(HOLD);
+    if (await page.evaluate(done)) return;
+  }
+  throw new Error('the menu never acknowledged the stick input');
+}
+
 /** Presses and releases the trigger (a fresh press) and waits for the given status. */
 async function pressTrigger(page: Page, expected: string): Promise<void> {
   await trigger(page, 0);
@@ -109,20 +124,11 @@ test('VR pause menu: B opens it, the stick moves rows and adjusts, the trigger r
   await page.waitForTimeout(HOLD); // menu arm delay
 
   // Stick down: Resume -> Snap turn; stick right: next snap option (90 degrees -> smooth)
-  await rightStick(page, 0, 0.9);
-  await page.waitForTimeout(HOLD);
-  await rightStick(page, 0, 0);
-  await page.waitForTimeout(HOLD);
-  await rightStick(page, 0.9, 0);
-  await page.waitForFunction(() => window.__game?.getState().settings.snapAngle === 0, undefined, { timeout: 30_000 });
-  await rightStick(page, 0, 0);
-  await page.waitForTimeout(HOLD);
+  await pushUntil(page, 0, 0.9, () => window.__vrMenuRow === 1);
+  await pushUntil(page, 0.9, 0, () => window.__game?.getState().settings.snapAngle === 0);
 
   // Back up to Resume and confirm with a fresh trigger press
-  await rightStick(page, 0, -0.9);
-  await page.waitForTimeout(HOLD);
-  await rightStick(page, 0, 0);
-  await page.waitForTimeout(HOLD);
+  await pushUntil(page, 0, -0.9, () => window.__vrMenuRow === 0);
   expect(await status(page)).toBe('PAUSED');
   await trigger(page, 1);
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING', undefined, { timeout: 30_000 });

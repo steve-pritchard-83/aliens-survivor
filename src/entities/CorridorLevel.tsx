@@ -79,7 +79,7 @@ export function CorridorLevel() {
 
   return (
     <group name="SulacoSector">
-      <fog attach="fog" args={['#04070a', 22, 60]} />
+      <fog attach="fog" args={['#04070a', 9, 40]} />
       <ambientLight intensity={ambientIntensity} color={phase === 1 ? '#86a2be' : '#5e3232'} />
       <hemisphereLight args={['#6e94b8', '#1a2634', hemiIntensity]} />
 

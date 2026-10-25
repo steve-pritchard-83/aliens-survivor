@@ -27,8 +27,8 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 
 const SMALL_ALIEN_ID = 99;
-const FH_EMISSIVE = { hex: 0x221808, intensity: 0.38 };
-const CB_EMISSIVE = { hex: 0x28100c, intensity: 0.42 };
+const FH_EMISSIVE = { hex: 0x221808, intensity: 0.12 };
+const CB_EMISSIVE = { hex: 0x28100c, intensity: 0.12 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
 const _events: SmallEvents = { playerDamage: 0, leapHit: false, died: false };
 // Reused threat record published to the store (read via getState by Bishop, tracker and auto-aim)
