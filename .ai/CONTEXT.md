@@ -5,7 +5,7 @@
 
 ## 2. Directory Architecture
 - `src/core/`: engine services and state. `GameStore`/`GameTypes` (Zustand store, status machine, `runId`, settings), `Persistence` (validated localStorage), `SettingsBinding`, `MissionLauncher`, `CombatEvents` (target providers, `queryTarget`/`resolveShot`), `CorridorNav`, `InputManager`, `AudioManager`/`AudioCatalog`, `AdaptiveQuality`/`QualityState`, `XRStore`/`XRControllerState`/`Haptics`/`ComfortState`, `Platform`.
-- `src/data/`: `balance.ts` is **the** source of game numbers (mission timers, player, xeno pool, Praetorian, small aliens, XP, tracker, score weights, upgrade effects); `difficulty.ts` holds the difficulty profiles and per-run rules; `weapons.ts` holds weapon profiles. Do not restate their values elsewhere; read them from the files.
+- `src/data/`: `balance.ts` is **the** source of game numbers (mission timers, player, xeno pool, Alien Queen, small aliens, XP, tracker, score weights, upgrade effects); `difficulty.ts` holds the difficulty profiles and per-run rules; `weapons.ts` holds weapon profiles. Do not restate their values elsewhere; read them from the files.
 - `src/levels/`: `LevelDefinition` (halls, junctions, adjacency, spawn nodes, starts, radar outline), `validateLevel` and the Sulaco map. Systems read the active level; do not hard-code map coordinates.
 - `src/systems/`: pure logic with no React: corridor pathing, combat maths, wave director (boss rule, spawn picking, difficulty scaling), comfort vignette, scoring.
 - `src/entities/`: three.js / R3F world objects, each a thin adapter over pure modules (`xeno/`, `small/`, `rifle/`, `player/`, `level/`, `tracker/`, `fx/`).
@@ -23,4 +23,4 @@
 Dynamic light cap, fixed alien pool, allocation-free frame loops, frozen static transforms, throttled store updates, a precache of at most 36 MB and the chunk budgets are described and enforced as listed in `HANDOFF.md` section 2 and the ADRs in `docs/adr/`.
 
 ## 5. Mission phases (300-second wave director)
-Phase boundaries come from `BALANCE.PHASES`; spawn intervals, speeds and HP per phase come from `BALANCE.XENO_POOL`. Roughly: phase 1 *Awakening* (lone drones), phase 2 *The Swarm* (faster drones plus facehuggers/chestbursters), phase 3 *Hull Breach* (one Praetorian boss), phase 4 *Extraction* (one more Praetorian, fastest spawns until the timer reaches 0:00). A Praetorian appears at most once per phase (`shouldSpawnBoss`).
+Phase boundaries come from `BALANCE.PHASES`; spawn intervals, speeds and HP per phase come from `BALANCE.XENO_POOL`. Roughly: phase 1 *Awakening* (lone drones), phase 2 *The Swarm* (faster drones plus facehuggers/chestbursters), phase 3 *Hull Breach* (one Alien Queen boss), phase 4 *Extraction* (one more Alien Queen, fastest spawns until the timer reaches 0:00). An Alien Queen appears at most once per phase (`shouldSpawnBoss`).

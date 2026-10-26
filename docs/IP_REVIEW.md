@@ -18,11 +18,17 @@ what is in use so that question can be answered deliberately.
 | Titles and settings | `README.md`, `index.html` title, `manifest.json`, menus, `src/ui/*` | "Aliens Survivor", "USS Sulaco", "LV-426" (roadmap), "Sector 4" |
 | Corporations and organisations | `src/ui/PwaInstallPrompt.tsx`, `LevelUpModal.tsx`, `VRStatusCanvas.ts` | "Weyland-Yutani", "USCM" (United States Colonial Marines) |
 | Characters (names and likeness) | none shipped: the Ripley and Bishop models were removed from the game | (formerly Ellen Ripley and Bishop; the source files remain in `assets/models/`) |
-| Creatures | `xenomorph.glb`, `facehugger.glb`, `chestburster.glb`, `egg.glb`, Praetorian mini-boss | Xenomorph drone, Praetorian, Facehugger, Chestburster, Ovomorph |
+| Creatures | `xenomorph.glb`, `facehugger.glb`, `chestburster.glb`, `egg.glb`, `alien_queen.glb`, Alien Queen boss | Xenomorph drone, Alien Queen, Facehugger, Chestburster, Ovomorph |
 | Props and weapons | `pulse_rifle.glb` (M41A), `motion_tracker.glb` (M314), `src/entities/MotionTracker.tsx` | Model titles reference *Aliens* and *Alien: Isolation* |
 | Audio | `public/audio/*`, `assets/sound effects/**` | Sound effects and speech of unknown origin; some may be from films or games |
 | Video | `public/movies/victory.mp4` | Extraction cut-scene of unknown origin |
 | Font | `public/fonts/AlienLeague.otf` | Third-party font; licence unconfirmed |
+
+## Restrictive licence: the Alien Queen model
+
+`public/models/alien_queen.glb` is **CC BY-NC-ND 4.0** (NonCommercial, NoDerivatives), unlike the other seven
+models (CC BY 4.0). Decision needed: whether showing it scaled, posed, brightened and melted in a publicly hosted
+game is acceptable under that licence, or whether to replace it or ask the author (Quasar3000) for permission.
 
 ## Third-party assets requiring attribution
 

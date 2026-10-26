@@ -12,6 +12,9 @@
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
 - Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
+### Changed (boss)
+- **The Praetorian is replaced by the Alien Queen** (`alien_queen.glb`). Same behaviour and numbers (HP, speed, damage resistance, one per phase 3 and 4); the model is a single static mesh, so she is animated procedurally: breathing, a heavy stomping gait with tail swing, a rear-back and lunge for each slash, and a thrash, rear-up and slump when killed. She cannot be dismembered and her hit sphere now matches her size. **Licence note:** the model is CC BY-NC-ND 4.0; see `CREDITS.md`.
+
 ### Changed (look)
 - Faint blue-teal grade over the picture, thick close teal fog (1.5 to 15 m), and a light teal-blue M314 tracker with a fuzzy CRT effect (grain, scanlines, rolling band, glitch lines).
 
@@ -34,6 +37,16 @@
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
 
 ### Fixed
+- A level-up card is applied once (clicking its button used to apply it twice); kills outside PLAYING are ignored; the card shuffle is unbiased.
+- Left-handed VR: fire, reload, turn, move and weapon-cycle now follow the weapon hand.
+- Restart from the pause menu puts the player back on the start marker.
+- A downloaded update no longer reloads the page mid-mission or in VR; it waits for a menu or end screen outside VR.
+- On Quest the flat page now shows an ENTER VR button after you leave VR; elsewhere the VR button appears only when a headset is available, and the mission starts only after VR is entered.
+- The touch stick releases when you pause; the phone pauses (with sound) when you switch apps; one pause path stops music and klaxon everywhere.
+- The red hit effect fades on the defeat and pause screens; the motion tracker upgrade pings out to its full range; upgrade texts match what they do.
+- Rifle fire rate no longer depends on frame rate (about 12% faster on Quest 2 at 72 Hz, matching the stated rate).
+- The victory score no longer waits on the extraction video (tap to skip; shown on error, blocked playback or timeout).
+- Early VR request: exact `vr=1` match, a session that ended is not reused, an unclaimed session is ended after 20 s.
 - Acid pools left on the deck by dying enemies are now very dark green instead of bright lime.
 - **Models:** restored the original GLB files. The compressed set (flattened, merged and simplified by `gltf-transform optimize`) made the xenomorph invisible and Bishop show only his lower half.
 - Touch auto-aim no longer damages aliens just by looking at them, and bullets from the player and Bishop no longer pass through walls.
