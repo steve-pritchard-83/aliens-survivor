@@ -33,7 +33,6 @@ export interface PooledXenomorph {
   yaw: number;
   speed: number;
   laneOffset: number;
-  preferCW: boolean;
   animPhase: number;
   deathVariant: number;
   targetCorner: number;

@@ -36,8 +36,6 @@ export type SoundKey =
   | 'vent_clang'
   | 'marine_pain'
   | 'marine_death'
-  | 'torch_on'
-  | 'torch_off'
   | 'distant_boom1'
   | 'distant_boom2'
   | 'console_alarm'
@@ -86,8 +84,6 @@ export const SOUND_URLS: Record<SoundKey, string> = {
   vent_clang: '/audio/sfx_vent_clang.m4a',
   marine_pain: '/audio/sfx_marine_pain.m4a',
   marine_death: '/audio/sfx_marine_death.m4a',
-  torch_on: '/audio/sfx_torch_on.m4a',
-  torch_off: '/audio/sfx_torch_off.m4a',
   distant_boom1: '/audio/sfx_distant_boom1.m4a',
   distant_boom2: '/audio/sfx_distant_boom2.m4a',
   console_alarm: '/audio/sfx_console_alarm.m4a',

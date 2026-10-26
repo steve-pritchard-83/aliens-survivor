@@ -11,7 +11,7 @@ import { getActiveLevel } from '../levels';
 import { pickSpawnNode } from '../systems/waveDirector';
 import { sharedImpactFx } from './fx/sharedImpactFx';
 import { animateFace, animateWorm, AnimMode } from './SmallAlienAnim';
-import { buildSmallAlienAssets } from './small/smallAssets';
+import { buildSmallAlienAssets, FH_EMISSIVE, CB_EMISSIVE } from './small/smallAssets';
 import { meltScale, restoreMelt, tintMelt } from './fx/meltTint';
 import {
   createSmallSim,
@@ -28,8 +28,6 @@ const _sphere = new THREE.Sphere(),
   _hitVec = new THREE.Vector3();
 
 const SMALL_ALIEN_ID = 99;
-const FH_EMISSIVE = { hex: 0x221808, intensity: 0 };
-const CB_EMISSIVE = { hex: 0x28100c, intensity: 0 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
 const _events: SmallEvents = { playerDamage: 0, leapHit: false, died: false };
 const _meltScale = { x: 1, y: 1, z: 1 };

@@ -25,7 +25,6 @@ function makeXeno(overrides: Partial<PooledXenomorph> = {}): PooledXenomorph {
     yaw: 0,
     speed: 3,
     laneOffset: 0,
-    preferCW: true,
     animPhase: 0,
     deathVariant: 0,
     targetCorner: -1,

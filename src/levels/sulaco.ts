@@ -83,7 +83,6 @@ export const SULACO: LevelDefinition = {
   spawnNodes: SPAWN_NODES,
   spawnFallback: { xeno: [0, 4, 5, 6], small: [0, 4, 5, 10] },
   playerStart: { x: -0.32, z: 13.0, yaw: Math.PI },
-  companionStart: { x: -0.32, z: 11.4 },
   radarOutline: [
     [
       [0.42, 7.58],

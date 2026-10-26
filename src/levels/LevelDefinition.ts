@@ -34,7 +34,6 @@ export interface LevelDefinition {
   /** Spawn node indices used when every node is visible to the player. */
   spawnFallback: { readonly xeno: readonly number[]; readonly small: readonly number[] };
   playerStart: { readonly x: number; readonly z: number; readonly yaw: number };
-  companionStart: { readonly x: number; readonly z: number };
   /** Polygons for the motion tracker map, drawn with the even-odd rule. */
   radarOutline: readonly (readonly (readonly [number, number])[])[];
 }
@@ -97,7 +96,6 @@ export function validateLevel(level: LevelDefinition): string[] {
       if (!level.spawnNodes[i]) add(`spawnFallback.${key} references missing node ${i}`);
   }
   if (!inAnyHall(level, level.playerStart.x, level.playerStart.z)) add('player start is outside every hall');
-  if (!inAnyHall(level, level.companionStart.x, level.companionStart.z)) add('companion start is outside every hall');
   if (level.radarOutline.length === 0 || level.radarOutline.some((p) => p.length < 3))
     add('radar outline needs polygons of 3+ points');
   return problems;

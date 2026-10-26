@@ -53,7 +53,6 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
     const pud = puddleState[idx];
     pud.active = true;
     pud.timer = 14.0;
-    pud.maxTimer = 14.0;
     pud.targetScale = size;
   };
 
@@ -103,9 +102,7 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
       gib.vx = -dir.x * 0.65 + (Math.random() - 0.5) * 1.4;
       gib.vy = 1.15 + Math.random() * 0.85;
       gib.vz = -dir.z * 0.65 + (Math.random() - 0.5) * 1.4;
-      gib.rx = (Math.random() - 0.5) * 7;
       gib.ry = (Math.random() - 0.5) * 8;
-      gib.rz = (Math.random() - 0.5) * 7;
     },
     startXenoMelt(xenoId, duration) {
       for (let i = 0; i < GIB_POOL_SIZE; i++) {

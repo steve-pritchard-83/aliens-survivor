@@ -95,11 +95,4 @@ describe('InputManager', () => {
     expect(snap.mode).toBe('DESKTOP');
     expect(snap.isFiring).toBe(false);
   });
-
-  it('touch fire is reported while held', () => {
-    input.setTouchFire(true);
-    expect(input.isFiringActive()).toBe(true);
-    input.setTouchFire(false);
-    expect(input.isFiringActive()).toBe(false);
-  });
 });

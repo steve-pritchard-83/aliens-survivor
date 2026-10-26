@@ -1,13 +1,7 @@
 import * as THREE from 'three';
+import { LIMB_NAMES } from '../XenoTypes';
 
 // Asset builders for the acid / dismemberment effects: procedural textures and per-limb gib geometry
-const LIMB_BONE_ROOTS = [
-  'XenosBiped_l_Arm_ShoulderSHJnt_028',
-  'XenosBiped_r_Arm_ShoulderSHJnt_046',
-  'XenosBiped_l_Leg_Knee1SHJnt_077',
-  'XenosBiped_r_Leg_Knee1SHJnt_087',
-  'XenosBiped_Neck_TopSHJnt_09'
-];
 
 export function createAcidTextures(): { dropletTex: THREE.CanvasTexture; puddleTex: THREE.CanvasTexture } {
   const c1 = document.createElement('canvas');
@@ -47,7 +41,7 @@ export function buildActualLimbTemplates(scene: THREE.Group): {
     if ((c as THREE.SkinnedMesh).isSkinnedMesh && !bodyMesh) bodyMesh = c as THREE.SkinnedMesh;
   });
   if (!bodyMesh)
-    return { geos: LIMB_BONE_ROOTS.map(() => new THREE.BufferGeometry()), mat: new THREE.MeshStandardMaterial() };
+    return { geos: LIMB_NAMES.map(() => new THREE.BufferGeometry()), mat: new THREE.MeshStandardMaterial() };
 
   const sm = bodyMesh as THREE.SkinnedMesh,
     mat = (sm.material as THREE.MeshStandardMaterial).clone();
@@ -66,7 +60,7 @@ export function buildActualLimbTemplates(scene: THREE.Group): {
   const srcNorm = srcGeo.attributes.normal as THREE.BufferAttribute,
     srcUv = srcGeo.attributes.uv as THREE.BufferAttribute;
 
-  const geos = LIMB_BONE_ROOTS.map((rootName, slot) => {
+  const geos = LIMB_NAMES.map((rootName, slot) => {
     const descBones = new Set<THREE.Object3D>(),
       boneIdxSet = new Set<number>();
     scene.getObjectByName(rootName)?.traverse((b) => descBones.add(b));

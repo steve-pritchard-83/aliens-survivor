@@ -9,14 +9,11 @@ export interface SeveredGib {
   vx: number;
   vy: number;
   vz: number;
-  rx: number;
   ry: number;
-  rz: number;
 }
 export interface AcidPuddle {
   active: boolean;
   timer: number;
-  maxTimer: number;
   targetScale: number;
 }
 
@@ -38,5 +35,5 @@ export function createGibPool(size: number): SeveredGib[] {
 }
 
 export function createPuddlePool(size: number): AcidPuddle[] {
-  return Array.from({ length: size }, () => ({ active: false, timer: 0, maxTimer: 14, targetScale: 0.9 }));
+  return Array.from({ length: size }, () => ({ active: false, timer: 0, targetScale: 0.9 }));
 }

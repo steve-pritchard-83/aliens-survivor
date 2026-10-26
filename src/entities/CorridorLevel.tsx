@@ -16,9 +16,6 @@ export function CorridorLevel() {
   const status = useGameStore((s) => s.status);
 
   const beacon1Ref = useRef<THREE.Group>(null);
-  const beacon2Ref = useRef<THREE.Group>(null);
-  const beacon3Ref = useRef<THREE.Group>(null);
-  const beacon4Ref = useRef<THREE.Group>(null);
   const sectorMeshGroupRef = useRef<THREE.Group>(null);
 
   const { c1, c2, c3, c4 } = useMemo(() => {
@@ -79,9 +76,6 @@ export function CorridorLevel() {
     const t = clock.getElapsedTime();
     const rotSpeed = phase === 1 ? 3.2 : phase === 2 ? 4.8 : 6.8;
     if (beacon1Ref.current) beacon1Ref.current.rotation.y = t * rotSpeed;
-    if (beacon2Ref.current) beacon2Ref.current.rotation.y = -t * rotSpeed * 1.05;
-    if (beacon3Ref.current) beacon3Ref.current.rotation.y = t * rotSpeed * 0.95;
-    if (beacon4Ref.current) beacon4Ref.current.rotation.y = -t * rotSpeed * 1.1;
   });
 
   const ambientIntensity = phase === 1 ? 0.95 : phase === 2 ? 0.82 : 0.74;

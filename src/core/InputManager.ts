@@ -36,14 +36,12 @@ export class InputManagerController {
   private lookDY = 0;
   private snapTurnAngle = 0;
   private mouseDown = false;
-  private touchFiring = false;
   private xrFiring = false;
   private reloadFlag = false;
   public trackerToggleFlag = false;
   public weaponCycleFlag = false;
   public pauseToggleFlag = false;
   public pointerLocked = false;
-  public gyroEnabled = false;
   /** Look options applied from settings (see SettingsBinding). */
   public mouseSensitivity = 1;
   public invertY = false;
@@ -81,7 +79,6 @@ export class InputManagerController {
     window.addEventListener('mousemove', this.onMouseMove);
     window.addEventListener('touchstart', this.onTouchActivity, { passive: true });
     document.addEventListener('pointerlockchange', this.onPointerLockChange);
-    window.addEventListener('deviceorientation', this.onDeviceOrientation);
   }
 
   private onTouchActivity = () => {
@@ -157,14 +154,6 @@ export class InputManagerController {
     this.keys.clear();
   }
 
-  private onDeviceOrientation = (e: DeviceOrientationEvent) => {
-    if (!this.gyroEnabled || this.mode !== 'TOUCH') return;
-    if (e.gamma !== null && e.beta !== null) {
-      // Subtle gyro assist when enabled on mobile
-      this.lookDX += e.gamma * 0.00015;
-    }
-  };
-
   public requestPointerLock(): void {
     if (typeof window === 'undefined') return;
     if (!Platform.hasMouse || this.mode === 'TOUCH') return;
@@ -186,11 +175,6 @@ export class InputManagerController {
     this.lookDY += dy * (this.invertY ? -1 : 1);
   }
 
-  public setTouchFire(firing: boolean): void {
-    this.mode = 'TOUCH';
-    this.touchFiring = firing;
-  }
-
   public triggerReload(): void {
     this.reloadFlag = true;
   }
@@ -200,7 +184,7 @@ export class InputManagerController {
   }
 
   public isFiringActive(): boolean {
-    return this.mouseDown || this.touchFiring || this.xrFiring;
+    return this.mouseDown || this.xrFiring;
   }
 
   public setXRState(active: boolean, moveX = 0, moveZ = 0, firing = false): void {
@@ -231,7 +215,7 @@ export class InputManagerController {
 
     const moveX = this.mode === 'XR' ? this.xrMoveX : kbX !== 0 ? kbX : this.touchMoveX;
     const moveZ = this.mode === 'XR' ? this.xrMoveZ : kbZ !== 0 ? kbZ : this.touchMoveZ;
-    const isFiring = this.mouseDown || this.touchFiring || this.xrFiring;
+    const isFiring = this.mouseDown || this.xrFiring;
     const reloadRequested = this.reloadFlag;
     const snapTurn = this.snapTurnAngle;
 

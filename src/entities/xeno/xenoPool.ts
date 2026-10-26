@@ -49,7 +49,6 @@ export function buildXenoPool(scene: THREE.Group, clips: THREE.AnimationClip[]):
       yaw: 0,
       speed: 3.2,
       laneOffset: (i % 2 === 0 ? -1 : 1) * 0.14,
-      preferCW: i % 2 === 0,
       animPhase: i * 0.41,
       deathVariant: 0,
       targetCorner: -1,
@@ -111,7 +110,6 @@ export function spawnXeno(x: PooledXenomorph, p: SpawnParams): void {
   const speed = p.isBoss ? BALANCE.QUEEN.SPEED : p.baseSpeed;
   x.speed = speed * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18);
   x.laneOffset = (Math.random() - 0.5) * 0.24;
-  x.preferCW = Math.random() < 0.5;
   x.targetCorner = -1;
   x.leapCooldown = 0.35;
   x.gaitTimer = 2.0 + Math.random() * 2.5;

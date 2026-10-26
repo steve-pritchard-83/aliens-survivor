@@ -30,7 +30,6 @@ const STRAIGHT: LevelDefinition = {
   ],
   spawnFallback: { xeno: [0], small: [1] },
   playerStart: { x: 0, z: 5, yaw: 0 },
-  companionStart: { x: 0, z: 3 },
   radarOutline: [
     [
       [1, 0],

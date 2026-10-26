@@ -31,9 +31,13 @@ function prepareCreature(
   return { wrap, mats };
 }
 
+/** Dim warm emissive per creature, shared with the spawner (which resets it on each respawn). */
+export const FH_EMISSIVE = { hex: 0x221808, intensity: 0 };
+export const CB_EMISSIVE = { hex: 0x28100c, intensity: 0 };
+
 export function buildSmallAlienAssets(facehuggerScene: THREE.Group, chestbursterScene: THREE.Group) {
-  const fh = prepareCreature(facehuggerScene, 0.72, [1.35, 1.18, 0.92], 0x221808);
-  const cb = prepareCreature(chestbursterScene, 0.85, [1.38, 1.05, 0.88], 0x28100c);
+  const fh = prepareCreature(facehuggerScene, 0.72, [1.35, 1.18, 0.92], FH_EMISSIVE.hex);
+  const cb = prepareCreature(chestbursterScene, 0.85, [1.38, 1.05, 0.88], CB_EMISSIVE.hex);
   return {
     fhGroup: fh.wrap,
     cbGroup: cb.wrap,
