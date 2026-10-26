@@ -27,7 +27,14 @@ function rotateLocal(b: BoneEntry, x: number, y: number, z: number) {
   b.obj.quaternion.copy(b.base).multiply(_qD);
 }
 
-const reset = (bs: BoneEntry[]) => bs.forEach((b) => b.obj.quaternion.copy(b.base));
+// Index loops, not forEach: these run every frame for every small alien (no closures or arrays per frame)
+function reset(bs: BoneEntry[]): void {
+  for (let i = 0; i < bs.length; i++) bs[i].obj.quaternion.copy(bs[i].base);
+}
+
+function resetBone(b: BoneEntry): void {
+  b.obj.quaternion.copy(b.base);
+}
 
 export function groundModel(wrap: THREE.Object3D, model: THREE.Object3D) {
   wrap.updateMatrixWorld(true);
@@ -82,13 +89,18 @@ export function buildFaceRig(wrap: THREE.Object3D): FaceRig {
 
 export function animateFace(rig: FaceRig, mode: AnimMode, phase: number, t: number) {
   reset(rig.tail);
-  rig.legs.forEach((l) => reset([l.hip, l.knee, l.ankle]));
+  for (let i = 0; i < rig.legs.length; i++) {
+    resetBone(rig.legs[i].hip);
+    resetBone(rig.legs[i].knee);
+    resetBone(rig.legs[i].ankle);
+  }
   const isDead = mode === 'DEAD',
     isLeap = mode === 'LEAP',
     isBite = mode === 'BITE',
     isRun = mode === 'RUN';
 
-  rig.legs.forEach((l, i) => {
+  for (let i = 0; i < rig.legs.length; i++) {
+    const l = rig.legs[i];
     const ph = phase + l.parity * Math.PI;
     let swing = 0,
       lift = 0,
@@ -121,16 +133,16 @@ export function animateFace(rig: FaceRig, mode: AnimMode, phase: number, t: numb
     rotateLocal(l.hip, lift, swing, 0);
     rotateLocal(l.knee, knee, 0, 0);
     rotateLocal(l.ankle, claw, 0, 0);
-  });
+  }
 
   // Segmented scorpion whip tail: curls over the back while swaying organically
   const tailAmp = isRun ? 0.24 : isBite ? 0.35 : isLeap ? 0.08 : isDead ? 0.02 : 0.12;
   const tailCurl = isLeap ? -0.05 : isDead ? -0.25 : isBite ? -0.38 : -0.28;
   const tailSpeed = isRun ? phase * 0.6 : t * 4.0;
-  rig.tail.forEach((b, i) => {
+  for (let i = 0; i < rig.tail.length; i++) {
     const sway = Math.sin(tailSpeed - i * 0.72) * tailAmp;
-    rotateLocal(b, tailCurl, sway, 0);
-  });
+    rotateLocal(rig.tail[i], tailCurl, sway, 0);
+  }
 
   // Whole-body arachnid scuttle: dynamic deck tilt and rapid cadence bob
   rig.wrap.position.y = isRun ? Math.abs(Math.sin(phase * 2)) * 0.022 : 0;
@@ -172,7 +184,7 @@ export function animateWorm(rig: WormRig, mode: AnimMode, phase: number, t: numb
   const amp = isRun ? 0.32 : isBite ? 0.22 : isLeap ? 0.12 : isDead ? 0.04 : 0.14;
   const speed = isRun ? phase : t * 3.5;
 
-  rig.spine.forEach((b, i) => {
+  for (let i = 0; i < n; i++) {
     const frac = i / (n - 1);
     const env = 0.25 + 0.75 * frac;
     let waveZ = Math.sin(speed - (n - 1 - i) * 0.72) * amp * env;
@@ -191,8 +203,8 @@ export function animateWorm(rig: WormRig, mode: AnimMode, phase: number, t: numb
       // Elevate head vertebra slightly while slithering
       pitchX = i >= 7 ? -0.06 : 0.01;
     }
-    rotateLocal(b, pitchX, 0, waveZ);
-  });
+    rotateLocal(rig.spine[i], pitchX, 0, waveZ);
+  }
 
   rig.wrap.position.y = isRun ? Math.abs(Math.sin(phase)) * 0.018 : 0;
   rig.wrap.rotation.y = isRun ? Math.sin(phase) * 0.14 : 0;
