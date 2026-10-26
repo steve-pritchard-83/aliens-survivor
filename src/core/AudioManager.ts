@@ -13,6 +13,8 @@ export interface AudioVolumes {
 // The music is the hero of the mix: about 0.76 at the default music level (0.8), up from the original 0.32
 const BGM_BASE_VOLUME = 0.95;
 // Effects sit under the music; the compressor on their bus evens out loud shots against quiet details
+/** Longest wait for AudioContext.resume() before loading and music carry on regardless. */
+const RESUME_WAIT_MS = 3000;
 const SFX_BASE_VOLUME = 0.62;
 const MAX_VOICES = 24;
 const PULSE_VARIANTS: SoundKey[] = ['pulse_shot', 'pulse_shot2', 'pulse_shot3', 'pulse_shot4'];
