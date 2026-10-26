@@ -8,6 +8,34 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <script>
+      // Quest: ask for VR the moment the page starts, before any bundle has loaded. Launching the installed app counts
+      // as the click WebXR requires, but that allowance is short, so waiting for the app to mount (or for a slow first
+      // load after an update) can lose it and leave you on the 2D page. The game's own request (src/core/XRStore.ts)
+      // is handed this session. If the browser refuses (no click yet), it falls back to the normal request.
+      (function () {
+        try {
+          var quest = /OculusBrowser|Quest/i.test(navigator.userAgent) || location.search.indexOf('vr=1') !== -1;
+          var xr = navigator.xr;
+          if (!quest || !xr || !xr.requestSession) return;
+          var original = xr.requestSession.bind(xr);
+          var early = original('immersive-vr', { requiredFeatures: ['local-floor'], optionalFeatures: ['hand-tracking'] });
+          early.catch(function () {});
+          var handedOver = false;
+          xr.requestSession = function (mode, init) {
+            if (mode === 'immersive-vr' && !handedOver) {
+              handedOver = true;
+              return early.catch(function () {
+                return original(mode, init);
+              });
+            }
+            return original(mode, init);
+          };
+        } catch (e) {
+          /* WebXR unavailable: nothing to do */
+        }
+      })();
+    </script>
     <title>ALIENS SURVIVOR — USS SULACO</title>
     <style>
       @font-face {

@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 ## Unreleased
 
@@ -20,6 +20,9 @@
 
 ### Added (audio)
 - **Metal deck footsteps** for the player and for drones and the Praetorian (heavier and deeper), one every stride actually walked, from four new sounds, `stepmetal1.wav` to `stepmetal4.wav`.
+
+### Changed (Quest)
+- **Faster entry into VR from the installed app:** the VR session is now requested by a tiny script at the very start of page load, before the bundles download, so a slow first load after an update can no longer lose the browser's click allowance and strand you on the 2D page.
 
 ### Removed
 - **Bishop and the Ripley player model.** The AI companion (patrol, covering fire, rig) and the hidden first-person body are gone, along with their two models (about 14 MB less to download).
