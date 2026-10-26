@@ -1,11 +1,5 @@
 import { useGameStore } from '../core/GameStore';
-import { AudioManager } from '../core/AudioManager';
-
-function pauseWithAudio(): void {
-  useGameStore.getState().pauseGame();
-  AudioManager.pauseBGM();
-  AudioManager.setKlaxonActive(false);
-}
+import { pauseMission, resumeMission } from '../core/MissionLauncher';
 
 /**
  * Pauses the mission when the headset is taken off, the system menu opens or the session ends, and resumes
@@ -18,21 +12,19 @@ export function attachSessionHandlers(session: XRSession): () => void {
     const st = useGameStore.getState();
     if (session.visibilityState !== 'visible') {
       if (st.status === 'PLAYING') {
-        pauseWithAudio();
+        pauseMission();
         pausedByVisibility = true;
       }
     } else if (pausedByVisibility) {
       pausedByVisibility = false;
       if (st.status === 'PAUSED') {
-        st.resumeGame();
-        AudioManager.resumeBGM();
-        AudioManager.setKlaxonActive(true);
+        resumeMission();
       }
     }
   };
 
   const onEnd = () => {
-    if (useGameStore.getState().status === 'PLAYING') pauseWithAudio();
+    if (useGameStore.getState().status === 'PLAYING') pauseMission();
     pausedByVisibility = false;
   };
 

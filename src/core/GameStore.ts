@@ -21,6 +21,9 @@ import {
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase, isSimulationFrozen };
 
+/** Hit-flash fade per second; also applied outside PLAYING so a killing blow cannot freeze the red vignette. */
+export const DAMAGE_FLASH_DECAY = 2.5;
+
 /** Fisher-Yates; the old `sort(() => Math.random() - 0.5)` was biased. */
 function shuffleInPlace<T>(items: T[]): void {
   for (let i = items.length - 1; i > 0; i--) {
@@ -92,7 +95,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       isJammed,
       continuousFireTime,
       ...(nextStatus === 'VICTORY' ? endRunPatch(s, true) : {}),
-      damageFlash: Math.max(0, s.damageFlash - dt * 2.5),
+      damageFlash: Math.max(0, s.damageFlash - dt * DAMAGE_FLASH_DECAY),
       screenShake: Math.max(0, s.screenShake - dt * 4.2)
     });
   },

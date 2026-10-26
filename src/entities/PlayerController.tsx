@@ -1,12 +1,13 @@
 import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useGameStore } from '../core/GameStore';
+import { useGameStore, DAMAGE_FLASH_DECAY } from '../core/GameStore';
 import { BALANCE } from '../data/balance';
 import { isE2E } from '../core/e2e';
 import { InputManager } from '../core/InputManager';
 import { PLAYER_STEP, StrideCounter, playPlayerStep } from '../core/footsteps';
 import { AudioManager } from '../core/AudioManager';
+import { pauseMission, resumeMission } from '../core/MissionLauncher';
 import { constrainToCorridorInto, XZ } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
 import { velocityDelta } from './player/playerMotion';
@@ -56,9 +57,7 @@ export function PlayerController() {
     InputManager.onPointerUnlockCallback = () => {
       const st = useGameStore.getState();
       if (st.status === 'PLAYING') {
-        st.pauseGame();
-        AudioManager.pauseBGM();
-        AudioManager.setKlaxonActive(false);
+        pauseMission();
         AudioManager.play2D('ui_beep', 0.5);
       }
     };
@@ -103,22 +102,21 @@ export function PlayerController() {
   useFrame(({ clock, gl }, dt, frame) => {
     const state = useGameStore.getState();
     const now = clock.getElapsedTime();
+    if (state.status !== 'PLAYING' && state.damageFlash > 0) {
+      useGameStore.setState({ damageFlash: Math.max(0, state.damageFlash - dt * DAMAGE_FLASH_DECAY) });
+    }
 
     // Handle keyboard 'P' pause/resume toggle
     if (InputManager.pauseToggleFlag) {
       InputManager.pauseToggleFlag = false;
       if (state.status === 'PLAYING') {
-        state.pauseGame();
+        pauseMission();
         InputManager.releasePointerLock();
-        AudioManager.pauseBGM();
-        AudioManager.setKlaxonActive(false);
         AudioManager.play2D('ui_beep', 0.5);
         return;
       } else if (state.status === 'PAUSED') {
-        state.resumeGame();
+        resumeMission();
         InputManager.requestPointerLock();
-        AudioManager.resumeBGM();
-        AudioManager.setKlaxonActive(true);
         AudioManager.play2D('ui_beep', 0.5);
         return;
       }

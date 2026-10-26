@@ -1,6 +1,7 @@
 import { useGameStore } from '../core/GameStore';
 import { InputManager } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
+import { pauseMission, resumeMission } from '../core/MissionLauncher';
 import { xrControllerState } from '../core/XRControllerState';
 import { comfort, SNAP_PULSE_SECONDS } from '../core/ComfortState';
 import type { XRHandPose } from '../core/XRControllerState';
@@ -90,10 +91,10 @@ function togglePause(latches: VRControllerLatches): void {
   const s = useGameStore.getState();
   if (s.status === 'PLAYING') {
     AudioManager.play2D('ui_beep', 0.8);
-    s.pauseGame();
+    pauseMission();
   } else if (s.status === 'PAUSED') {
     AudioManager.play2D('ui_beep', 0.8);
-    s.resumeGame();
+    resumeMission();
   }
 }
 

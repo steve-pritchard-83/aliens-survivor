@@ -7,6 +7,7 @@ import { xrStore } from './core/XRStore';
 import { bindSettings } from './core/SettingsBinding';
 import { isE2E } from './core/e2e';
 import { canApplyUpdate } from './core/updatePolicy';
+import { pauseMission } from './core/MissionLauncher';
 
 // Register Workbox Service Worker for offline Mobile PWA & Meta Quest 2 asset caching.
 // A browser only looks for a new service worker when a page loads, and a Quest tab is usually resumed rather than
@@ -35,6 +36,11 @@ const updateSW = registerSW({
       if (document.visibilityState === 'visible') check();
     });
   }
+});
+// A phone left to another app must not keep playing (desktop pauses on pointer unlock, VR on session events)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'hidden') return;
+  if (useGameStore.getState().status === 'PLAYING' && xrStore.getState().session == null) pauseMission();
 });
 let lastStatus = useGameStore.getState().status;
 useGameStore.subscribe((s) => {

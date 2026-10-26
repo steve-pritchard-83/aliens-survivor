@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { InputManager } from '../core/InputManager';
 import { GREEN, hintStyle } from './uiStyles';
 
@@ -22,6 +22,9 @@ export function TouchControls({ onPause }: { onPause: () => void }) {
   const joyTouchId = useRef<number | null>(null),
     lookTouchId = useRef<number | null>(null),
     lookLastPos = useRef<[number, number] | null>(null);
+
+  // This component unmounts on pause or level-up before its touchend arrives; never leave the stick held
+  useEffect(() => () => InputManager.setTouchMove(0, 0), []);
 
   const onLeftStart = (e: React.TouchEvent) => {
     const t = e.changedTouches[0];

@@ -4,7 +4,7 @@ import { useGameStore } from '../core/GameStore';
 import { InputManager, InputMode } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
 import { Platform } from '../core/Platform';
-import { launchMission } from '../core/MissionLauncher';
+import { launchMission, pauseMission, resumeMission } from '../core/MissionLauncher';
 import { xrStore } from '../core/XRStore';
 import { SettingsPanel } from './SettingsPanel';
 import { LevelUpModal } from './LevelUpModal';
@@ -36,8 +36,6 @@ export function HUD() {
     shotsFired = useGameStore((s) => s.shotsFired);
   const shotsHit = useGameStore((s) => s.shotsHit),
     damageFlash = useGameStore((s) => s.damageFlash);
-  const pauseGame = useGameStore((s) => s.pauseGame),
-    resumeGame = useGameStore((s) => s.resumeGame);
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
   const [isQuest] = useState(() => Platform.isQuest);
@@ -109,9 +107,7 @@ export function HUD() {
 
   const handleResume = () => {
     AudioManager.play2D('ui_beep', 0.65);
-    AudioManager.resumeBGM();
-    AudioManager.setKlaxonActive(true);
-    resumeGame();
+    resumeMission();
     if (isDesktopPointer(inputMode)) InputManager.requestPointerLock();
   };
 
@@ -183,7 +179,7 @@ export function HUD() {
         </div>
       )}
       {status === 'PLAYING' && showStatusBar && inputMode !== 'XR' && !isQuest && <StatusBar />}
-      {status === 'PLAYING' && inputMode === 'TOUCH' && !isQuest && <TouchControls onPause={pauseGame} />}
+      {status === 'PLAYING' && inputMode === 'TOUCH' && !isQuest && <TouchControls onPause={pauseMission} />}
       {isVrApp && !hasXrSession && (
         // On Quest the flat page is only ever seen after leaving VR: offer the way back in
         <button

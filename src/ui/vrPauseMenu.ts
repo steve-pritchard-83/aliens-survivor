@@ -1,5 +1,6 @@
 import type { GameState } from '../core/GameTypes';
 import { AudioManager } from '../core/AudioManager';
+import { resumeMission } from '../core/MissionLauncher';
 import type { VRControllerInput } from './vrControllers';
 import type { VRMenuNav } from './VRMenuNav';
 import { VR_MENU_ROWS, adjustRow } from './vrMenuModel';
@@ -36,7 +37,7 @@ export function stepPauseMenu(
   const result = adjustRow(VR_MENU_ROWS[selected.current], dir, st.settings);
   if (result === 'RESUME') {
     AudioManager.play2D('ui_beep', 0.8);
-    st.resumeGame();
+    resumeMission();
   } else if (result) {
     AudioManager.play2D('ui_beep', 0.7);
     st.updateSettings(result);
