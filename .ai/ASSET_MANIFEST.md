@@ -89,7 +89,6 @@
 ### 3.3 Motion Tracker & Tactical Equipment
 * `/audio/sfx_tracker_sweep.m4a` — Radar ping sweep pulse
 * `/audio/sfx_tracker_ping.wav` — Proximity pitch-modulated target ping
-* `/audio/sfx_torch_on.m4a` & `sfx_torch_off.m4a` — Flashlight toggle clicks
 * `/audio/sfx_ui_beep.wav` — Upgrade selection and UI confirmation
 
 ### 3.4 Xenomorph Audio
@@ -114,3 +113,8 @@
 * `/audio/sfx_marine_pain.m4a` — Damage grunt
 * `/audio/sfx_marine_death.m4a` — Fatal defeat vocal
 * `/audio/sfx_bullet_flesh1.m4a` & `sfx_bullet_flesh2.m4a` — Xenomorph flesh penetration
+
+## Alien Queen (`/models/alien_queen.glb`)
+
+* One static mesh (4309 vertices, one alpha-blended PNG material), no skeleton and no animation clips. World size 157 x 295 x 473 units (X, Y up, Z), origin between the feet, **facing +Z**, tail trailing toward -Z. Shown at `BALANCE.QUEEN.SCALE` (0.0072, about 2.1 m tall). Animated procedurally by `src/entities/xeno/queenRig.ts`.
+* Licence CC BY-NC-ND 4.0 (author Quasar3000); see `CREDITS.md`.

@@ -10,7 +10,16 @@
 - **Comfort vignette** in VR that darkens the periphery while turning or walking.
 - Best-kills record shown on the menu and end screens (2D and VR), saved on victory as well as defeat.
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
-- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 226 unit tests and 18 Playwright tests (including an emulated Quest 3).
+- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 263 unit tests and 18 Playwright tests (including an emulated Quest 3).
+
+### Changed (performance)
+- The HUD no longer re-renders on every hit flash or shot; the input snapshot is reused; small-alien animation, kills and spawns allocate nothing per frame; menus stop redrawing the tracker; one shared impact-effect instance serves drones and small aliens; the service worker registers after the first scene loads (the first visit no longer downloads the models twice); audio loading starts before the audio context resumes.
+- VR panels open in front of you and stay put (they used to follow your head), redraw at 4 Hz, and level-up card text wraps instead of being cut off.
+
+### Changed (accessibility, build and hosting)
+- The pause dialog traps focus and closes on Escape; the level-up screen is a labelled dialog; hint text and the build id have higher contrast.
+- CI runs the browser tests on every push and pull request, uses a read-only token, cancels superseded runs, pins third-party actions in the signing job and validates the Gradle wrapper. `vercel.json` adds cache and security headers and 404s missing files instead of serving the app.
+- Cleanup: the torch, companion, gyro and other dead code are gone; game numbers and map layout (spark emitters, egg spots, lights) moved to `balance.ts` and the level definition; GPU resources are freed on unmount.
 
 ### Changed (boss)
 - **The Praetorian is replaced by the Alien Queen** (`alien_queen.glb`). Same behaviour and numbers (HP, speed, damage resistance, one per phase 3 and 4); the model is a single static mesh, so she is animated procedurally: breathing, a heavy stomping gait with tail swing, a rear-back and lunge for each slash, and a thrash, rear-up and slump when killed. She cannot be dismembered and her hit sphere now matches her size. **Licence note:** the model is CC BY-NC-ND 4.0; see `CREDITS.md`.

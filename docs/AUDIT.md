@@ -12,7 +12,7 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 | Performance (Quest 2) | 15 | 6.0 | 8.0 | BVH wall raycasts, allocation-free hot paths, 15.9 → 10.6 MB precache, chunk split, tiers; not yet measured on device |
 | Architecture | 10 | 6.5 | 8.5 | Query/resolve combat, pure `systems/`, `*Sim`/`*AI` modules, single balance source |
 | Code quality | 10 | 5.0 | 8.5 | Lint-enforced size and style, unpacked code, shared pathing, no empty `catch` |
-| Testing | 10 | 3.0 | 8.5 | 8 → 226 unit tests, 87% line coverage on logic layers, 18 browser tests including emulated Quest 3 |
+| Testing | 10 | 3.0 | 8.5 | 8 → 263 unit tests, 86.5% line coverage on the logic layers, 18 browser tests including emulated Quest 3 |
 | CI/CD | 8 | 5.0 | 7.0 | `verify` gate, e2e job, budgets, signed-APK workflow (not yet run on GitHub) |
 | Documentation | 8 | 5.0 | 8.5 | HANDOFF/CONTEXT/CONVENTIONS rewritten from the code, ADRs, credits, audit record |
 | UX and accessibility | 10 | 5.0 | 8.0 | VR menus, volumes, vignette, seated mode, optional PWA prompt, labelled settings, zoomable menus |
@@ -25,10 +25,10 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 | ID | Finding | Status | How it was closed / evidence |
 |---|---|---|---|
 | C1 | Touch auto-aim probe damaged aliens every frame | Fixed | `CombatSystem.queryTarget` is side-effect free (`tests/combat.test.ts`, `tests/rifle.test.ts`) |
-| C2 | Bullets passed through walls (player and Bishop) | Fixed | `resolveShot` applies damage only to the nearest unoccluded target (`tests/combat.test.ts`) |
+| C2 | Bullets passed through walls (player and the since-removed Bishop) | Fixed | `resolveShot` applies damage only to the nearest unoccluded target (`tests/combat.test.ts`) |
 | C3 | VR level-up auto-picked card 1 | Fixed | Stick selection, edge-detected confirm, arm delay (`tests/vrMenuNav.test.ts`, emulated-Quest e2e) |
 | C4 | Adaptive quality never worked in VR | Fixed | Scale chosen once per device; effect tiers adapt (`tests/qualityState.test.ts`); **verify on device** |
-| C5 | Level-ups wiped aliens and teleported Bishop | Fixed | `runId`-based resets; e2e checks aliens persist through a level-up |
+| C5 | Level-ups wiped aliens and teleported the since-removed Bishop | Fixed | `runId`-based resets; e2e checks aliens persist through a level-up |
 | H1 | Praetorian respawned endlessly | Fixed | `shouldSpawnBoss` once per phase (`tests/waveDirector.test.ts`) |
 | H2 | AI kept simulating during level-up | Fixed | `isSimulationFrozen` in all loops |
 | H3 | `balance.ts` was not the source of truth | Fixed | Values moved and centralised; small kills now award 15 XP (changelog) |
@@ -52,7 +52,7 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 1. **Legal / IP (highest priority).** Owner decisions listed in `docs/IP_REVIEW.md` are still pending; consider keeping the deployment private until they are made, and add visible CC BY attribution (a credits screen) regardless.
 2. **Device verification.** Run the manual checklists (headset, phone, desktop), especially the walking-speed decision (1.2 m/s), VR menu legibility, comfort vignette feel, AAC sound starts and BVH load time.
 3. **CI on GitHub.** Push a branch and confirm both jobs (`verify`, `e2e`) pass on Linux, then create the four APK signing secrets and back up the keystore.
-4. **Residual quality items.** The 68 MB `assets/` source folder lives in the repo (LFS or external storage is an owner decision); Bishop's AI is not yet extracted into a pure step function; Praetorian and small-alien balance have not been re-tuned.
+4. **Residual quality items.** The 68 MB `assets/` source folder lives in the repo (LFS or external storage is an owner decision); Alien Queen and small-alien balance have not been re-tuned (the companion Bishop that this item once covered was removed).
 5. **Repository history.** An earlier version of `HANDOFF.md` containing the headset serial number remains in git history (history was deliberately not rewritten).
 
 ## 4. Product depth added in phase 5
@@ -62,3 +62,23 @@ Beyond fixing findings, the programme added the structure for future content: di
 ## 5. Method
 
 Baseline: read all source and docs, ran the tests, build, `npm audit` and `npm outdated`. After: every claim above maps to a test, lint rule, budget or a documented manual check. See `.ai/UPLIFT_PLAN.md` (the execution plan) and `.ai/UPLIFT_PROGRESS.md` (commit-by-commit record, deviations, checklists).
+
+## 6. Re-audit 2 (27 Oct 2026)
+
+A second audit at commit `fb94bfb` scored **64 / 100** on the same ten areas (each out of 10; the weight column above is nominal). The earlier ≈ 76 had slipped because feature work after phase 5 (footsteps, hit vignette, level-up gate, update timer, early XR request, removing Bishop and the torch) landed without tests or documentation, and a deeper read of the UI and VR paths found defects the first audit missed. The findings, fixes and evidence are in `.ai/UPLIFT_PLAN_2.md` and `.ai/UPLIFT_PROGRESS_2.md`.
+
+| Area | Baseline | After | Evidence for the change |
+|---|---|---|---|
+| Gameplay correctness | 6.5 | 8.5 | Cards applied once, left-handed controls, restart pose, no mid-run reload, VR re-entry, fire rate, tracker range, victory without the video (unit tests; device checks pending) |
+| Performance (Quest 2) | 7.0 | 7.5 | HUD re-render fix, allocation-free hot paths, one FX instance, single service-worker download, VR panel redraw at 4 Hz; **not measured on a device** |
+| Architecture | 8.0 | 8.5 | Numbers in `balance.ts`, map dressing on the level, pool provider and music split out |
+| Code quality | 7.5 | 8.5 | Dead code and duplicates removed, resources freed on unmount, size limit restored |
+| Testing | 7.0 | 8.0 | 263 unit tests, widened coverage include list, footstep and hosting-config tests; the browser suite still relies on documented holds and one loosened bound |
+| CI/CD | 6.0 | 7.5 | e2e on every PR and push, read-only token, concurrency, pinned actions, wrapper validation, Node pinned (**not yet observed on GitHub**) |
+| Documentation | 6.0 | 8.0 | Encoding repaired and guarded by a test, stamps, counts and layout updated |
+| UX and accessibility | 6.5 | 8.0 | Focus trap, dialog roles, contrast, wrapped VR card text, ENTER VR button |
+| Security | 6.5 | 7.5 | Cache and security headers, stricter rewrite; no CSP (the inline XR script would need a hash) |
+| Legal / IP | 3.0 | 2.5 | **Worse:** the Alien Queen model is CC BY-NC-ND 4.0; attribution still not shown; decisions open |
+| **Total** | **64** | **≈ 77** | |
+
+Still open: the owner decisions in `docs/IP_REVIEW.md` and `.ai/UPLIFT_PLAN_2.md` section 8, device verification of every checklist, the GitHub run, and the dependency majors (three, vite, TypeScript, ESLint).

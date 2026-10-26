@@ -1,7 +1,7 @@
 # Aliens Survivor: Engineering Handoff
 
 > **Audience:** the next engineer or AI coding assistant.
-> **Verified against code at commit `b99ba2f`** (end of uplift phase 5). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
+> **Verified against the code on branch `uplift/p10-docs-polish`** (end of the second uplift programme: [`.ai/UPLIFT_PROGRESS_2.md`](.ai/UPLIFT_PROGRESS_2.md)). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
 > Machine-specific details (headset serial, ADB paths, keystore location) live in `HANDOFF.local.md`, which is gitignored.
 
 ---
@@ -61,14 +61,16 @@ src/
 │   ├── GameStore.ts / GameTypes.ts   Zustand store, status machine, runId, settings
 │   ├── Persistence.ts         Validated localStorage for settings and best kills
 │   ├── SettingsBinding.ts     Pushes settings into audio, input and haptics
-│   ├── MissionLauncher.ts     launchMission(): start a run and bring up audio
+│   ├── MissionLauncher.ts     launchMission(), pauseMission(), resumeMission(): state, music and klaxon together
 │   ├── runState.ts / runSummary.ts   Per-run reset fields; scoring a finished run onto the leaderboard
 │   ├── CombatEvents.ts        Target providers, queryTarget / resolveShot, wall impacts
 │   ├── CorridorNav.ts         Hall rectangles, corners, spawn nodes, allocation-free clamping
 │   ├── InputManager.ts        Keyboard, mouse, touch and XR input aggregation
-│   ├── AudioManager.ts / AudioCatalog.ts / AmbienceLoop.ts   Web Audio buses, voice cap, sound table
+│   ├── AudioManager.ts / AudioCatalog.ts / AmbienceLoop.ts / BgmPlayer.ts   Web Audio buses, voice cap, sound table, music element
 │   ├── AdaptiveQuality.tsx / QualityState.ts   FPS governor and effect tiers (0..2)
 │   ├── XRStore.ts, XRControllerState.ts, Haptics.ts, ComfortState.ts   XR session and controllers
+│   ├── swRegistration.ts, ServiceWorkerStarter.tsx, updatePolicy.ts   Service worker registered after the first scene; updates wait for a safe moment
+│   ├── footsteps.ts           Metal deck step sounds (stride counter, per-enemy profiles)
 │   └── Platform.ts, e2e.ts, iwerHarness.ts, TrackerState.ts, MuzzleTexture.ts, SevenSegment.ts
 ├── data/
 │   ├── balance.ts             Game numbers, score weights, upgrade catalogue and effects
@@ -76,20 +78,20 @@ src/
 │   └── weapons.ts             WeaponProfile registry (M41A only), cycling order
 ├── levels/                    LevelDefinition (halls, junctions, spawns, starts, radar outline), validateLevel,
 │   └── sulaco.ts              the Sulaco map; index.ts holds the registry and the active level
-├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort, scoring
+├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, levelUpGate, comfort, scoring
 ├── entities/                  three.js / R3F world objects
-│   ├── XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool}.ts
+│   ├── XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool,xenoProvider,xenoSteps,queenRig}.ts
 │   ├── SmallAlienSpawner.tsx + small/{smallSim,smallAssets}.ts
 │   ├── PulseRifle.tsx + rifle/{RifleState,rifleFiring,rifleViewmodel,autoTarget}.ts
 │   ├── PlayerController.tsx + player/{playerMotion,xrRig}.ts
 │   ├── CorridorLevel.tsx + level/{envRaycast,trimSectorWalls}.ts
 │   ├── MotionTracker.tsx + tracker/trackerCanvas.ts
-│   ├── ComfortVignette.tsx, AlienEggs.tsx
-│   └── WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
+│   ├── ComfortVignette.tsx, HitVignette.tsx (VR hit effect), AlienEggs.tsx
+│   └── WallImpactFX, XenomorphImpactFX (one shared instance, mounted in App), CorridorAtmosphereFX + fx/*
 └── ui/                        2D overlays and VR menus
-    ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
-    └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
-tests/   Vitest suites (logic, systems, UI models, budgets, credits)
+    ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal, DamageFlashOverlay (+ useFocusTrap)
+    └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher, wrapText
+tests/   Vitest suites (263 tests: logic, systems, UI models, step sounds, budgets, credits, hosting config)
 e2e/     Playwright (smoke, mobile, vr)
 scripts/ compress-audio, check-budgets, list-asset-metadata, tick-progress
 docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
@@ -108,12 +110,17 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 
 ## 6. Architecture notes
 
-- **Status machine:** `MENU → PLAYING ⇄ PAUSED / LEVEL_UP → VICTORY | DEFEAT`. `startGame()` increments `runId`; pools and companions reset when they see a new `runId` while PLAYING.
+- **Status machine:** `MENU → PLAYING ⇄ PAUSED / LEVEL_UP → VICTORY | DEFEAT`. `startGame()` increments `runId`; the enemy pools and the player pose reset when they see a new `runId` while PLAYING (so Restart from the pause menu resets too).
 - **Frame ownership:** `PlayerController` ticks the store (`tick(dt, now)`) each frame and integrates movement into a local position ref; the store copy of the player position is throttled to 20 Hz for other systems.
 - **VR rig:** the head (XR viewer pose) is the player. Turns pivot about the head, locomotion and room-scale movement are clamped to the corridor with a 15 cm margin, and seated mode raises the origin. See `entities/player/xrRig.ts`.
 - **Quality:** `XRStore` picks the framebuffer scale once per device class (three.js ignores scale changes mid-session). `AdaptiveQuality` then adjusts effect tiers from measured FPS (sparks, decals, droplets, eggs).
 - **Quest launch:** the installed app (quest-build/, an immersive Trusted Web Activity) enters VR by itself, because launching it counts as the click WebXR needs. index.html requests the session in an inline script before any bundle loads (Quest user agent or `?vr=1`) and hands it to the game's own request, so a slow first load cannot lose that short allowance. In plain Quest Browser there is no such click, so one trigger pull is still needed. The asset-links fingerprint in `public/.well-known/assetlinks.json` must match the installed APK's signing key (it does; checked against the APK on the headset).
 - **Footsteps:** metal deck steps (`stepmetal1-4.wav`), one per stride walked: the player from `core/footsteps.ts` (called in `PlayerController`), drones and the Alien Queen from `entities/xeno/xenoSteps.ts` (the boss is slower, deeper and louder).
+- **Alien Queen:** the boss is a pool slot like any drone (same AI, damage resistance, hit and kill logic) shown with `xeno/queenRig.ts` instead of the drone clone. `alien_queen.glb` is one static mesh with no skeleton or clips, so she is animated procedurally from the AI state (`queenPose`): breathing, a stomping gait, a slash wind-up and lunge, a death thrash and slump. She cannot be dismembered. Her model is CC BY-NC-ND 4.0 (see `CREDITS.md`).
+- **Level-up gate:** under pressure the cards are held back (`systems/levelUpGate.ts`, numbers in `BALANCE.LEVEL_UP_GATE`) and open at the next lull.
+- **Updates:** the service worker is registered after the first scene loads, and a downloaded update is applied only between missions and outside VR (`core/updatePolicy.ts`), because applying it reloads the page.
+- **VR entry:** on Quest the flat page is only seen after leaving VR, so it shows an ENTER VR button; elsewhere the VR button appears only when `navigator.xr` reports a headset.
+- **Hit feedback:** the red hit wash is `ui/DamageFlashOverlay` on flat screens and `entities/HitVignette` in VR; both read `damageFlash`, which fades in every status.
 - **Audio:** master/SFX gain buses, a 24-voice cap (gunfire, damage and UI are exempt), HRTF only for key cues, music through an `<audio>` element.
 - **Settings:** stored under `uscm_settings_v1` (validated per field); `SettingsBinding` applies them live.
 - **Difficulty:** the chosen profile is resolved once per run into `state.rules` (spawn interval, enemy HP and damage, concurrent drones, regen); marine equals the original balance, and it cannot change mid-run.
@@ -123,7 +130,7 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 
 ## 7. Release and deployment
 
-- **Web:** Vercel builds `main`. Iterate with `npm run check` (types and lint, seconds); run `npm run verify` before pushing. `npm run e2e` is optional and CI runs it only when started by hand (Actions, "Run workflow").
+- **Web:** Vercel builds `main`. Iterate with `npm run check` (types and lint, seconds); run `npm run verify` before pushing. `npm run e2e` runs the browser tests; CI runs it on every push and pull request (with one retry and a report artifact on failure), after `verify` passes. `vercel.json` sets cache headers (never cache `index.html`, `sw.js`, `manifest.json`; cache `/assets/*` forever), baseline security headers and a rewrite that sends only extensionless paths to the app.
 - **Quest APK:** `.github/workflows/build-quest-apk.yml` (tag `v*` or manual run) builds the signed TWA wrapper in `quest-build/`. It needs four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The signing certificate fingerprint must match `public/.well-known/assetlinks.json`. Back up the keystore and passwords somewhere safe: if they are lost the installed app can never be updated.
 - **Local APK builds** read the same environment variables (see `quest-build/app/build.gradle`).
 
@@ -136,10 +143,10 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 5. **three-mesh-bvh is pinned to 0.8.x** to match drei's copy (two versions cause duplicate type declarations).
 6. **e2e builds include the IWER headset emulator** (`VITE_E2E_XR=1`, set by `playwright.config.ts`); production builds do not. IWER spoofs a Quest user agent, so the app auto-enters VR in those tests. Software-rendered XR runs at a few frames per second, so VR tests hold inputs for about a second.
 7. **PowerShell:** do not chain with `&&`; use `;`. Bash tool and npm scripts are fine.
-8. **Provenance and IP:** see `CREDITS.md` (CC BY attribution is required for all models and is not yet shown in the app) and `docs/IP_REVIEW.md` (owner decisions pending).
+8. **Provenance and IP:** see `CREDITS.md` (CC BY attribution is required for seven models, the Alien Queen model is CC BY-NC-ND, and none of it is shown in the app yet) and `docs/IP_REVIEW.md` (owner decisions pending).
 
 ## 9. Open items
 
 - **Owner decisions pending** (assets and legal): Smartgun and Flamethrower art and sounds (`docs/design/weapons.md`), a second map (`docs/design/lv426.md`), IP and licensing and visible CC BY attribution (`docs/IP_REVIEW.md`, `CREDITS.md`), Git LFS for `assets/`.
-- **Device verification:** the manual checklists in `.ai/UPLIFT_PROGRESS.md` have not been run on a headset or phone yet.
+- **Device verification:** the manual checklists in `.ai/UPLIFT_PROGRESS.md` and `.ai/UPLIFT_PROGRESS_2.md` have not been run on a headset or phone yet.
 - See `docs/AUDIT.md` for the scorecard and remaining findings.

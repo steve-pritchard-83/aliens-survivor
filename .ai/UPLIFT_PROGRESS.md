@@ -25,7 +25,7 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 - [x] P1.9 Phase close — gate green: 77 tests, build ok, precache 10.6 MB, largest chunk 854 kB
 
 ## Phase 2 — Tests and gates
-- [x] P2.1 (aec7ccc) Pure AI step functions — small/xeno AI extracted as pure step functions with tests (Bishop AI not extracted)
+- [x] P2.1 (aec7ccc) Pure AI step functions — small/xeno AI extracted as pure step functions with tests (Bishop AI not extracted; Bishop was later removed)
 - [x] P2.2 (04605bc) Unit test suite
 - [x] P2.3 (04605bc) Coverage gate — thresholds raised to 80/75/65 (actual ~86% lines)
 - [x] P2.4 (5ff96c6) Playwright smoke
@@ -87,7 +87,7 @@ Plan: [UPLIFT_PLAN.md](./UPLIFT_PLAN.md). Baseline `ffa46eb` (audit score 48/100
 ### Phase 0 (branch uplift/p0-stabilise) — needs device testing
 - [ ] Mobile/touch: aim at a drone without firing; it must not die instantly (auto-aim probe no longer damages).
 - [ ] Desktop: shoot at a drone standing behind a corridor corner; wall sparks and ricochet only, no damage.
-- [ ] Quest: reach level 2 with aliens alive — they must still be there after choosing a card, Bishop must not teleport.
+- [ ] Quest: reach level 2 with aliens alive — they must still be there after choosing a card, Bishop must not teleport (obsolete: Bishop was removed).
 - [ ] Quest: level-up card picking: hold the trigger while levelling, nothing selects; stick left/right moves the highlight; trigger confirms; card 3 reachable.
 - [ ] Quest: right stick pushes during the level-up screen do not turn the view after resuming.
 - [ ] Phase 3 and 4 each spawn exactly one Praetorian.
