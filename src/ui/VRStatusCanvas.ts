@@ -2,8 +2,13 @@ import { UpgradeCard } from '../data/balance';
 import { GameSettings, RunSummary } from '../core/GameTypes';
 import { VR_MENU_ROWS, valueText } from './vrMenuModel';
 import { DIFFICULTY } from '../data/difficulty';
+import { wrapText } from './wrapText';
 
 export type VRPanelStatus = 'MENU' | 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
+
+// Characters per line that fit a 265 px card at the font sizes used below
+const CARD_TITLE_CHARS = 22;
+const CARD_DESC_CHARS = 22;
 
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60),
@@ -176,13 +181,15 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
       ctx.strokeRect(cx, 100, cw, 320);
       ctx.textAlign = 'center';
       ctx.font = '40px monospace';
-      ctx.fillText(c.icon, cx + cw / 2, 165);
+      ctx.fillText(c.icon, cx + cw / 2, 160);
       ctx.fillStyle = '#00ff88';
       ctx.font = 'bold 18px Courier New, monospace';
-      ctx.fillText(c.title.slice(0, 18), cx + cw / 2, 215);
+      const titleLines = wrapText(c.title, CARD_TITLE_CHARS, 2);
+      for (let l = 0; l < titleLines.length; l++) ctx.fillText(titleLines[l], cx + cw / 2, 198 + l * 22);
       ctx.fillStyle = '#ffffff';
-      ctx.font = '13px Courier New, monospace';
-      ctx.fillText(c.desc.slice(0, 26), cx + cw / 2, 270);
+      ctx.font = '18px Courier New, monospace';
+      const descLines = wrapText(c.desc, CARD_DESC_CHARS, 3);
+      for (let l = 0; l < descLines.length; l++) ctx.fillText(descLines[l], cx + cw / 2, 262 + l * 24);
       if (selected) {
         ctx.fillStyle = 'rgba(0, 255, 136, 0.3)';
         ctx.fillRect(cx + 15, 340, cw - 30, 60);

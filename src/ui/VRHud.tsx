@@ -91,7 +91,7 @@ export function VRHud() {
     }
     if (st.status === 'PAUSED') {
       if (statusMeshRef.current) {
-        VRStatusPanel.place(statusMeshRef.current, camera);
+        VRStatusPanel.follow(statusMeshRef.current, camera);
         panel.render('PAUSED', clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       stepPauseMenu(navRef.current, selectedRef, st, dt, input);
@@ -99,7 +99,7 @@ export function VRHud() {
     }
     if (st.status === 'LEVEL_UP') {
       if (statusMeshRef.current) {
-        VRStatusPanel.place(statusMeshRef.current, camera);
+        VRStatusPanel.follow(statusMeshRef.current, camera);
         panel.render('LEVEL_UP', clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       const nav = navRef.current,
@@ -117,7 +117,7 @@ export function VRHud() {
     }
     if (st.status === 'MENU' || st.status === 'DEFEAT' || st.status === 'VICTORY') {
       if (statusMeshRef.current) {
-        VRStatusPanel.place(statusMeshRef.current, camera);
+        VRStatusPanel.follow(statusMeshRef.current, camera);
         panel.render(st.status, clock.getElapsedTime(), dt, selectedRef.current, st);
       }
       // A fresh trigger press (armed after a short delay) starts or restarts the mission; nothing auto-restarts

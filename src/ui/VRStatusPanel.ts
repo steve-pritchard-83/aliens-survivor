@@ -2,11 +2,15 @@ import * as THREE from 'three';
 import type { GameState } from '../core/GameTypes';
 import { drawVRStatusPanel, VRPanelData, VRPanelStatus } from './VRStatusCanvas';
 
-const REDRAW_SECONDS = 0.1;
+// The only animation is a slow glow, so 4 Hz is enough (each redraw re-uploads a 1536 x 768 texture)
+const REDRAW_SECONDS = 0.25;
+/** The panel stays where it was opened until the head turns this far from it. */
+const FOLLOW_COS = Math.cos((35 * Math.PI) / 180);
 const DISTANCE = 1.7;
 const _fwd = new THREE.Vector3(),
   _pos = new THREE.Vector3(),
-  _quat = new THREE.Quaternion();
+  _quat = new THREE.Quaternion(),
+  _to = new THREE.Vector3();
 
 /** Floating holographic panel (pause, level-up, victory, defeat) drawn to a canvas texture. */
 export class VRStatusPanel {
@@ -82,6 +86,20 @@ export class VRStatusPanel {
     d.bestScore = st.leaderboard[st.settings.difficulty][0]?.score ?? 0;
     drawVRStatusPanel(this.canvas, d);
     this.texture.needsUpdate = true;
+  }
+
+  /**
+   * Shows the panel: placed in front of the head when it opens, then left in the world (a head-locked panel is
+   * uncomfortable) unless the head turns more than 35 degrees away from it.
+   */
+  public static follow(mesh: THREE.Mesh, camera: THREE.Camera): void {
+    if (mesh.visible) {
+      camera.getWorldDirection(_fwd);
+      camera.getWorldPosition(_pos);
+      _to.copy(mesh.position).sub(_pos).normalize();
+      if (_fwd.dot(_to) > FOLLOW_COS) return;
+    }
+    VRStatusPanel.place(mesh, camera);
   }
 
   /** Shows the mesh 1.7 m in front of the player's head, facing them. */
