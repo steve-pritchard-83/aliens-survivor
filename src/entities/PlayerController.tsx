@@ -29,6 +29,7 @@ export function PlayerController() {
   const xrYawRef = useRef(0);
   const headBobTimer = useRef(0);
   const prevStatusRef = useRef(useGameStore.getState().status);
+  const lastRunIdRef = useRef(useGameStore.getState().runId);
   const lastTransformSync = useRef(0);
   // Player position (the head in VR), integrated locally every frame; the store copy is throttled for other systems
   const posRef = useRef<XZ>({ x: getActiveLevel().playerStart.x, z: getActiveLevel().playerStart.z });
@@ -36,6 +37,7 @@ export function PlayerController() {
   const levelUpGate = useRef({ calm: 0, waiting: 0 });
 
   const status = useGameStore((s) => s.status);
+  const runId = useGameStore((s) => s.runId);
 
   useEffect(() => {
     if (isE2E()) {
@@ -69,7 +71,9 @@ export function PlayerController() {
     const prev = prevStatusRef.current;
     prevStatusRef.current = status;
 
-    if (status === 'PLAYING' && (prev === 'MENU' || prev === 'DEFEAT' || prev === 'VICTORY')) {
+    // A new run (including Restart from the pause menu) puts the player back on the start marker
+    if (status === 'PLAYING' && runId !== lastRunIdRef.current) {
+      lastRunIdRef.current = runId;
       const start = getActiveLevel().playerStart;
       posRef.current.x = start.x;
       posRef.current.z = start.z;
@@ -85,6 +89,8 @@ export function PlayerController() {
       }
       _euler.set(0, yawRef.current, 0, 'YXZ');
       camera.quaternion.setFromEuler(_euler);
+      // The throttled sync would otherwise write the previous run's pose back for up to 50 ms
+      useGameStore.getState().updatePlayerTransform(start.x, EYE_HEIGHT, start.z, start.yaw);
     } else if (status === 'DEFEAT' || status === 'VICTORY' || status === 'PAUSED' || status === 'LEVEL_UP') {
       // The cursor must be free to click an upgrade card on the level-up screen
       InputManager.releasePointerLock();
@@ -92,7 +98,7 @@ export function PlayerController() {
       // Choosing a card is a user gesture, so the lock can be retaken straight away
       InputManager.requestPointerLock();
     }
-  }, [status, camera]);
+  }, [status, runId, camera]);
 
   useFrame(({ clock, gl }, dt, frame) => {
     const state = useGameStore.getState();

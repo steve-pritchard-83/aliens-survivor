@@ -59,6 +59,11 @@ function stickAxes(axes: readonly number[]): [number, number] {
   return [0, 0];
 }
 
+/** Which role a controller plays: the weapon hand fires, reloads and turns; the off hand moves and cycles weapons. */
+export function controllerRole(handedness: XRHandedness, leftHanded: boolean): 'weapon' | 'off' {
+  return handedness === (leftHanded ? 'left' : 'right') ? 'weapon' : 'off';
+}
+
 function applyTurn(turnAxis: number, dt: number, latches: VRControllerLatches): void {
   const state = useGameStore.getState();
   comfort.turnRate = 0;
@@ -104,6 +109,7 @@ export function pollControllers(
   out.moveX = out.moveZ = out.rightStickX = out.rightStickY = 0;
   out.firing = out.anyButton = false;
   const sources = xrSession.inputSources;
+  const leftHanded = useGameStore.getState().settings.leftHanded;
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
     const pad = source.gamepad;
@@ -120,24 +126,26 @@ export function pollControllers(
     const actuator = (pad.hapticActuators?.[0] as GamepadHapticActuator) || null;
     const [sx, sy] = stickAxes(pad.axes);
 
-    if (source.handedness === 'left') {
-      xrControllerState.leftHand.hapticActuator = actuator;
-      updateHandPose(xrControllerState.leftHand, source, frame, refSpace);
-      out.moveX = sx;
-      out.moveZ = -sy;
-      // Left grip cycles weapons (the right grip is reserved for steadying the rifle)
-      if (buttons[BTN_GRIP]?.pressed && latches.weaponCooldown <= 0) {
-        latches.weaponCooldown = 0.5;
-        InputManager.weaponCycleFlag = true;
+    if (source.handedness === 'left' || source.handedness === 'right') {
+      const hand = source.handedness === 'left' ? xrControllerState.leftHand : xrControllerState.rightHand;
+      hand.hapticActuator = actuator;
+      updateHandPose(hand, source, frame, refSpace);
+      if (controllerRole(source.handedness, leftHanded) === 'weapon') {
+        out.firing = Boolean(buttons[BTN_TRIGGER]?.pressed);
+        if (buttons[BTN_PRIMARY]?.pressed) useGameStore.getState().startReload();
+        // rightStick* is the weapon-hand stick (the right one unless left-handed): turning and menu input
+        out.rightStickX = sx;
+        out.rightStickY = sy;
+        applyTurn(sx, dt, latches);
+      } else {
+        out.moveX = sx;
+        out.moveZ = -sy;
+        // The off-hand grip cycles weapons (the weapon-hand grip is reserved for steadying the rifle)
+        if (buttons[BTN_GRIP]?.pressed && latches.weaponCooldown <= 0) {
+          latches.weaponCooldown = 0.5;
+          InputManager.weaponCycleFlag = true;
+        }
       }
-    } else if (source.handedness === 'right') {
-      xrControllerState.rightHand.hapticActuator = actuator;
-      updateHandPose(xrControllerState.rightHand, source, frame, refSpace);
-      out.firing = Boolean(buttons[BTN_TRIGGER]?.pressed);
-      if (buttons[BTN_PRIMARY]?.pressed) useGameStore.getState().startReload();
-      out.rightStickX = sx;
-      out.rightStickY = sy;
-      applyTurn(sx, dt, latches);
     }
     if (pausePressed && latches.pauseCooldown <= 0) togglePause(latches);
   }
