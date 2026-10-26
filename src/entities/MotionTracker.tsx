@@ -117,12 +117,12 @@ export function MotionTracker() {
       for (let i = 0; i < threats.length; i++) closest = Math.min(closest, rangedDist(threats[i], px, pz, maxRange));
       if (state.smallThreat) closest = Math.min(closest, rangedDist(state.smallThreat, px, pz, maxRange));
       if (
-        closest <= MAX_RANGE &&
+        closest <= maxRange &&
         !pingTriggeredOnSweepRef.current &&
-        sweepProgressRef.current >= Math.min(0.85, (closest / MAX_RANGE) * 0.85)
+        sweepProgressRef.current >= Math.min(0.85, (closest / maxRange) * 0.85)
       ) {
         pingTriggeredOnSweepRef.current = true;
-        const proximity = 1.0 - Math.min(1.0, closest / MAX_RANGE);
+        const proximity = 1.0 - Math.min(1.0, closest / maxRange);
         AudioManager.play2D('tracker_ping', 0.24 + proximity * 0.14, 0.95 + proximity * 0.85);
         Haptics.trackerPing();
       }
@@ -140,7 +140,7 @@ export function MotionTracker() {
         for (let i = 0; i < state.activeThreats.length; i++)
           drawThreat(ctx, state.activeThreats[i], px, pz, maxRange, sweepProgressRef.current);
         if (state.smallThreat) drawThreat(ctx, state.smallThreat, px, pz, maxRange, sweepProgressRef.current);
-        drawFooter(ctx, contacts, closest, MAX_RANGE);
+        drawFooter(ctx, contacts, closest, maxRange);
       }
       drawCrtNoise(ctx);
       publish();

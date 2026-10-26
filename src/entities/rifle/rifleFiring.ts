@@ -68,7 +68,8 @@ function aimRay(state: GameState, ctx: FireContext, heat: number, weapon: Weapon
 }
 
 function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext, weapon: WeaponProfile): void {
-  rs.fireCooldown = state.fireInterval;
+  // Carry the overshoot so the rate does not snap to whole frames (about 12% slower at 72 Hz otherwise)
+  rs.fireCooldown += state.fireInterval;
   rs.wasFiring = true;
   rs.recoilOffset = 0.058 + Math.random() * 0.015;
   rs.recoilPitch = 0.038 + Math.random() * 0.018;
@@ -95,12 +96,16 @@ function fireOneRound(rs: RifleState, state: GameState, ctx: FireContext, weapon
 /** Trigger logic: jam heat, fire-rate cooldown, dry-fire reload, and burst audio tail on release. */
 export function updateFiring(rs: RifleState, state: GameState, isFiring: boolean, dt: number, ctx: FireContext): void {
   const weapon = WEAPONS[state.activeWeapon];
-  rs.fireCooldown = Math.max(0, rs.fireCooldown - dt);
+  rs.fireCooldown -= dt;
   if (!isFiring || state.isReloading || state.isJammed) {
+    // Nothing is banked while the trigger is up: a fresh pull fires at once and no further
+    rs.fireCooldown = Math.max(0, rs.fireCooldown);
     stopBurstAudio(rs, true);
     rs.continuousFire = Math.max(0, rs.continuousFire - dt * 2.5);
     return;
   }
+  // The carried overshoot is at most one interval
+  rs.fireCooldown = Math.max(rs.fireCooldown, -state.fireInterval);
   rs.continuousFire += dt;
   if (rs.continuousFire > weapon.jamThresholdSeconds) {
     stopBurstAudio(rs, false);

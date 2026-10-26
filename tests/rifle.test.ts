@@ -51,6 +51,22 @@ describe('rifle firing', () => {
     expect(s().ammo).toBe(WEAPONS.m41a.magazine - 2);
   });
 
+  it('fires at the stated rate regardless of frame rate', () => {
+    for (const hz of [60, 72, 90]) {
+      s().startGame();
+      useGameStore.setState({ ammo: 1000, maxAmmo: 1000 });
+      const rs = createRifleState();
+      let shots = 0;
+      let last = s().ammo;
+      for (let i = 0; i < hz; i++) {
+        updateFiring(rs, s(), true, 1 / hz, ctx);
+        if (s().ammo < last) shots++;
+        last = s().ammo;
+      }
+      expect(Math.abs(shots - 1 / s().fireInterval)).toBeLessThanOrEqual(2);
+    }
+  });
+
   it('shots into empty space use ammo but never count as hits', () => {
     const rs = createRifleState();
     updateFiring(rs, s(), true, 0.016, ctx);

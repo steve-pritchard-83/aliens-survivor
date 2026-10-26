@@ -91,7 +91,7 @@ export interface UpgradeCard {
 }
 
 export const UPGRADE_CATALOG: UpgradeCard[] = [
-  { id: 'fire_rate', title: 'OVERCLOCKED ACTUATOR', desc: '+25% Pulse Rifle Rate of Fire', icon: '⚡' },
+  { id: 'fire_rate', title: 'OVERCLOCKED ACTUATOR', desc: '+31% Pulse Rifle Rate of Fire', icon: '⚡' },
   {
     id: 'extended_mag',
     title: '150-ROUND DRUM',
@@ -102,8 +102,8 @@ export const UPGRADE_CATALOG: UpgradeCard[] = [
   { id: 'ap_ammo', title: 'M309 ARMOR PIERCING', desc: '+40% Pulse Rifle Kinetic Impact & Dismemberment', icon: '💥' },
   {
     id: 'tracker_gain',
-    title: '360° SCANNER ARRAY',
-    desc: 'Upgrades Motion Tracker to Full 360° Corridor Coverage',
+    title: 'LONG-RANGE SCANNER ARRAY',
+    desc: `Extends Motion Tracker Range From ${BALANCE.TRACKER.BASE_RANGE} m To ${UPGRADE_EFFECTS.tracker_gain.trackerRange} m`,
     icon: '📡'
   },
   {
