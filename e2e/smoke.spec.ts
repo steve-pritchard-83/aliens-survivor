@@ -14,7 +14,7 @@ async function startMission(page: Page, errors: string[]): Promise<void> {
 test('boots, starts a mission, runs, pauses and resumes without page errors', async ({ page }) => {
   const errors: string[] = [];
   await startMission(page, errors);
-  await page.waitForTimeout(3000);
+  await page.waitForFunction(() => window.__game!.getState().timeRemaining < 298, undefined, { timeout: 30_000 });
   expect(await page.evaluate(() => window.__game!.getState().timeRemaining)).toBeLessThan(299);
   expect(await page.locator('canvas').count()).toBeGreaterThan(0);
 
@@ -91,7 +91,8 @@ test('the status bar shows health, ammo and phase and can be switched off', asyn
   await expect(bar).toContainText('M41A');
   // Weapon cycling is wired to Q; with only the M41A registered it must be a harmless no-op
   await page.keyboard.press('KeyQ');
-  await page.waitForTimeout(500);
+  // Let two frames run so the key press has been handled
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   expect(await page.evaluate(() => window.__game!.getState().activeWeapon)).toBe('m41a');
   expect(await page.evaluate(() => window.__game!.getState().isReloading)).toBe(false);
 

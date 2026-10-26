@@ -129,3 +129,11 @@ describe('readHeadLocal', () => {
     expect(out.toArray()).toEqual([1, 2, 3]);
   });
 });
+
+describe('configured walking speeds', () => {
+  it('keeps VR slower than flat-screen play, in a comfortable walking range', () => {
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeGreaterThan(1.5);
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThan(2.1);
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThan(BALANCE.PLAYER.MOVE_SPEED);
+  });
+});
