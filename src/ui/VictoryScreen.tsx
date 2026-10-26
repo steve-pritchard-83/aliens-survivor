@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GREEN, solidButton } from './uiStyles';
 import { Leaderboard } from './Leaderboard';
 import type { ScoreEntry } from '../systems/scoring';
 import type { RunSummary } from '../core/GameTypes';
+
+// Without metadata (offline, blocked, broken file) the results show after this long
+const NO_VIDEO_SECONDS = 15;
 
 /** Extraction video followed by the victory banner and stats bar. */
 export function VictoryScreen({
@@ -21,9 +24,35 @@ export function VictoryScreen({
   onRedeploy: () => void;
 }) {
   const [videoEnded, setVideoEnded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // The score must never depend on the video: show it when playback ends, fails, is blocked, is skipped or times out
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const done = () => setVideoEnded(true);
+    let timer = window.setTimeout(done, NO_VIDEO_SECONDS * 1000);
+    const onMeta = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(done, (video.duration + 2) * 1000);
+    };
+    video.addEventListener('loadedmetadata', onMeta);
+    video.play().catch(() => {
+      // iOS and some browsers refuse unmuted autoplay: retry muted, and give up quietly if that fails too
+      video.muted = true;
+      video.play().catch(done);
+    });
+    return () => {
+      window.clearTimeout(timer);
+      video.removeEventListener('loadedmetadata', onMeta);
+    };
+  }, []);
   return (
     <div
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        setVideoEnded(true); // tap to skip the video
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -36,10 +65,12 @@ export function VictoryScreen({
       }}
     >
       <video
+        ref={videoRef}
         src="/movies/victory.mp4"
         autoPlay
         playsInline
         onEnded={() => setVideoEnded(true)}
+        onError={() => setVideoEnded(true)}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
       {videoEnded && (

@@ -15,15 +15,25 @@
       // is handed this session. If the browser refuses (no click yet), it falls back to the normal request.
       (function () {
         try {
-          var quest = /OculusBrowser|Quest/i.test(navigator.userAgent) || location.search.indexOf('vr=1') !== -1;
+          var quest = /OculusBrowser|Quest/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('vr') === '1';
           var xr = navigator.xr;
           if (!quest || !xr || !xr.requestSession) return;
           var original = xr.requestSession.bind(xr);
           var early = original('immersive-vr', { requiredFeatures: ['local-floor'], optionalFeatures: ['hand-tracking'] });
           early.catch(function () {});
           var handedOver = false;
+          var ended = false;
+          early.then(function (session) {
+            session.addEventListener('end', function () {
+              ended = true;
+            });
+            // If the app never claims the session (bundle failed to load), do not strand the player in a black headset
+            setTimeout(function () {
+              if (!handedOver) session.end().catch(function () {});
+            }, 20000);
+          }, function () {});
           xr.requestSession = function (mode, init) {
-            if (mode === 'immersive-vr' && !handedOver) {
+            if (mode === 'immersive-vr' && !handedOver && !ended) {
               handedOver = true;
               return early.catch(function () {
                 return original(mode, init);
