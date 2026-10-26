@@ -21,6 +21,7 @@ import { useGameStore } from './core/GameStore';
 import { Platform } from './core/Platform';
 import { ShaderWarmup } from './entities/fx/ShaderWarmup';
 import { HitVignette } from './entities/HitVignette';
+import { ServiceWorkerStarter } from './core/ServiceWorkerStarter';
 
 // Telemetry is only ever used with ?debug=1, so keep it out of the main bundle
 const DebugTelemetry = lazy(() => import('./ui/DebugTelemetry').then((m) => ({ default: m.DebugTelemetry })));
@@ -69,6 +70,7 @@ export function App() {
             <ComfortVignette />
             <HitVignette />
             <ShaderWarmup />
+            <ServiceWorkerStarter />
             {Platform.isDebug && <DebugTelemetry />}
           </Suspense>
         </XR>

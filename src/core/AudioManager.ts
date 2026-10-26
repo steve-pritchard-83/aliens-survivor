@@ -48,8 +48,12 @@ class WebAudioController {
       this.masterGain.connect(this.ctx.destination);
       this.applyVolumes();
     }
-    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    // Decoding works on a suspended context, so start loading first; a resume that never settles (no user gesture
+    // yet, as can happen right after entering VR) must not hold up loading, music or the mission start
     if (!this.loadingPromise) this.loadingPromise = this.preloadAll();
+    if (this.ctx.state === 'suspended') {
+      await Promise.race([this.ctx.resume(), new Promise<void>((resolve) => setTimeout(resolve, RESUME_WAIT_MS))]);
+    }
     await this.loadingPromise;
   }
 
