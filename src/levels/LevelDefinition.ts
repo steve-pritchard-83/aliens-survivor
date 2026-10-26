@@ -21,6 +21,18 @@ export interface HallDef {
  * definition (see `levels/index.ts`) instead of importing constants, so a new map is a new data file.
  * The 3D scene for a map is separate (`CorridorLevel`); this describes only layout, pathing and spawns.
  */
+/** Scene dressing positions for a map: where sparks fly, where eggs may sit, and where the lights hang. */
+export interface LevelSceneDef {
+  /** Electrical spark emitters: [x, y, z, normalX, normalZ] (the normal is the direction sparks leave the wall). */
+  readonly sparkEmitters: readonly (readonly [number, number, number, number, number])[];
+  /** Candidate Ovomorph egg positions [x, z, yaw]; a few are picked at random each session. */
+  readonly eggSpots: readonly (readonly [number, number, number])[];
+  /** Position of the single key light. */
+  readonly keyLight: readonly [number, number, number];
+  /** Position of the rotating emergency beacon. */
+  readonly beacon: readonly [number, number, number];
+}
+
 export interface LevelDefinition {
   id: string;
   name: string;
@@ -36,6 +48,7 @@ export interface LevelDefinition {
   playerStart: { readonly x: number; readonly z: number; readonly yaw: number };
   /** Polygons for the motion tracker map, drawn with the even-odd rule. */
   radarOutline: readonly (readonly (readonly [number, number])[])[];
+  scene: LevelSceneDef;
 }
 
 function inRect(x: number, z: number, r: HallDef['rect']): boolean {
@@ -96,6 +109,8 @@ export function validateLevel(level: LevelDefinition): string[] {
       if (!level.spawnNodes[i]) add(`spawnFallback.${key} references missing node ${i}`);
   }
   if (!inAnyHall(level, level.playerStart.x, level.playerStart.z)) add('player start is outside every hall');
+  const scenePoints = [...level.scene.sparkEmitters, level.scene.keyLight, level.scene.beacon, ...level.scene.eggSpots];
+  if (scenePoints.some((p) => p.some((v) => !Number.isFinite(v)))) add('scene positions must be finite numbers');
   if (level.radarOutline.length === 0 || level.radarOutline.some((p) => p.length < 3))
     add('radar outline needs polygons of 3+ points');
   return problems;

@@ -1,25 +1,15 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { quality } from '../core/QualityState';
+import { getActiveLevel } from '../levels';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-
-// Candidate Ovomorph egg positions [x, z, yaw] tucked against corridor bulkheads; 3 picked randomly per session
-const EGG_SPOTS: [number, number, number][] = [
-  [-0.86, 19.2, 0.4],
-  [-13.12, 13.5, 2.1],
-  [-10.2, 22.58, 1.1],
-  [-3.8, 36.32, 2.8],
-  [-13.12, 29.8, 0.7],
-  [-5.2, 8.02, 1.9],
-  [-0.86, 31.8, 2.4]
-];
 
 export function AlienEggs() {
   const gltf = useGLTF('/models/egg.glb');
 
   const eggs = useMemo(() => {
-    const picked = [...EGG_SPOTS].sort(() => Math.random() - 0.5).slice(0, 3);
+    const picked = [...getActiveLevel().scene.eggSpots].sort(() => Math.random() - 0.5).slice(0, 3);
     return picked.map(([x, z, yaw], idx) => {
       const obj = gltf.scene.clone(true);
       obj.traverse((ch) => {

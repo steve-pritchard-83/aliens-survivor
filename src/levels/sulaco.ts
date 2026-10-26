@@ -83,6 +83,35 @@ export const SULACO: LevelDefinition = {
   spawnNodes: SPAWN_NODES,
   spawnFallback: { xeno: [0, 4, 5, 6], small: [0, 4, 5, 10] },
   playerStart: { x: -0.32, z: 13.0, yaw: Math.PI },
+  scene: {
+    // 12 wall and ceiling junction boxes across the sector (Z = 8.30..35.90)
+    sparkEmitters: [
+      [-1.25, 1.85, 15.2, 1.0, 0.0], // South-East Spine bulkhead panel
+      [-0.35, 2.15, 22.1, -0.8, -0.5], // Central East T-junction ceiling conduit
+      [-1.25, 1.85, 29.0, 1.0, 0.0], // North-East Spine bulkhead panel
+      [-0.8, 2.3, 35.6, 0.0, -1.0], // Far North-East Corner overhead junction
+      [-6.8, 1.95, 35.1, 0.0, 1.0], // Far North Wing inner wall conduit
+      [-13.2, 2.3, 35.6, 0.0, -1.0], // Far North-West Corner overhead pipe
+      [-12.7, 1.85, 29.0, -1.0, 0.0], // North-West Spine inner bulkhead panel
+      [-6.8, 1.95, 21.3, 0.0, 1.0], // Central Crossway inner wall conduit
+      [-13.2, 2.3, 21.8, 0.0, -1.0], // Central West T-junction overhead pipe
+      [-12.7, 1.85, 15.2, -1.0, 0.0], // South-West Spine inner bulkhead panel
+      [-13.2, 2.3, 8.4, 0.0, 1.0], // South-West Corner overhead junction
+      [-6.8, 1.95, 8.9, 0.0, -1.0] // South Wing inner wall conduit
+    ],
+    // Candidate Ovomorph egg positions tucked against corridor bulkheads
+    eggSpots: [
+      [-0.86, 19.2, 0.4],
+      [-13.12, 13.5, 2.1],
+      [-10.2, 22.58, 1.1],
+      [-3.8, 36.32, 2.8],
+      [-13.12, 29.8, 0.7],
+      [-5.2, 8.02, 1.9],
+      [-0.86, 31.8, 2.4]
+    ],
+    keyLight: [-6.9, 2.3, 22.1],
+    beacon: [-0.32, 2.15, 14.0]
+  },
   radarOutline: [
     [
       [0.42, 7.58],

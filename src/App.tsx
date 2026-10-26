@@ -22,12 +22,14 @@ import { Platform } from './core/Platform';
 import { ShaderWarmup } from './entities/fx/ShaderWarmup';
 import { HitVignette } from './entities/HitVignette';
 import { ServiceWorkerStarter } from './core/ServiceWorkerStarter';
+import { getActiveLevel } from './levels';
 
 // Telemetry is only ever used with ?debug=1, so keep it out of the main bundle
 const DebugTelemetry = lazy(() => import('./ui/DebugTelemetry').then((m) => ({ default: m.DebugTelemetry })));
 
 export function App() {
   const status = useGameStore((s) => s.status);
+  const start = getActiveLevel().playerStart;
 
   return (
     <div
@@ -50,13 +52,13 @@ export function App() {
 
       <Canvas
         dpr={0.8}
-        camera={{ fov: 62, near: 0.05, far: 65, position: [-0.8, 1.15, 13.0] }}
+        camera={{ fov: 62, near: 0.05, far: 65, position: [start.x, 1.15, start.z] }}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
       >
         <XR store={xrStore}>
           <VRAutoLauncher />
           <AdaptiveQuality />
-          <XROrigin position={[-0.8, 0, 13.0]} />
+          <XROrigin position={[start.x, 0, start.z]} />
           <Suspense fallback={null}>
             <CorridorLevel />
             <WallImpactFX />

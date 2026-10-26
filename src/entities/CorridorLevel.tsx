@@ -9,6 +9,7 @@ import { registerEnvironmentRaycast } from './level/envRaycast';
 import { CorridorAtmosphereFX } from './CorridorAtmosphereFX';
 import { MistFX } from './MistFX';
 import { AlienEggs } from './AlienEggs';
+import { getActiveLevel } from '../levels';
 
 export function CorridorLevel() {
   const { scene } = useGLTF('/models/corridor.glb');
@@ -92,7 +93,7 @@ export function CorridorLevel() {
 
       {/* Optimized Single Bulkhead Sector Key Light */}
       <pointLight
-        position={[-6.9, 2.3, 22.1]}
+        position={[...getActiveLevel().scene.keyLight]}
         color="#a6c8e4"
         intensity={stripPower * 1.5}
         distance={34.0}
@@ -110,7 +111,7 @@ export function CorridorLevel() {
       <AlienEggs />
 
       {/* Single Synchronized Emergency Alarm Beacon */}
-      <group position={[-0.32, 2.15, 14.0]} ref={beacon1Ref}>
+      <group position={[...getActiveLevel().scene.beacon]} ref={beacon1Ref}>
         <pointLight position={[0.32, 0, 0]} color={beaconColor} intensity={beaconPower} distance={9} decay={1.8} />
       </group>
 

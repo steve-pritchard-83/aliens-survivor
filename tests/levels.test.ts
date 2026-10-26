@@ -30,6 +30,7 @@ const STRAIGHT: LevelDefinition = {
   ],
   spawnFallback: { xeno: [0], small: [1] },
   playerStart: { x: 0, z: 5, yaw: 0 },
+  scene: { sparkEmitters: [], eggSpots: [], keyLight: [0, 2, 20], beacon: [0, 2, 5] },
   radarOutline: [
     [
       [1, 0],

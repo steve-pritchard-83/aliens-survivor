@@ -4,26 +4,12 @@ import * as THREE from 'three';
 import { AudioManager } from '../core/AudioManager';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
-
-// 12 Wall & Ceiling Electrical Junction Boxes across the Double-Size Figure-8 Sulaco Sector (Z = 8.30..35.90)
-const SPARK_EMITTERS: [number, number, number, number, number][] = [
-  [-1.25, 1.85, 15.2, 1.0, 0.0], // South-East Spine bulkhead panel
-  [-0.35, 2.15, 22.1, -0.8, -0.5], // Central East T-junction ceiling conduit
-  [-1.25, 1.85, 29.0, 1.0, 0.0], // North-East Spine bulkhead panel
-  [-0.8, 2.3, 35.6, 0.0, -1.0], // Far North-East Corner overhead junction
-  [-6.8, 1.95, 35.1, 0.0, 1.0], // Far North Wing inner wall conduit
-  [-13.2, 2.3, 35.6, 0.0, -1.0], // Far North-West Corner overhead pipe
-  [-12.7, 1.85, 29.0, -1.0, 0.0], // North-West Spine inner bulkhead panel
-  [-6.8, 1.95, 21.3, 0.0, 1.0], // Central Crossway inner wall conduit
-  [-13.2, 2.3, 21.8, 0.0, -1.0], // Central West T-junction overhead pipe
-  [-12.7, 1.85, 15.2, -1.0, 0.0], // South-West Spine inner bulkhead panel
-  [-13.2, 2.3, 8.4, 0.0, 1.0], // South-West Corner overhead junction
-  [-6.8, 1.95, 8.9, 0.0, -1.0] // South Wing inner wall conduit
-];
+import { getActiveLevel } from '../levels';
 
 const SPARKS_PER_BURST = 42;
 
 export function CorridorAtmosphereFX() {
+  const emitters = getActiveLevel().scene.sparkEmitters;
   const sparkPointsRef = useRef<THREE.Points>(null);
   const burstTimerRef = useRef(0);
   const nextBurstDelayRef = useRef(1.2);
@@ -45,8 +31,8 @@ export function CorridorAtmosphereFX() {
     if (burstTimerRef.current <= 0) {
       nextBurstDelayRef.current -= dt;
       if (nextBurstDelayRef.current <= 0 && quality.tier > 0) {
-        const idx = Math.floor(Math.random() * SPARK_EMITTERS.length);
-        const [ex, ey, ez, nx, nz] = SPARK_EMITTERS[idx];
+        const idx = Math.floor(Math.random() * emitters.length);
+        const [ex, ey, ez, nx, nz] = emitters[idx];
 
         if (sparkPointsRef.current) {
           const posAttr = sparkPointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
