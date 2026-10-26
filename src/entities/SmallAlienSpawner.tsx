@@ -9,7 +9,7 @@ import { BALANCE } from '../data/balance';
 import { moveConstrained } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
 import { pickSpawnNode } from '../systems/waveDirector';
-import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
+import { sharedImpactFx } from './fx/sharedImpactFx';
 import { animateFace, animateWorm, AnimMode } from './SmallAlienAnim';
 import { buildSmallAlienAssets } from './small/smallAssets';
 import { meltScale, restoreMelt, tintMelt } from './fx/meltTint';
@@ -58,8 +58,7 @@ function animationMode(e: SmallAlienSim): AnimMode {
 export function SmallAlienSpawner() {
   const fhGltf = useGLTF('/models/facehugger.glb'),
     cbGltf = useGLTF('/models/chestburster.glb');
-  const rootRef = useRef<THREE.Group>(null),
-    fxRef = useRef<ImpactFXHandle>(null);
+  const rootRef = useRef<THREE.Group>(null);
   const lastRunIdRef = useRef(useGameStore.getState().runId);
   const entityRef = useRef<SmallAlienSim>(createSmallSim());
 
@@ -96,7 +95,7 @@ export function SmallAlienSpawner() {
       applyHit: (_id, pt, origin, dir) => {
         const e = entityRef.current;
         const isKill = (e.hp -= BALANCE.SMALL_ALIEN.DAMAGE_PER_HIT) <= 0;
-        fxRef.current?.triggerImpact(pt, origin, dir, isKill);
+        sharedImpactFx.current?.triggerImpact(pt, origin, dir, isKill);
         moveConstrained(e, e.x + dir.x * 0.16, e.z + dir.z * 0.16, 0.2);
         AudioManager.play3D(Math.random() > 0.5 ? 'bullet_flesh1' : 'bullet_flesh2', pt.x, pt.y, pt.z, 0.9, 1.05);
         AudioManager.play3D('acid_fizz', pt.x, pt.y, pt.z, 0.75, 1.15);
@@ -106,7 +105,7 @@ export function SmallAlienSpawner() {
           e.y = 0.0;
           AudioManager.play3D('xeno_gib1', e.x, 0.2, e.z, 0.88, 1.2);
           AudioManager.play3D('acid_burn', e.x, 0.1, e.z, 0.82, 1.1);
-          fxRef.current?.triggerAcidPool(e.x, e.z, 0.68);
+          sharedImpactFx.current?.triggerAcidPool(e.x, e.z, 0.68);
           useGameStore.getState().registerKill('small');
         }
       }
@@ -204,11 +203,7 @@ export function SmallAlienSpawner() {
     }
   });
 
-  return (
-    <group ref={rootRef} name="SmallAlienContainer">
-      <XenomorphImpactFX ref={fxRef} />
-    </group>
-  );
+  return <group ref={rootRef} name="SmallAlienContainer"></group>;
 }
 useGLTF.preload('/models/facehugger.glb');
 useGLTF.preload('/models/chestburster.glb');

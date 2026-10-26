@@ -7,6 +7,8 @@ import { PlayerController } from './entities/PlayerController';
 import { PulseRifle } from './entities/PulseRifle';
 import { XenomorphPool } from './entities/XenomorphPool';
 import { SmallAlienSpawner } from './entities/SmallAlienSpawner';
+import { XenomorphImpactFX } from './entities/XenomorphImpactFX';
+import { sharedImpactFx } from './entities/fx/sharedImpactFx';
 import { WallImpactFX } from './entities/WallImpactFX';
 import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
@@ -60,6 +62,7 @@ export function App() {
             <PlayerController />
             <PulseRifle />
             <MotionTracker />
+            <XenomorphImpactFX ref={sharedImpactFx} />
             <XenomorphPool />
             <SmallAlienSpawner />
             <VRHud />

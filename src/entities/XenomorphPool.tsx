@@ -16,7 +16,7 @@ import {
   pickSpawnNode
 } from '../systems/waveDirector';
 import type { GameRules } from '../data/difficulty';
-import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
+import { sharedImpactFx } from './fx/sharedImpactFx';
 import { POOL_SIZE, PooledXenomorph, sanitizeClips } from './XenoTypes';
 import { buildXenoPool, resetXenoPool, spawnXeno } from './xeno/xenoPool';
 import { stepXenoFootsteps } from './xeno/xenoSteps';
@@ -81,8 +81,7 @@ function ambientHiss(pool: PooledXenomorph[]): void {
 
 export function XenomorphPool() {
   const { scene, animations } = useGLTF('/models/xenomorph.glb');
-  const containerRef = useRef<THREE.Group>(null),
-    fxRef = useRef<ImpactFXHandle>(null);
+  const containerRef = useRef<THREE.Group>(null);
   const spawnCooldownRef = useRef<number>(BALANCE.XENO_POOL.FIRST_SPAWN_DELAY),
     hissTimerRef = useRef(3.5),
     lastSpawnIndexRef = useRef(-1),
@@ -108,7 +107,7 @@ export function XenomorphPool() {
   }, [pool, queen]);
 
   useEffect(() => {
-    const xenoProvider = createXenoProvider(pool, () => fxRef.current, deathCounter.current);
+    const xenoProvider = createXenoProvider(pool, () => sharedImpactFx.current, deathCounter.current);
     CombatSystem.registerProvider('xeno', xenoProvider);
     return () => CombatSystem.unregisterProvider('xeno');
   }, [pool]);
@@ -213,11 +212,7 @@ export function XenomorphPool() {
     spawnCooldownRef.current = scaledSpawnInterval(phase, rules);
   }
 
-  return (
-    <group ref={containerRef} name="XenomorphPoolContainer">
-      <XenomorphImpactFX ref={fxRef} />
-    </group>
-  );
+  return <group ref={containerRef} name="XenomorphPoolContainer"></group>;
 }
 
 /** Turns one frame of AI events into audio and player damage. */
