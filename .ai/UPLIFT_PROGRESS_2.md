@@ -41,7 +41,7 @@ Plan: `.ai/UPLIFT_PLAN_2.md`. Baseline `fb94bfb`, score 64/100.
 - [x] P8.4 `useDisposeOnUnmount` on the FX components; `BgmPlayer` split out of `AudioManager`
 
 ## Phase 9 (branch uplift/p9-tests-ci): COMPLETE
-- [x] P9.1 footstep and enemy-step tests; coverage include list widened (263 unit tests at the end of phase 10)
+- [x] P9.1 footstep and enemy-step tests; coverage include list widened (264 unit tests at the end of phase 10)
 - [x] P9.2 e2e on every push and PR with a report artifact; two avoidable smoke sleeps replaced; speed-test lower bound relaxed
 - [x] P9.3 read-only token, concurrency, pinned third-party actions, Gradle wrapper validation, `engines` and `.nvmrc`
 - [x] P9.4 `vercel.json` cache and security headers, extensionless-only rewrite, config test

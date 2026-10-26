@@ -91,7 +91,7 @@ src/
 └── ui/                        2D overlays and VR menus
     ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal, DamageFlashOverlay (+ useFocusTrap)
     └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher, wrapText
-tests/   Vitest suites (263 tests: logic, systems, UI models, step sounds, budgets, credits, hosting config)
+tests/   Vitest suites (264 tests: logic, systems, UI models, step sounds, budgets, credits, hosting config)
 e2e/     Playwright (smoke, mobile, vr)
 scripts/ compress-audio, check-budgets, list-asset-metadata, tick-progress
 docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)

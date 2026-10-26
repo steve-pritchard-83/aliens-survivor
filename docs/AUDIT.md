@@ -12,7 +12,7 @@ Baseline audit: 25 Oct 2026 at commit `ffa46eb` (**48 / 100**). Re-scored after 
 | Performance (Quest 2) | 15 | 6.0 | 8.0 | BVH wall raycasts, allocation-free hot paths, 15.9 → 10.6 MB precache, chunk split, tiers; not yet measured on device |
 | Architecture | 10 | 6.5 | 8.5 | Query/resolve combat, pure `systems/`, `*Sim`/`*AI` modules, single balance source |
 | Code quality | 10 | 5.0 | 8.5 | Lint-enforced size and style, unpacked code, shared pathing, no empty `catch` |
-| Testing | 10 | 3.0 | 8.5 | 8 → 263 unit tests, 86.5% line coverage on the logic layers, 18 browser tests including emulated Quest 3 |
+| Testing | 10 | 3.0 | 8.5 | 8 → 264 unit tests, 86.5% line coverage on the logic layers, 18 browser tests including emulated Quest 3 |
 | CI/CD | 8 | 5.0 | 7.0 | `verify` gate, e2e job, budgets, signed-APK workflow (not yet run on GitHub) |
 | Documentation | 8 | 5.0 | 8.5 | HANDOFF/CONTEXT/CONVENTIONS rewritten from the code, ADRs, credits, audit record |
 | UX and accessibility | 10 | 5.0 | 8.0 | VR menus, volumes, vignette, seated mode, optional PWA prompt, labelled settings, zoomable menus |
@@ -73,7 +73,7 @@ A second audit at commit `fb94bfb` scored **64 / 100** on the same ten areas (ea
 | Performance (Quest 2) | 7.0 | 7.5 | HUD re-render fix, allocation-free hot paths, one FX instance, single service-worker download, VR panel redraw at 4 Hz; **not measured on a device** |
 | Architecture | 8.0 | 8.5 | Numbers in `balance.ts`, map dressing on the level, pool provider and music split out |
 | Code quality | 7.5 | 8.5 | Dead code and duplicates removed, resources freed on unmount, size limit restored |
-| Testing | 7.0 | 8.0 | 263 unit tests, widened coverage include list, footstep and hosting-config tests; the browser suite still relies on documented holds and one loosened bound |
+| Testing | 7.0 | 8.0 | 264 unit tests, widened coverage include list, footstep and hosting-config tests; the browser suite still relies on documented holds and one loosened bound |
 | CI/CD | 6.0 | 7.5 | e2e on every PR and push, read-only token, concurrency, pinned actions, wrapper validation, Node pinned (**not yet observed on GitHub**) |
 | Documentation | 6.0 | 8.0 | Encoding repaired and guarded by a test, stamps, counts and layout updated |
 | UX and accessibility | 6.5 | 8.0 | Focus trap, dialog roles, contrast, wrapped VR card text, ENTER VR button |

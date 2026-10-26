@@ -10,7 +10,7 @@
 - **Comfort vignette** in VR that darkens the periphery while turning or walking.
 - Best-kills record shown on the menu and end screens (2D and VR), saved on victory as well as defeat.
 - Credits and provenance file (`CREDITS.md`), IP inventory (`docs/IP_REVIEW.md`), architecture decision records and the audit record.
-- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 263 unit tests and 18 Playwright tests (including an emulated Quest 3).
+- Quality tooling: ESLint, Prettier, a `verify` gate, coverage thresholds, bundle/precache/light budgets, 264 unit tests and 18 Playwright tests (including an emulated Quest 3).
 
 ### Changed (performance)
 - The HUD no longer re-renders on every hit flash or shot; the input snapshot is reused; small-alien animation, kills and spawns allocate nothing per frame; menus stop redrawing the tracker; one shared impact-effect instance serves drones and small aliens; the service worker registers after the first scene loads (the first visit no longer downloads the models twice); audio loading starts before the audio context resumes.
