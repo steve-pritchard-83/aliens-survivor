@@ -1,5 +1,6 @@
 import { AmbienceLoop } from './AmbienceLoop';
-import { SoundKey, SOUND_URLS, BGM_URL, CRITICAL_SOUNDS, HRTF_SOUNDS } from './AudioCatalog';
+import { SoundKey, SOUND_URLS, CRITICAL_SOUNDS, HRTF_SOUNDS } from './AudioCatalog';
+import { BgmPlayer } from './BgmPlayer';
 import { connectLevelled } from './audioLeveller';
 
 export type { SoundKey };
@@ -29,7 +30,7 @@ class WebAudioController {
   private sfxGain: GainNode | null = null;
   private volumes: AudioVolumes = { master: 1, music: 0.8, sfx: 1 };
   private buffers = new Map<SoundKey, AudioBuffer>();
-  private bgmAudio: HTMLAudioElement | null = null;
+  private bgm = new BgmPlayer();
   private ambience = new AmbienceLoop((key, volume, rate) => this.play2D(key, volume, rate));
   private loadingPromise: Promise<void> | null = null;
   private activePulseSrc: AudioBufferSourceNode | null = null;
@@ -70,8 +71,7 @@ class WebAudioController {
   private applyVolumes(): void {
     if (this.masterGain) this.masterGain.gain.value = this.volumes.master;
     if (this.sfxGain) this.sfxGain.gain.value = this.volumes.sfx * SFX_BASE_VOLUME;
-    // BGM plays through an <audio> element, outside the Web Audio graph, so its level is applied directly
-    if (this.bgmAudio) this.bgmAudio.volume = clamp01(BGM_BASE_VOLUME * this.volumes.music * this.volumes.master);
+    this.bgm.setVolume(clamp01(BGM_BASE_VOLUME * this.volumes.music * this.volumes.master));
   }
 
   private async preloadAll(): Promise<void> {
@@ -91,28 +91,20 @@ class WebAudioController {
   }
 
   public startBGM(): void {
-    if (!this.bgmAudio) {
-      this.bgmAudio = new Audio(BGM_URL);
-      this.bgmAudio.loop = true;
-      this.applyVolumes();
-    }
-    this.bgmAudio.play().catch((e) => console.warn('[AudioManager] BGM play blocked', e));
+    this.bgm.start();
   }
 
   public pauseBGM(): void {
-    this.bgmAudio?.pause();
+    this.bgm.pause();
     this.stopPulseLoop(false);
   }
 
   public resumeBGM(): void {
-    this.bgmAudio?.play().catch((e) => console.warn('[AudioManager] BGM resume blocked', e));
+    this.bgm.resume();
   }
 
   public stopBGM(): void {
-    if (this.bgmAudio) {
-      this.bgmAudio.pause();
-      this.bgmAudio.currentTime = 0;
-    }
+    this.bgm.stop();
     this.stopPulseLoop(false);
   }
 
