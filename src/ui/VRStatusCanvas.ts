@@ -139,6 +139,9 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
   const { status, kills, shotsFired, shotsHit, timeRem, pulse, offered, selectedIndex, recordKills, settings } = d;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+  // Every panel is drawn on a 1024 x 512 grid; scale it to whatever size the canvas actually is
+  const scale = canvas.width / 1024;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
   if (status === 'MENU') {
     drawMenuPanel(ctx, d);

@@ -132,7 +132,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...(nextHp <= 0 ? endRunPatch(s, false) : {}),
       hp: nextHp,
       lastDamageTime: now,
-      damageFlash: s.settings.reducedFlash ? 0.25 : 1.0,
+      // A bigger hit flashes harder: a nip is about half strength, a full slash is close to full
+      damageFlash: s.settings.reducedFlash ? 0.25 : Math.min(1, 0.45 + effectiveAmount / 40),
       screenShake: s.settings.reducedFlash ? 0.35 : 1.0,
       status: nextHp <= 0 ? 'DEFEAT' : 'PLAYING'
     });

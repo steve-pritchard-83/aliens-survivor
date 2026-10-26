@@ -24,6 +24,11 @@
 ### Changed (Quest)
 - **Faster entry into VR from the installed app:** the VR session is now requested by a tiny script at the very start of page load, before the bundles download, so a slow first load after an update can no longer lose the browser's click allowance and strand you on the 2D page.
 
+### Changed (clarity and feedback)
+- **Render resolution 70% -> 80%** on flat screens, and Quest 2 in VR 72% -> 80% (Quest 3 stays at 85%). Costs some frame rate; `dpr` in `App.tsx` and `frameBufferScaling` in `core/XRStore.ts` are the two numbers.
+- **Sharper VR panels:** the level-up cards, pause menu and start menu are drawn at 1.5x and sampled without mipmaps, so their text is no longer soft.
+- **Red hit effect:** a blood-red vignette with a faint wash now shows when you are hit, in VR as well as on flat screens, and a bigger hit flashes harder. Reduced-flash mode keeps it gentle.
+
 ### Removed
 - **Bishop and the Ripley player model.** The AI companion (patrol, covering fire, rig) and the hidden first-person body are gone, along with their two models (about 14 MB less to download).
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.

@@ -18,6 +18,7 @@ import { InputManager } from './core/InputManager';
 import { useGameStore } from './core/GameStore';
 import { Platform } from './core/Platform';
 import { ShaderWarmup } from './entities/fx/ShaderWarmup';
+import { HitVignette } from './entities/HitVignette';
 
 // Telemetry is only ever used with ?debug=1, so keep it out of the main bundle
 const DebugTelemetry = lazy(() => import('./ui/DebugTelemetry').then((m) => ({ default: m.DebugTelemetry })));
@@ -45,7 +46,7 @@ export function App() {
       <HUD />
 
       <Canvas
-        dpr={0.7}
+        dpr={0.8}
         camera={{ fov: 62, near: 0.05, far: 65, position: [-0.8, 1.15, 13.0] }}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
       >
@@ -63,6 +64,7 @@ export function App() {
             <SmallAlienSpawner />
             <VRHud />
             <ComfortVignette />
+            <HitVignette />
             <ShaderWarmup />
             {Platform.isDebug && <DebugTelemetry />}
           </Suspense>

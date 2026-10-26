@@ -36,10 +36,15 @@ export class VRStatusPanel {
 
   constructor() {
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 1024;
-    this.canvas.height = 512;
+    // Drawn on a 1024 x 512 design grid at 1.5x, so text has more pixels than the headset can resolve at this distance
+    this.canvas.width = 1536;
+    this.canvas.height = 768;
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
+    // Mipmaps make small text soft when the panel is viewed at an angle; sample the canvas directly instead
+    this.texture.generateMipmaps = false;
+    this.texture.minFilter = THREE.LinearFilter;
+    this.texture.magFilter = THREE.LinearFilter;
   }
 
   /** Redraws when the inputs change, otherwise every REDRAW_SECONDS to keep the pulse animation alive. */

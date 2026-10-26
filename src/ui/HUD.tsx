@@ -120,7 +120,8 @@ export function HUD() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: `radial-gradient(circle, transparent 40%, rgba(220, 15, 15, ${damageFlash * 0.68}) 100%)`,
+            // A faint red wash over the whole view, and blood-red closing in from the edges
+            background: `radial-gradient(ellipse at center, rgba(160, 0, 0, ${damageFlash * 0.16}) 0%, rgba(170, 5, 5, ${damageFlash * 0.2}) 35%, rgba(190, 8, 8, ${damageFlash * 0.85}) 100%)`,
             pointerEvents: 'none'
           }}
         />

@@ -16,7 +16,7 @@ export const xrStore = createXRStore({
   foveation: 1.0,
   frameRate: () => 72,
   // three.js cannot change framebuffer scale mid-session, so pick it once per device class
-  frameBufferScaling: (max: number) => Math.min(max, Platform.isQuest3 ? 0.85 : 0.72),
+  frameBufferScaling: (max: number) => Math.min(max, Platform.isQuest3 ? 0.85 : 0.8),
   customSessionInit: {
     requiredFeatures: ['local-floor'],
     optionalFeatures: ['hand-tracking']
