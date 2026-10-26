@@ -3,8 +3,8 @@ import { BALANCE } from '../data/balance';
 import { isSpawnVisibleToPlayer } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
 
-/** First phase in which a Alien Queen boss may appear. */
-export const BOSS_FIRST_PHASE = 3;
+/** First phase in which an Alien Queen boss may appear. */
+export const BOSS_FIRST_PHASE = BALANCE.QUEEN.FIRST_PHASE;
 
 /** A boss spawns at most once per phase (phases 3 and 4), and never while another boss is alive. */
 export function shouldSpawnBoss(phase: WavePhase, spawnedPhases: ReadonlySet<number>, bossAlive: boolean): boolean {

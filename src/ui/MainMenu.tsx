@@ -4,6 +4,7 @@ import { DIFFICULTY, DIFFICULTY_ORDER, DifficultyId } from '../data/difficulty';
 import type { ScoreEntry } from '../systems/scoring';
 import type { RunSummary } from '../core/GameTypes';
 import { Leaderboard } from './Leaderboard';
+import { BALANCE } from '../data/balance';
 
 const DIFFICULTY_CHOICES: readonly Choice<DifficultyId>[] = DIFFICULTY_ORDER.map((id) => ({
   value: id,
@@ -43,7 +44,7 @@ export function MainMenu({
   const intro = vrCapable
     ? 'VR HEADSET READY. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready.'
     : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.';
-  const summary = `SURVIVAL TIME: ${formatTimer(300 - stats.timeRemaining)} | XENOMORPHS ELIMINATED: ${stats.kills} | ACCURACY: ${stats.accuracy}% | BEST: ${stats.best}`;
+  const summary = `SURVIVAL TIME: ${formatTimer(BALANCE.MISSION_DURATION_SECONDS - stats.timeRemaining)} | XENOMORPHS ELIMINATED: ${stats.kills} | ACCURACY: ${stats.accuracy}% | BEST: ${stats.best}`;
 
   return (
     <div

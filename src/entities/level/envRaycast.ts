@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh';
 import { CombatSystem, WallHitResult } from '../../core/CombatEvents';
+import { BALANCE } from '../../data/balance';
 
-const MAX_RANGE = 52.0;
+const MAX_RANGE = BALANCE.RANGES.ENV_RAY_MAX;
 
 const _raycaster = new THREE.Raycaster();
 const _hits: THREE.Intersection[] = [];

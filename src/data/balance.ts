@@ -44,10 +44,24 @@ export const BALANCE = {
     SLASH_DAMAGE: 34,
     SLASH_INTERVAL: 1.15,
     LEAP_MIN_DIST: 3.2,
-    LEAP_MAX_DIST: 8.5
+    LEAP_MAX_DIST: 8.5,
+    /** Chance per second (while a leap is possible) that a pursuing drone leaps. */
+    LEAP_RATE_PER_SECOND: 1.4,
+    /** Distances (m): starts a slash, a leap counts as a hit, and a slashing drone gives chase again. */
+    ATTACK_RANGE: 1.75,
+    LEAP_HIT_RANGE: 1.65,
+    DISENGAGE_RANGE: 2.05,
+    /** Seconds before the first slash after closing in, and after a leap lands. */
+    ATTACK_FIRST_DELAY: 0.35,
+    ATTACK_AFTER_LEAP_DELAY: 0.75,
+    /** Keep-out distance from corridor walls (m). */
+    WALL_MARGIN: 0.24,
+    /** A leg comes off when HP first drops below this fraction of maximum. */
+    LEG_SEVER_HP_FRACTION: 0.45
   },
   /** The Alien Queen boss (alien_queen.glb): one per phase 3 and 4, shown in place of a drone on a pool slot. */
   QUEEN: {
+    FIRST_PHASE: 3,
     HP: 1100,
     SPEED: 3.1,
     /** Metres per model unit: the authored model is 295 units tall, so about 2.1 m (the corridor is 2.5 m high). */
@@ -63,7 +77,22 @@ export const BALANCE = {
     DAMAGE_PER_HIT: 30,
     LEAP_DAMAGE: 26,
     BITE_DAMAGE: 22,
-    FIRST_SPAWN_DELAY: 7.0
+    FIRST_SPAWN_DELAY: 7.0,
+    SPEED_FACEHUGGER: 4.65,
+    SPEED_CHESTBURSTER: 4.25,
+    /** Leap distance window (m) and cooldown (s). */
+    LEAP_MIN_DIST: 1.6,
+    LEAP_MAX_DIST: 6.2,
+    LEAP_COOLDOWN: 2.2,
+    /** Distances (m): starts or lands a bite, and a biting alien gives chase again. */
+    BITE_RANGE: 1.45,
+    DISENGAGE_RANGE: 1.75,
+    BITE_INTERVAL: 0.95,
+    /** Hit sphere radius (m). */
+    HIT_RADIUS: 0.48,
+    /** Seconds until the next small alien is allowed: minimum plus a random spread. */
+    RESPAWN_MIN_SECONDS: 4.5,
+    RESPAWN_SPREAD_SECONDS: 3.5
   },
   XP: {
     DRONE_KILL: 25,
@@ -73,6 +102,27 @@ export const BALANCE = {
   },
   TRACKER: {
     BASE_RANGE: 25.0
+  },
+  /** A held-back level-up opens after a lull; see systems/levelUpGate.ts. */
+  LEVEL_UP_GATE: {
+    /** A hostile closer than this (m) counts as combat. */
+    CALM_RADIUS: 14,
+    /** The area must stay clear this long (s) before the cards open. */
+    CALM_SECONDS: 1.5,
+    /** Safety valve: the cards open after this long (s) even if the fight never lets up. */
+    MAX_WAIT_SECONDS: 60
+  },
+  /**
+   * Distances (m) used by shooting and auto-aim. They differ on purpose: the environment ray reaches the far end of
+   * the longest hall, auto-aim only helps on targets worth correcting for, and the weapon's own range
+   * (data/weapons.ts) is what bullets actually travel.
+   */
+  RANGES: {
+    ENV_RAY_MAX: 52,
+    /** Wall distance assumed by the auto-aim probe when no wall is hit. */
+    AUTO_AIM_OPEN_DISTANCE: 55,
+    AUTO_AIM_DRONE: 24,
+    AUTO_AIM_SMALL: 18
   },
   /** Leaderboard score weights (see systems/scoring.ts). */
   SCORE: {

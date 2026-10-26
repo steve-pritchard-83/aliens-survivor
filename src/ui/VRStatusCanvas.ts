@@ -3,6 +3,7 @@ import { GameSettings, RunSummary } from '../core/GameTypes';
 import { VR_MENU_ROWS, valueText } from './vrMenuModel';
 import { DIFFICULTY } from '../data/difficulty';
 import { wrapText } from './wrapText';
+import { BALANCE } from '../data/balance';
 
 export type VRPanelStatus = 'MENU' | 'DEFEAT' | 'VICTORY' | 'LEVEL_UP' | 'PAUSED';
 
@@ -212,7 +213,9 @@ export function drawVRStatusPanel(canvas: HTMLCanvasElement, d: VRPanelData): vo
   const mainColor = isDefeat ? '#ff3333' : '#00ff88';
   const bgColor = isDefeat ? 'rgba(22, 6, 6, 0.94)' : 'rgba(4, 22, 12, 0.94)';
   const acc = shotsFired > 0 ? Math.round((shotsHit / shotsFired) * 100) : 0;
-  const dur = isDefeat ? fmtTime(300 - timeRem) : '05:00';
+  const dur = isDefeat
+    ? fmtTime(BALANCE.MISSION_DURATION_SECONDS - timeRem)
+    : fmtTime(BALANCE.MISSION_DURATION_SECONDS);
 
   ctx.clearRect(0, 0, 1024, 512);
   ctx.fillStyle = bgColor;

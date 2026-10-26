@@ -93,7 +93,7 @@ export function spawnSmall(
   e.y = Math.min(0.6, nodeY);
   e.z = nodeZ;
   e.yaw = Math.atan2(px - nodeX, pz - nodeZ);
-  e.speed = isFacehugger ? 4.65 : 4.25;
+  e.speed = isFacehugger ? BALANCE.SMALL_ALIEN.SPEED_FACEHUGGER : BALANCE.SMALL_ALIEN.SPEED_CHESTBURSTER;
   e.targetCorner = -1;
   e.leapCooldown = 0.4;
   e.attackCooldown = 0;
@@ -165,15 +165,20 @@ export function stepSmall(
   } else if (e.state === 'PURSUING') {
     e.leapCooldown = Math.max(0, e.leapCooldown - dt);
     const sameHall = getHallId(e.x, e.z) === getHallId(px, pz);
-    if (sameHall && e.leapCooldown <= 0 && dist >= 1.6 && dist <= 6.2) {
+    if (
+      sameHall &&
+      e.leapCooldown <= 0 &&
+      dist >= BALANCE.SMALL_ALIEN.LEAP_MIN_DIST &&
+      dist <= BALANCE.SMALL_ALIEN.LEAP_MAX_DIST
+    ) {
       e.state = 'LEAPING';
       e.stateTimer = LEAP_SECONDS;
-      e.leapCooldown = 2.2;
+      e.leapCooldown = BALANCE.SMALL_ALIEN.LEAP_COOLDOWN;
       const inv = 1 / Math.max(0.1, dist);
       e.leapVx = (px - e.x) * inv * (e.speed * 2.4);
       e.leapVz = (pz - e.z) * inv * (e.speed * 2.4);
       e.yaw = Math.atan2(e.leapVx, e.leapVz);
-    } else if (dist <= 1.45) {
+    } else if (dist <= BALANCE.SMALL_ALIEN.BITE_RANGE) {
       e.state = 'ATTACKING';
       e.attackCooldown = 0.25;
     } else {
@@ -185,7 +190,7 @@ export function stepSmall(
     e.y = Math.sin(u * Math.PI) * (e.kind === 'FACEHUGGER' ? 1.35 : 0.88);
     pose.pitch = (u - 0.5) * -0.6;
     moveConstrained(e, e.x + e.leapVx * dt, e.z + e.leapVz * dt, 0.18);
-    if (dist <= 1.45) {
+    if (dist <= BALANCE.SMALL_ALIEN.BITE_RANGE) {
       e.y = 0.0;
       pose.pitch = 0;
       e.state = 'ATTACKING';
@@ -199,9 +204,9 @@ export function stepSmall(
     }
   } else if (e.state === 'ATTACKING') {
     e.yaw = Math.atan2(px - e.x, pz - e.z);
-    if (dist > 1.75) e.state = 'PURSUING';
+    if (dist > BALANCE.SMALL_ALIEN.DISENGAGE_RANGE) e.state = 'PURSUING';
     else if ((e.attackCooldown -= dt) <= 0) {
-      e.attackCooldown = 0.95;
+      e.attackCooldown = BALANCE.SMALL_ALIEN.BITE_INTERVAL;
       ev.playerDamage = BALANCE.SMALL_ALIEN.BITE_DAMAGE;
     }
   } else {

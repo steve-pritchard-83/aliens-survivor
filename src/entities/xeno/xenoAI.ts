@@ -25,7 +25,7 @@ function turnToward(x: PooledXenomorph, dx: number, dz: number, rate: number): v
 }
 
 /** Chance per second, once a drone is in range with its cooldown spent, that it chooses to leap (about 0.7 s average). */
-const LEAP_RATE_PER_SECOND = 1.4;
+const LEAP_RATE_PER_SECOND = BALANCE.XENO_POOL.LEAP_RATE_PER_SECOND;
 
 function randomLeapClip(): string {
   return Math.random() < 0.6 ? CLIP_LEAP : ATK_CLIPS[0];
@@ -61,7 +61,7 @@ function pursue(x: PooledXenomorph, px: number, pz: number, dt: number, dist: nu
     dT = Math.hypot(dx, dz);
   if (dT > 0.04) {
     turnToward(x, dx, dz, Math.min(1, dt * 12));
-    moveConstrained(x, x.x + (dx / dT) * x.speed * dt, x.z + (dz / dT) * x.speed * dt, 0.24);
+    moveConstrained(x, x.x + (dx / dT) * x.speed * dt, x.z + (dz / dT) * x.speed * dt, BALANCE.XENO_POOL.WALL_MARGIN);
   }
 }
 
@@ -98,9 +98,9 @@ function stepPursuing(x: PooledXenomorph, px: number, pz: number, dt: number, di
     x.yaw = Math.atan2(x.leapVx, x.leapVz);
     playClip(x, randomLeapClip(), false, 1.15 + Math.random() * 0.6, Math.random() * 0.12);
     ev.leapStarted = true;
-  } else if (dist <= 1.75) {
+  } else if (dist <= BALANCE.XENO_POOL.ATTACK_RANGE) {
     x.state = 'ATTACKING';
-    x.attackCooldown = 0.35;
+    x.attackCooldown = BALANCE.XENO_POOL.ATTACK_FIRST_DELAY;
     playClip(x, randomAttackClip(), true, 1.05);
   } else {
     pursue(x, px, pz, dt, dist, xH, pH);
@@ -112,12 +112,12 @@ function stepLeaping(x: PooledXenomorph, dt: number, dist: number, pose: XenoPos
   const u = 1.0 - Math.max(0, x.stateTimer / x.leapDuration);
   x.y = Math.sin(u * Math.PI) * x.leapArc;
   pose.pitch = Math.cos(u * Math.PI) * -0.52;
-  moveConstrained(x, x.x + x.leapVx * dt, x.z + x.leapVz * dt, 0.24);
-  if (dist <= 1.65) {
+  moveConstrained(x, x.x + x.leapVx * dt, x.z + x.leapVz * dt, BALANCE.XENO_POOL.WALL_MARGIN);
+  if (dist <= BALANCE.XENO_POOL.LEAP_HIT_RANGE) {
     x.y = 0.0;
     pose.pitch = 0;
     x.state = 'ATTACKING';
-    x.attackCooldown = 0.75;
+    x.attackCooldown = BALANCE.XENO_POOL.ATTACK_AFTER_LEAP_DELAY;
     ev.playerDamage = BALANCE.XENO_POOL.LEAP_DAMAGE;
     ev.leapHit = true;
     playClip(x, randomAttackClip(), true, 1.0 + Math.random() * 0.2);
@@ -131,7 +131,7 @@ function stepLeaping(x: PooledXenomorph, dt: number, dist: number, pose: XenoPos
 
 function stepAttacking(x: PooledXenomorph, px: number, pz: number, dt: number, dist: number, ev: XenoEvents): void {
   x.yaw = Math.atan2(px - x.x, pz - x.z);
-  if (dist > 2.05) {
+  if (dist > BALANCE.XENO_POOL.DISENGAGE_RANGE) {
     x.state = 'PURSUING';
     playClip(x, legsIntact(x) ? CLIP_RUN : CLIP_WALK, true, 1.0);
   } else if ((x.attackCooldown -= dt) <= 0) {

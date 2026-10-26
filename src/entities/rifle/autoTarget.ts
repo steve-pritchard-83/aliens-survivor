@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import type { ActiveThreat } from '../../core/GameTypes';
 import { CombatSystem } from '../../core/CombatEvents';
+import { BALANCE } from '../../data/balance';
+
+const DRONE_RANGE_SQ = BALANCE.RANGES.AUTO_AIM_DRONE * BALANCE.RANGES.AUTO_AIM_DRONE;
+const SMALL_RANGE_SQ = BALANCE.RANGES.AUTO_AIM_SMALL * BALANCE.RANGES.AUTO_AIM_SMALL;
 
 const _losDir = new THREE.Vector3();
 
@@ -31,7 +35,7 @@ export function checkAutoTarget(
   // Side-effect free probe: never applies damage (see CombatSystem.queryTarget vs resolveShot)
   if (CombatSystem.queryTarget(camPos, camDir).kind === 'target') return true;
   const envProbe = CombatSystem.fireEnvironmentRay(camPos, camDir);
-  const wallDist = envProbe ? camPos.distanceTo(envProbe.point) : 55.0;
+  const wallDist = envProbe ? camPos.distanceTo(envProbe.point) : BALANCE.RANGES.AUTO_AIM_OPEN_DISTANCE;
 
   for (let i = 0; i < threats.length; i++) {
     const t = threats[i];
@@ -39,7 +43,7 @@ export function checkAutoTarget(
     const dx = t.x - camPos.x,
       dz = t.z - camPos.z,
       d2 = dx * dx + dz * dz;
-    if (d2 > 0.4 && d2 < 576) {
+    if (d2 > 0.4 && d2 < DRONE_RANGE_SQ) {
       const dist = Math.sqrt(d2);
       if (dist < wallDist && (dx * camDir.x + dz * camDir.z) / dist > 0.982) {
         _losDir.set(dx, 0.9 - camPos.y, dz).normalize();
@@ -53,7 +57,7 @@ export function checkAutoTarget(
       dz = small.z - camPos.z,
       d2 = dx * dx + dz * dz,
       dist = Math.sqrt(d2);
-    if (d2 > 0.2 && d2 < 324 && dist < wallDist && (dx * camDir.x + dz * camDir.z) / dist > 0.98) {
+    if (d2 > 0.2 && d2 < SMALL_RANGE_SQ && dist < wallDist && (dx * camDir.x + dz * camDir.z) / dist > 0.98) {
       _losDir.set(dx, 0.25 - camPos.y, dz).normalize();
       const losWall = CombatSystem.fireEnvironmentRay(camPos, _losDir);
       if (!losWall || camPos.distanceTo(losWall.point) >= dist - 0.25) return true;

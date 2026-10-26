@@ -1,12 +1,14 @@
 // A level-up must not freeze the game in the middle of a fight. When the XP line is crossed under pressure the
 // level-up is held back, and the card screen opens at the next lull. Pure logic, no React or three.js.
 
+import { BALANCE } from '../data/balance';
+
 /** A hostile closer than this (metres) counts as combat. */
-export const CALM_RADIUS = 14;
+export const CALM_RADIUS = BALANCE.LEVEL_UP_GATE.CALM_RADIUS;
 /** The area must stay clear this long (seconds) before the cards open. */
-export const CALM_SECONDS = 1.5;
+export const CALM_SECONDS = BALANCE.LEVEL_UP_GATE.CALM_SECONDS;
 /** Safety valve: a held-back level-up opens after this long even if the fight never lets up (seconds). */
-export const MAX_WAIT_SECONDS = 60;
+export const MAX_WAIT_SECONDS = BALANCE.LEVEL_UP_GATE.MAX_WAIT_SECONDS;
 
 interface Hostile {
   x: number;

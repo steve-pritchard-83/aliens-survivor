@@ -77,7 +77,12 @@ export function applyXenoHit(
   const isKill = (t.hp -= damageAgainstXeno(dmg.amount, t.state === 'SPAWNING', t.isBoss)) <= 0;
   fx?.triggerImpact(point, origin, dir, isKill);
   moveConstrained(t, t.x + dir.x * 0.12, t.z + dir.z * 0.12, 0.25);
-  if (prevHp > t.maxHp * 0.45 && t.hp <= t.maxHp * 0.45 && relY < 0.4) severLimb(t, SLOT_LEFT_LEG, origin, dir, fx);
+  if (
+    prevHp > t.maxHp * BALANCE.XENO_POOL.LEG_SEVER_HP_FRACTION &&
+    t.hp <= t.maxHp * BALANCE.XENO_POOL.LEG_SEVER_HP_FRACTION &&
+    relY < 0.4
+  )
+    severLimb(t, SLOT_LEFT_LEG, origin, dir, fx);
   if (isKill) {
     if (relY > 0.85) severLimb(t, SLOT_HEAD, origin, dir, fx);
     else if (Math.random() < 0.4) severLimb(t, Math.random() < 0.5 ? 0 : 1, origin, dir, fx);

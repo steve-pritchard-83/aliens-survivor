@@ -81,7 +81,7 @@ export function SmallAlienSpawner() {
         if (!e.active || e.state === 'DEAD') return Infinity;
         _ray.set(origin, dir);
         _sphere.center.set(e.x, e.y + 0.25, e.z);
-        _sphere.radius = 0.48;
+        _sphere.radius = BALANCE.SMALL_ALIEN.HIT_RADIUS;
         if (!_ray.intersectSphere(_sphere, _hitVec)) return Infinity;
         const d = origin.distanceTo(_hitVec);
         if (d > maxDist) return Infinity;
@@ -171,7 +171,9 @@ export function SmallAlienSpawner() {
       e.active = false;
       hideAll();
       r.scale.set(1, 1, 1);
-      e.spawnCooldown = (4.5 + Math.random() * 3.5) * state.rules.spawnIntervalMult;
+      e.spawnCooldown =
+        (BALANCE.SMALL_ALIEN.RESPAWN_MIN_SECONDS + Math.random() * BALANCE.SMALL_ALIEN.RESPAWN_SPREAD_SECONDS) *
+        state.rules.spawnIntervalMult;
       clearSmallThreat(state);
       return;
     }
