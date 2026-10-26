@@ -95,6 +95,8 @@ export function MotionTracker() {
     }
     defeatDrawnRef.current = false;
     if (isSimulationFrozen(state.status)) return;
+    // The tracker is only visible in play; do not redraw and re-upload its texture on the menu or victory screens
+    if (state.status === 'MENU' || state.status === 'VICTORY') return;
 
     const playing = state.status === 'PLAYING';
     const maxRange = state.activeUpgrades.includes('tracker_gain')

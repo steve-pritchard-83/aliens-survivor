@@ -2,7 +2,7 @@ import { useRef, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { constrainToCorridor, constrainToCorridorInto } from '../core/CorridorNav';
+import { constrainToCorridorInto } from '../core/CorridorNav';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
 import { createAcidTextures, buildActualLimbTemplates } from './fx/acidFxAssets';
@@ -45,12 +45,16 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
     const idx = nextPuddleIdxRef.current++ % PUDDLE_POOL_SIZE,
       m = grp.children[idx] as THREE.Mesh;
     if (!m) return;
-    const [cx, cz] = constrainToCorridor(x, z, 0.22);
-    m.position.set(cx, 0.015 + (idx % 5) * 0.001, cz);
+    constrainToCorridorInto(x, z, 0.22, _gibXZ);
+    m.position.set(_gibXZ.x, 0.015 + (idx % 5) * 0.001, _gibXZ.z);
     m.rotation.set(-Math.PI / 2, 0, Math.random() * Math.PI * 2);
     m.scale.setScalar(0.12);
     m.visible = true;
-    Object.assign(puddleState[idx], { active: true, timer: 14.0, maxTimer: 14.0, targetScale: size });
+    const pud = puddleState[idx];
+    pud.active = true;
+    pud.timer = 14.0;
+    pud.maxTimer = 14.0;
+    pud.targetScale = size;
   };
 
   useImperativeHandle(ref, () => ({
@@ -89,20 +93,19 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
       mesh.rotation.set((Math.random() - 0.5) * 0.5, yaw + (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5);
       mesh.scale.set(1, 1, 1);
       mesh.visible = true;
-      Object.assign(gibState[idx], {
-        active: true,
-        xenoId,
-        settled: false,
-        melting: false,
-        meltTimer: 0,
-        meltDuration: 2.2,
-        vx: -dir.x * 0.65 + (Math.random() - 0.5) * 1.4,
-        vy: 1.15 + Math.random() * 0.85,
-        vz: -dir.z * 0.65 + (Math.random() - 0.5) * 1.4,
-        rx: (Math.random() - 0.5) * 7,
-        ry: (Math.random() - 0.5) * 8,
-        rz: (Math.random() - 0.5) * 7
-      });
+      const gib = gibState[idx];
+      gib.active = true;
+      gib.xenoId = xenoId;
+      gib.settled = false;
+      gib.melting = false;
+      gib.meltTimer = 0;
+      gib.meltDuration = 2.2;
+      gib.vx = -dir.x * 0.65 + (Math.random() - 0.5) * 1.4;
+      gib.vy = 1.15 + Math.random() * 0.85;
+      gib.vz = -dir.z * 0.65 + (Math.random() - 0.5) * 1.4;
+      gib.rx = (Math.random() - 0.5) * 7;
+      gib.ry = (Math.random() - 0.5) * 8;
+      gib.rz = (Math.random() - 0.5) * 7;
     },
     startXenoMelt(xenoId, duration) {
       for (let i = 0; i < GIB_POOL_SIZE; i++) {

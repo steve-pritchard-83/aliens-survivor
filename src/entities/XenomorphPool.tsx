@@ -59,6 +59,11 @@ function countActive(pool: PooledXenomorph[]): number {
   return n;
 }
 
+function firstFree(pool: PooledXenomorph[]): PooledXenomorph | null {
+  for (let i = 0; i < pool.length; i++) if (!pool[i].active) return pool[i];
+  return null;
+}
+
 function anyActiveBoss(pool: PooledXenomorph[]): boolean {
   for (let i = 0; i < pool.length; i++) if (pool[i].active && pool[i].isBoss) return true;
   return false;
@@ -149,7 +154,7 @@ export function XenomorphPool() {
       (spawnCooldownRef.current -= dt) <= 0 &&
       activeCount < state.rules.maxConcurrentDrones
     ) {
-      const free = pool.find((x) => !x.active);
+      const free = firstFree(pool);
       if (free) spawnOne(free, phase, px, pz, state.playerYaw, state.rules);
     }
     if ((hissTimerRef.current -= dt) <= 0 && activeCount > 0) {

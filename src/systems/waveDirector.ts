@@ -58,9 +58,11 @@ export function pickSpawnNode(
   }
   const useHidden = count > 0;
   const n = useHidden ? count : fallback.length;
-  const at = (k: number) => (useHidden ? _hidden[k] : fallback[k]);
   const pickedAt = Math.floor(random() * n);
-  let idx = at(pickedAt);
-  if (idx === lastIndex && n > 1) idx = at((pickedAt + 1) % n);
+  let idx = useHidden ? _hidden[pickedAt] : fallback[pickedAt];
+  if (idx === lastIndex && n > 1) {
+    const next = (pickedAt + 1) % n;
+    idx = useHidden ? _hidden[next] : fallback[next];
+  }
   return idx;
 }
