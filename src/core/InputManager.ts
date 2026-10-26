@@ -17,6 +17,17 @@ export interface InputSnapshot {
 export class InputManagerController {
   public mode: InputMode = 'DESKTOP';
   private keys = new Set<string>();
+  private readonly snapshot: InputSnapshot = {
+    mode: 'DESKTOP',
+    moveX: 0,
+    moveZ: 0,
+    lookDeltaX: 0,
+    lookDeltaY: 0,
+    snapTurn: 0,
+    isFiring: false,
+    reloadRequested: false,
+    pointerLocked: false
+  };
   private touchMoveX = 0;
   private touchMoveZ = 0;
   private xrMoveX = 0;
@@ -224,17 +235,17 @@ export class InputManagerController {
     const reloadRequested = this.reloadFlag;
     const snapTurn = this.snapTurnAngle;
 
-    const snap: InputSnapshot = {
-      mode: this.mode,
-      moveX,
-      moveZ,
-      lookDeltaX: Math.max(-0.22, Math.min(0.22, this.lookDX)),
-      lookDeltaY: Math.max(-0.22, Math.min(0.22, this.lookDY)),
-      snapTurn,
-      isFiring,
-      reloadRequested,
-      pointerLocked: this.pointerLocked
-    };
+    // One object reused every call (this runs each frame); callers must copy anything they keep
+    const snap = this.snapshot;
+    snap.mode = this.mode;
+    snap.moveX = moveX;
+    snap.moveZ = moveZ;
+    snap.lookDeltaX = Math.max(-0.22, Math.min(0.22, this.lookDX));
+    snap.lookDeltaY = Math.max(-0.22, Math.min(0.22, this.lookDY));
+    snap.snapTurn = snapTurn;
+    snap.isFiring = isFiring;
+    snap.reloadRequested = reloadRequested;
+    snap.pointerLocked = this.pointerLocked;
 
     this.lookDX = 0;
     this.lookDY = 0;

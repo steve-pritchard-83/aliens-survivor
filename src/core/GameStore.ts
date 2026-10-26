@@ -21,6 +21,8 @@ import {
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase, isSimulationFrozen };
 
+const NO_PATCH = {};
+
 /** Hit-flash fade per second; also applied outside PLAYING so a killing blow cannot freeze the red vignette. */
 export const DAMAGE_FLASH_DECAY = 2.5;
 
@@ -94,7 +96,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ammo,
       isJammed,
       continuousFireTime,
-      ...(nextStatus === 'VICTORY' ? endRunPatch(s, true) : {}),
+      ...(nextStatus === 'VICTORY' ? endRunPatch(s, true) : NO_PATCH),
       damageFlash: Math.max(0, s.damageFlash - dt * DAMAGE_FLASH_DECAY),
       screenShake: Math.max(0, s.screenShake - dt * 4.2)
     });

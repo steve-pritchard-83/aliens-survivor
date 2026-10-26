@@ -14,6 +14,7 @@ import { pwaInstallMode, readPwaDismissed, writePwaDismissed } from './pwaInstal
 import { VictoryScreen } from './VictoryScreen';
 import { MainMenu } from './MainMenu';
 import { StatusBar } from './StatusBar';
+import { DamageFlashOverlay } from './DamageFlashOverlay';
 import { GREEN, INK, solidButton } from './uiStyles';
 
 function isDesktopPointer(inputMode: InputMode): boolean {
@@ -32,10 +33,10 @@ export function HUD() {
   const leaderboard = useGameStore((s) => s.leaderboard);
   // End screens show the board of the difficulty the run was played on; the start menu shows the selected one
   const board = leaderboard[lastRun?.entry.difficulty ?? difficulty];
-  const kills = useGameStore((s) => s.kills),
-    shotsFired = useGameStore((s) => s.shotsFired);
-  const shotsHit = useGameStore((s) => s.shotsHit),
-    damageFlash = useGameStore((s) => s.damageFlash);
+  // Run stats are only shown outside PLAYING, so they are not subscribed to during play (no re-render per shot)
+  const kills = useGameStore((s) => (s.status !== 'PLAYING' ? s.kills : 0)),
+    shotsFired = useGameStore((s) => (s.status !== 'PLAYING' ? s.shotsFired : 0));
+  const shotsHit = useGameStore((s) => (s.status !== 'PLAYING' ? s.shotsHit : 0));
 
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
   const [isQuest] = useState(() => Platform.isQuest);
@@ -132,17 +133,7 @@ export function HUD() {
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
-      {damageFlash > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            // A faint red wash over the whole view, and blood-red closing in from the edges
-            background: `radial-gradient(ellipse at center, rgba(160, 0, 0, ${damageFlash * 0.16}) 0%, rgba(170, 5, 5, ${damageFlash * 0.2}) 35%, rgba(190, 8, 8, ${damageFlash * 0.85}) 100%)`,
-            pointerEvents: 'none'
-          }}
-        />
-      )}
+      <DamageFlashOverlay />
       {status === 'PLAYING' && levelUpPending && (
         <div
           style={{
