@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useFocusTrap } from './useFocusTrap';
 import { useGameStore } from '../core/GameStore';
 
 export function LevelUpModal() {
@@ -17,10 +18,17 @@ export function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [status, offered, chooseUpgrade]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, status === 'LEVEL_UP' && offered.length > 0);
+
   if (status !== 'LEVEL_UP' || offered.length === 0) return null;
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="levelup-title"
       onClick={(e) => e.stopPropagation()}
       style={{
         position: 'fixed',
@@ -38,7 +46,10 @@ export function LevelUpModal() {
       <div style={{ color: '#00ff88', fontSize: 13, letterSpacing: 3, marginBottom: 6 }}>
         WEYLAND-YUTANI // USCM TACTICAL PROMOTION
       </div>
-      <h2 style={{ color: '#ffffff', fontSize: 'clamp(26px, 5vw, 42px)', letterSpacing: 4, margin: '0 0 24px 0' }}>
+      <h2
+        id="levelup-title"
+        style={{ color: '#ffffff', fontSize: 'clamp(26px, 5vw, 42px)', letterSpacing: 4, margin: '0 0 24px 0' }}
+      >
         LEVEL {level} FIELD UPGRADE
       </h2>
 

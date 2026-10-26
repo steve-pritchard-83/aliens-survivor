@@ -109,7 +109,7 @@ Severity: **H** high, **M** medium, **L** low. Every H and most M items were con
 | F28 | H | e2e never runs on push/PR (`ci.yml:31` `if: workflow_dispatch`) while README says it does; 20+ fixed `waitForTimeout` sleeps make it flaky. | P9.2 |
 | F29 | M | CI: no `permissions` block in `ci.yml`, no `concurrency`, no failure artifacts, no Gradle wrapper validation, third-party `android-actions/setup-android@v3` unpinned in the signing job; no `engines`/`.nvmrc`. | P9.3 |
 | F30 | M | `vercel.json`: no cache headers (sw.js/index/manifest should be `no-cache`; hashed `/assets/*` immutable), catch-all rewrite turns missing `.glb`/`.m4a` into 200 `index.html`, no security headers. | P9.4 |
-| F31 | H | `HANDOFF.md` has a BOM and 37 double-encoded lines (`â‰¤`, `â”œâ”€â”€`); `CHANGELOG.md` has a BOM. | P10.1 |
+| F31 | H | `HANDOFF.md` has a BOM and 37 double-encoded lines (`≤`, `├──`); `CHANGELOG.md` has a BOM. | P10.1 |
 | F32 | M | Doc drift: HANDOFF stamp `b99ba2f`; "226 tests"/"87% coverage" (now 234 / 83.6%); README claims e2e runs on push; Bishop items open in `docs/AUDIT.md:55` and `.ai/UPLIFT_PROGRESS.md`; `CREDITS.md:9` says nine shipped models (seven); `.ai/ASSET_MANIFEST.md:92` lists torch clicks; HitVignette and level-up gate undocumented. | P10.2 |
 | F33 | L | Accessibility: SettingsPanel `aria-modal` without focus move/trap; LevelUpModal lacks `role="dialog"`; hint text and build id at ~3:1 contrast (`uiStyles.ts:47`); intro copy says "META QUEST 2 DETECTED" on Quest 3. | P10.4 |
 | L1 | Legal | CC BY 4.0 attribution for seven shipped models still not shown; franchise IP questions open (`docs/IP_REVIEW.md`). | **USER DECISION** (see §8) |

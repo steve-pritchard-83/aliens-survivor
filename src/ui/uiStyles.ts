@@ -44,6 +44,7 @@ export const hintStyle: CSSProperties = {
   bottom: 18,
   fontSize: 11,
   letterSpacing: 1.5,
-  color: 'rgba(0, 255, 136, 0.45)',
+  // 0.75 keeps the hint above 4.5:1 against the near-black background
+  color: 'rgba(0, 255, 136, 0.75)',
   pointerEvents: 'none'
 };

@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { useGameStore } from '../core/GameStore';
+import { useFocusTrap } from './useFocusTrap';
 import { SNAP_ANGLE_OPTIONS, VIGNETTE_OPTIONS, MOUSE_SENSITIVITY_RANGE } from '../core/Persistence';
 import { formatTimer, solidButton, overlay, GREEN, INK } from './uiStyles';
 import { ChoiceRow, ToggleRow, SliderRow, Choice } from './SettingsControls';
@@ -23,10 +25,22 @@ export function SettingsPanel({ onResume, onRestart }: { onResume: () => void; o
   const settings = useGameStore((s) => s.settings);
   const update = useGameStore((s) => s.updateSettings);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, status === 'PAUSED');
+  useEffect(() => {
+    if (status !== 'PAUSED') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onResume();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [status, onResume]);
+
   if (status !== 'PAUSED') return null;
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Tactical pause and settings"

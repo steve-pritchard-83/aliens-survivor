@@ -1,4 +1,4 @@
-﻿# Aliens Survivor: Engineering Handoff
+# Aliens Survivor: Engineering Handoff
 
 > **Audience:** the next engineer or AI coding assistant.
 > **Verified against code at commit `b99ba2f`** (end of uplift phase 5). Audit and scoring: [`docs/AUDIT.md`](docs/AUDIT.md).
@@ -22,8 +22,8 @@
 |---|---|
 | No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
 | At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, muzzle flash in the rifle; the torch was removed, so one slot is free). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
-| Largest JS chunk â‰¤ 900 kB, total JS â‰¤ 1.6 MB, service-worker precache â‰¤ 36 MB | `scripts/check-budgets.mjs` |
-| Logic-layer coverage â‰¥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
+| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 36 MB | `scripts/check-budgets.mjs` |
+| Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
 | `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |
 
 Rules that tooling cannot fully check, so reviewers must:
@@ -56,39 +56,39 @@ URL flags: `?debug=1` shows FPS, draw calls, triangles and the quality tier; `?v
 
 ```
 src/
-â”œâ”€â”€ main.tsx, App.tsx          Entry, canvas + XR + scene composition
-â”œâ”€â”€ core/                      Engine services and state
-â”‚   â”œâ”€â”€ GameStore.ts / GameTypes.ts   Zustand store, status machine, runId, settings
-â”‚   â”œâ”€â”€ Persistence.ts         Validated localStorage for settings and best kills
-â”‚   â”œâ”€â”€ SettingsBinding.ts     Pushes settings into audio, input and haptics
-â”‚   â”œâ”€â”€ MissionLauncher.ts     launchMission(): start a run and bring up audio
-â”‚   â”œâ”€â”€ runState.ts / runSummary.ts   Per-run reset fields; scoring a finished run onto the leaderboard
-â”‚   â”œâ”€â”€ CombatEvents.ts        Target providers, queryTarget / resolveShot, wall impacts
-â”‚   â”œâ”€â”€ CorridorNav.ts         Hall rectangles, corners, spawn nodes, allocation-free clamping
-â”‚   â”œâ”€â”€ InputManager.ts        Keyboard, mouse, touch and XR input aggregation
-â”‚   â”œâ”€â”€ AudioManager.ts / AudioCatalog.ts / AmbienceLoop.ts   Web Audio buses, voice cap, sound table
-â”‚   â”œâ”€â”€ AdaptiveQuality.tsx / QualityState.ts   FPS governor and effect tiers (0..2)
-â”‚   â”œâ”€â”€ XRStore.ts, XRControllerState.ts, Haptics.ts, ComfortState.ts   XR session and controllers
-â”‚   â””â”€â”€ Platform.ts, e2e.ts, iwerHarness.ts, TrackerState.ts, MuzzleTexture.ts, SevenSegment.ts
-â”œâ”€â”€ data/
-â”‚   â”œâ”€â”€ balance.ts             Game numbers, score weights, upgrade catalogue and effects
-â”‚   â”œâ”€â”€ difficulty.ts          Recruit / Marine / Ultimate Badass profiles and per-run GameRules
-â”‚   â””â”€â”€ weapons.ts             WeaponProfile registry (M41A only), cycling order
-â”œâ”€â”€ levels/                    LevelDefinition (halls, junctions, spawns, starts, radar outline), validateLevel,
-â”‚   â””â”€â”€ sulaco.ts              the Sulaco map; index.ts holds the registry and the active level
-â”œâ”€â”€ systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort, scoring
-â”œâ”€â”€ entities/                  three.js / R3F world objects
-â”‚   â”œâ”€â”€ XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool}.ts
-â”‚   â”œâ”€â”€ SmallAlienSpawner.tsx + small/{smallSim,smallAssets}.ts
-â”‚   â”œâ”€â”€ PulseRifle.tsx + rifle/{RifleState,rifleFiring,rifleViewmodel,autoTarget}.ts
-â”‚   â”œâ”€â”€ PlayerController.tsx + player/{playerMotion,xrRig}.ts
-â”‚   â”œâ”€â”€ CorridorLevel.tsx + level/{envRaycast,trimSectorWalls}.ts
-â”‚   â”œâ”€â”€ MotionTracker.tsx + tracker/trackerCanvas.ts
-â”‚   â”œâ”€â”€ ComfortVignette.tsx, AlienEggs.tsx
-â”‚   â””â”€â”€ WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
-â””â”€â”€ ui/                        2D overlays and VR menus
-    â”œâ”€â”€ HUD.tsx â†’ MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
-    â””â”€â”€ VRHud.tsx â†’ VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
+├── main.tsx, App.tsx          Entry, canvas + XR + scene composition
+├── core/                      Engine services and state
+│   ├── GameStore.ts / GameTypes.ts   Zustand store, status machine, runId, settings
+│   ├── Persistence.ts         Validated localStorage for settings and best kills
+│   ├── SettingsBinding.ts     Pushes settings into audio, input and haptics
+│   ├── MissionLauncher.ts     launchMission(): start a run and bring up audio
+│   ├── runState.ts / runSummary.ts   Per-run reset fields; scoring a finished run onto the leaderboard
+│   ├── CombatEvents.ts        Target providers, queryTarget / resolveShot, wall impacts
+│   ├── CorridorNav.ts         Hall rectangles, corners, spawn nodes, allocation-free clamping
+│   ├── InputManager.ts        Keyboard, mouse, touch and XR input aggregation
+│   ├── AudioManager.ts / AudioCatalog.ts / AmbienceLoop.ts   Web Audio buses, voice cap, sound table
+│   ├── AdaptiveQuality.tsx / QualityState.ts   FPS governor and effect tiers (0..2)
+│   ├── XRStore.ts, XRControllerState.ts, Haptics.ts, ComfortState.ts   XR session and controllers
+│   └── Platform.ts, e2e.ts, iwerHarness.ts, TrackerState.ts, MuzzleTexture.ts, SevenSegment.ts
+├── data/
+│   ├── balance.ts             Game numbers, score weights, upgrade catalogue and effects
+│   ├── difficulty.ts          Recruit / Marine / Ultimate Badass profiles and per-run GameRules
+│   └── weapons.ts             WeaponProfile registry (M41A only), cycling order
+├── levels/                    LevelDefinition (halls, junctions, spawns, starts, radar outline), validateLevel,
+│   └── sulaco.ts              the Sulaco map; index.ts holds the registry and the active level
+├── systems/                   Pure logic: corridorPathing, combatMath, waveDirector, comfort, scoring
+├── entities/                  three.js / R3F world objects
+│   ├── XenomorphPool.tsx + xeno/{xenoAI,xenoDamage,xenoDeath,xenoPool}.ts
+│   ├── SmallAlienSpawner.tsx + small/{smallSim,smallAssets}.ts
+│   ├── PulseRifle.tsx + rifle/{RifleState,rifleFiring,rifleViewmodel,autoTarget}.ts
+│   ├── PlayerController.tsx + player/{playerMotion,xrRig}.ts
+│   ├── CorridorLevel.tsx + level/{envRaycast,trimSectorWalls}.ts
+│   ├── MotionTracker.tsx + tracker/trackerCanvas.ts
+│   ├── ComfortVignette.tsx, AlienEggs.tsx
+│   └── WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
+└── ui/                        2D overlays and VR menus
+    ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
+    └── VRHud.tsx → VRStatusPanel, vrControllers, vrPauseMenu, vrMenuModel, VRMenuNav, vrSessionEvents, VRAutoLauncher
 tests/   Vitest suites (logic, systems, UI models, budgets, credits)
 e2e/     Playwright (smoke, mobile, vr)
 scripts/ compress-audio, check-budgets, list-asset-metadata, tick-progress
@@ -102,13 +102,13 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 |---|---|
 | Desktop | WASD move, mouse look (pointer lock), left click fire, R reload, Q cycle weapon, Tab tracker, P/Esc pause, 1/2/3 pick upgrade |
 | Touch | Left half: move stick. Right half: look; the rifle auto-fires when a threat is in the crosshair. PAUSE button |
-| Quest | Left stick move Â· right stick turn (snap or smooth) Â· right trigger fire Â· A reload Â· left grip cycle weapon Â· B/Y or stick click pause Â· look at the left wrist for the tracker |
+| Quest | Left stick move · right stick turn (snap or smooth) · right trigger fire · A reload · left grip cycle weapon · B/Y or stick click pause · look at the left wrist for the tracker |
 
 **VR menus.** On entering VR the mission waits in a start menu: stick left/right picks the difficulty and a fresh trigger press deploys. **Pause (B/Y):** right or left stick up/down selects a row, left/right adjusts (snap turn, comfort vignette, reduced flash, handedness, seated mode, master/music/effects volume), trigger on *Resume* resumes. **Level-up:** stick left/right selects a card, trigger confirms (input is ignored for 0.6 s and until the trigger has been released). **Defeat/victory:** a fresh trigger press redeploys; nothing restarts automatically.
 
 ## 6. Architecture notes
 
-- **Status machine:** `MENU â†’ PLAYING â‡„ PAUSED / LEVEL_UP â†’ VICTORY | DEFEAT`. `startGame()` increments `runId`; pools and companions reset when they see a new `runId` while PLAYING.
+- **Status machine:** `MENU → PLAYING ⇄ PAUSED / LEVEL_UP → VICTORY | DEFEAT`. `startGame()` increments `runId`; pools and companions reset when they see a new `runId` while PLAYING.
 - **Frame ownership:** `PlayerController` ticks the store (`tick(dt, now)`) each frame and integrates movement into a local position ref; the store copy of the player position is throttled to 20 Hz for other systems.
 - **VR rig:** the head (XR viewer pose) is the player. Turns pivot about the head, locomotion and room-scale movement are clamped to the corridor with a 15 cm margin, and seated mode raises the origin. See `entities/player/xrRig.ts`.
 - **Quality:** `XRStore` picks the framebuffer scale once per device class (three.js ignores scale changes mid-session). `AdaptiveQuality` then adjusts effect tiers from measured FPS (sparks, decals, droplets, eggs).
