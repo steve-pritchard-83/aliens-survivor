@@ -81,6 +81,7 @@ describe('GameStore State Machine', () => {
     expect(useGameStore.getState().offeredUpgrades.length).toBeGreaterThan(0);
 
     // Choose extended drum upgrade
+    useGameStore.setState({ offeredUpgrades: [{ id: 'extended_mag' } as never] });
     useGameStore.getState().chooseUpgrade('extended_mag');
     expect(useGameStore.getState().status).toBe('PLAYING');
     expect(useGameStore.getState().maxAmmo).toBe(150);
@@ -89,6 +90,7 @@ describe('GameStore State Machine', () => {
   });
 
   it('applies acid damage reduction upgrade', () => {
+    useGameStore.setState({ status: 'LEVEL_UP', offeredUpgrades: [{ id: 'acid_proofing' } as never] });
     useGameStore.getState().chooseUpgrade('acid_proofing');
     useGameStore.getState().takeDamage(20, 1.0, true);
     // Acid damage reduced by 50% from 20 to 10

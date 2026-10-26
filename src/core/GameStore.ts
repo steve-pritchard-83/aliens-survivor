@@ -21,6 +21,16 @@ import {
 export type { GameStatus, WavePhase, ActiveThreat, GameSettings, GameState };
 export { PHASE_NAMES, computePhase, isSimulationFrozen };
 
+/** Fisher-Yates; the old `sort(() => Math.random() - 0.5)` was biased. */
+function shuffleInPlace<T>(items: T[]): void {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = items[i];
+    items[i] = items[j];
+    items[j] = tmp;
+  }
+}
+
 const initialSettings = loadSettings();
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -142,8 +152,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   addScreenShake: (intensity) => set((s) => ({ screenShake: Math.min(1.0, Math.max(s.screenShake, intensity)) })),
 
   registerKill: (kind = 'drone') => {
-    Haptics.kill();
     const s = get();
+    if (s.status !== 'PLAYING') return;
+    Haptics.kill();
     const earnedXp =
       kind === 'boss' ? BALANCE.XP.PRAETORIAN_KILL : kind === 'small' ? BALANCE.XP.SMALL_KILL : BALANCE.XP.DRONE_KILL;
     const nextXp = s.xp + earnedXp;
@@ -161,7 +172,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (triggerLevelUp) {
       const pool = UPGRADE_CATALOG.filter((u) => !s.activeUpgrades.includes(u.id));
-      const choices = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+      shuffleInPlace(pool);
+      const choices = pool.slice(0, 3);
       const calm = isCalm(s.activeThreats, s.smallThreat, s.playerPos[0], s.playerPos[2]);
       set({
         kills: nextKills,
@@ -181,6 +193,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   chooseUpgrade: (id) => {
     const s = get();
+    if (s.status !== 'LEVEL_UP' || !s.offeredUpgrades.some((u) => u.id === id)) return;
     const active = [...s.activeUpgrades, id];
     let maxAmmo = s.maxAmmo,
       ammo = s.ammo,

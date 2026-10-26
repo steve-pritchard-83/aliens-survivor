@@ -4,6 +4,9 @@ import { BALANCE, UPGRADE_CATALOG, UPGRADE_EFFECTS } from '../src/data/balance';
 import { WEAPONS } from '../src/data/weapons';
 
 const s = () => useGameStore.getState();
+/** Put one specific card on offer, as the level-up screen would. */
+const offer = (id: string) =>
+  useGameStore.setState({ status: 'LEVEL_UP', offeredUpgrades: UPGRADE_CATALOG.filter((u) => u.id === id) });
 
 describe('store: pause, resume and simulation gating', () => {
   beforeEach(() => s().startGame());
@@ -126,14 +129,34 @@ describe('store: progression and upgrades', () => {
   });
 
   it('applies upgrade effects from the balance table', () => {
+    offer('armor_boost');
     s().chooseUpgrade('armor_boost');
     expect(s().maxHp).toBe(BALANCE.PLAYER.MAX_HP + UPGRADE_EFFECTS.armor_boost.maxHpBonus);
     expect(s().hp).toBe(s().maxHp);
+    offer('fire_rate');
     s().chooseUpgrade('fire_rate');
     expect(s().fireInterval).toBe(WEAPONS.m41a.overclockedFireInterval);
+    offer('extended_mag');
     s().chooseUpgrade('extended_mag');
     expect(s().maxAmmo).toBe(WEAPONS.m41a.extendedMagazine);
     expect(s().ammo).toBe(WEAPONS.m41a.extendedMagazine);
+  });
+
+  it('applies a card once and ignores cards that were not offered', () => {
+    offer('armor_boost');
+    s().chooseUpgrade('fire_rate');
+    expect(s().status).toBe('LEVEL_UP');
+    s().chooseUpgrade('armor_boost');
+    s().chooseUpgrade('armor_boost');
+    expect(s().maxHp).toBe(BALANCE.PLAYER.MAX_HP + UPGRADE_EFFECTS.armor_boost.maxHpBonus);
+    expect(s().activeUpgrades.filter((id) => id === 'armor_boost')).toHaveLength(1);
+  });
+
+  it('ignores kills outside PLAYING', () => {
+    useGameStore.setState({ status: 'DEFEAT' });
+    s().registerKill('drone');
+    expect(s().kills).toBe(0);
+    expect(s().status).toBe('DEFEAT');
   });
 
   it('a new run resets progression', () => {

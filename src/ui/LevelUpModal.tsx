@@ -74,8 +74,8 @@ export function LevelUpModal() {
             <p style={{ color: '#aaffd4', fontSize: 14, lineHeight: 1.5, flex: 1, margin: '0 0 16px 0' }}>
               {card.desc}
             </p>
+            {/* No handler of its own: the click (or Enter) bubbles to the card, so an upgrade is applied once */}
             <button
-              onClick={() => chooseUpgrade(card.id)}
               style={{
                 width: '100%',
                 padding: '10px 16px',
