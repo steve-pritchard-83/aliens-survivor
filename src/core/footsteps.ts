@@ -17,7 +17,7 @@ export interface StepProfile {
 
 export const PLAYER_STEP: StepProfile = { stride: 1.5, volume: 0.4, rate: 1, rateJitter: 0.08 };
 export const DRONE_STEP: StepProfile = { stride: 1.7, volume: 0.6, rate: 1, rateJitter: 0.12 };
-/** The Praetorian and other big enemies: slower, deeper, louder. */
+/** The Alien Queen and other big enemies: slower, deeper, louder. */
 export const BOSS_STEP: StepProfile = { stride: 2.6, volume: 1, rate: 0.7, rateJitter: 0.06 };
 
 let lastPick = -1;

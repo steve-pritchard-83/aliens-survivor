@@ -87,18 +87,18 @@ describe('xeno pool', () => {
     expect(pool.every((p) => !p.active && !p.root.visible)).toBe(true);
   });
 
-  it('bosses use the Praetorian speed instead of the phase speed', () => {
+  it('bosses use the Alien Queen speed instead of the phase speed', () => {
     const pool = buildXenoPool(new THREE.Group(), []);
     spawnXeno(pool[1], {
       nodeX: 0,
       nodeY: 0,
       nodeZ: 0,
       isBoss: true,
-      hp: BALANCE.PRAETORIAN.HP,
-      scale: BALANCE.PRAETORIAN.SCALE,
+      hp: BALANCE.QUEEN.HP,
+      scale: BALANCE.QUEEN.SCALE,
       baseSpeed: 99
     });
     expect(pool[1].isBoss).toBe(true);
-    expect(pool[1].speed).toBeLessThan(BALANCE.PRAETORIAN.SPEED * 1.2);
+    expect(pool[1].speed).toBeLessThan(BALANCE.QUEEN.SPEED * 1.2);
   });
 });

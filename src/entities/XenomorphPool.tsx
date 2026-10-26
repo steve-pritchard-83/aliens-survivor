@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore, ActiveThreat, isSimulationFrozen } from '../core/GameStore';
 import { AudioManager } from '../core/AudioManager';
-import { CombatSystem, TargetProvider } from '../core/CombatEvents';
+import { CombatSystem } from '../core/CombatEvents';
 import { BALANCE } from '../data/balance';
 import { getActiveLevel } from '../levels';
 import {
@@ -20,13 +20,12 @@ import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { POOL_SIZE, PooledXenomorph, sanitizeClips } from './XenoTypes';
 import { buildXenoPool, resetXenoPool, spawnXeno } from './xeno/xenoPool';
 import { stepXenoFootsteps } from './xeno/xenoSteps';
-import { applyXenoHit, DeathCounter } from './xeno/xenoDamage';
+import type { DeathCounter } from './xeno/xenoDamage';
+import { buildQueenRig, animateQueen } from './xeno/queenRig';
+import { createXenoProvider } from './xeno/xenoProvider';
 import { stepXeno, XenoPose, XenoEvents } from './xeno/xenoAI';
 import { stepXenoDeath } from './xeno/xenoDeath';
 
-const _sphere = new THREE.Sphere(),
-  _ray = new THREE.Ray(),
-  _hitVec = new THREE.Vector3();
 const _pose: XenoPose = { pitch: 0, roll: 0 };
 const _events: XenoEvents = { playerDamage: 0, leapHit: false, slash: false, leapStarted: false };
 const THREAT_PUBLISH_SECONDS = 0.1;
@@ -93,39 +92,23 @@ export function XenomorphPool() {
   const bossPhasesRef = useRef(new Set<number>());
   const cleanClips = useMemo(() => sanitizeClips(animations), [animations]);
   const pool = useMemo(() => buildXenoPool(scene, cleanClips), [scene, cleanClips]);
+  const queenModel = useGLTF('/models/alien_queen.glb').scene;
+  const queen = useMemo(() => buildQueenRig(queenModel), [queenModel]);
 
   useEffect(() => {
     const c = containerRef.current;
     if (!c) return;
     pool.forEach((x) => c.add(x.root));
+    // Mounted (hidden) from the start so the shader warm-up compiles the Queen's material before she first appears
+    c.add(queen.pivot);
     return () => {
       pool.forEach((x) => c.remove(x.root));
+      c.remove(queen.pivot);
     };
-  }, [pool]);
+  }, [pool, queen]);
 
   useEffect(() => {
-    const xenoProvider: TargetProvider = {
-      query: (origin, dir, maxDist, out) => {
-        _ray.set(origin, dir);
-        let closestDist = Infinity;
-        for (let i = 0; i < pool.length; i++) {
-          const x = pool[i];
-          if (!x.active || x.state === 'DEAD') continue;
-          _sphere.center.set(x.x, x.y + 0.72, x.z);
-          _sphere.radius = x.state === 'SPAWNING' ? 0.54 : 0.84;
-          if (!_ray.intersectSphere(_sphere, _hitVec)) continue;
-          const d = origin.distanceTo(_hitVec);
-          if (d < closestDist && d <= maxDist) {
-            closestDist = d;
-            out.id = x.id;
-            out.point.copy(_hitVec);
-          }
-        }
-        return closestDist;
-      },
-      applyHit: (id, point, origin, dir, dmg) =>
-        applyXenoHit(pool[id], point, origin, dir, dmg, fxRef.current, deathCounter.current)
-    };
+    const xenoProvider = createXenoProvider(pool, () => fxRef.current, deathCounter.current);
     CombatSystem.registerProvider('xeno', xenoProvider);
     return () => CombatSystem.unregisterProvider('xeno');
   }, [pool]);
@@ -178,8 +161,12 @@ export function XenomorphPool() {
     for (let i = 0; i < pool.length; i++) {
       const x = pool[i];
       if (!x.active) continue;
-      x.mixer.update(dt);
-      for (let b = 0; b < 5; b++) if (x.limbBones[b]) x.limbBones[b]!.scale.setScalar(x.severedLimbs[b] ? 0.0001 : 1.0);
+      // The Alien Queen is a static mesh animated by animateQueen(); only drones have a skeleton to update
+      if (!x.isBoss) {
+        x.mixer.update(dt);
+        for (let b = 0; b < 5; b++)
+          if (x.limbBones[b]) x.limbBones[b]!.scale.setScalar(x.severedLimbs[b] ? 0.0001 : 1.0);
+      }
       if (x.state === 'DEAD') {
         if (stepXenoDeath(x, dt, _pose)) continue;
       } else {
@@ -187,6 +174,7 @@ export function XenomorphPool() {
         stepXenoFootsteps(i, x, px, pz);
         applyEvents(x, now);
       }
+      if (x.isBoss && queen.owner === x) animateQueen(queen, x, dt);
       x.root.position.set(x.x, x.y, x.z);
       x.root.rotation.set(_pose.pitch, x.yaw, _pose.roll, 'YXZ');
     }
@@ -215,9 +203,10 @@ export function XenomorphPool() {
       nodeY: node.position[1],
       nodeZ: node.position[2],
       isBoss,
-      hp: scaledHp(isBoss ? BALANCE.PRAETORIAN.HP : droneMaxHp(phase), rules),
-      scale: isBoss ? BALANCE.PRAETORIAN.SCALE : BALANCE.XENO_POOL.SCALE,
-      baseSpeed: droneBaseSpeed(phase)
+      hp: scaledHp(isBoss ? BALANCE.QUEEN.HP : droneMaxHp(phase), rules),
+      scale: BALANCE.XENO_POOL.SCALE,
+      baseSpeed: droneBaseSpeed(phase),
+      queen
     });
     AudioManager.play3D('vent_clang', free.x, free.y + 1.0, free.z, 0.85);
     if (isBoss) AudioManager.play3D('xeno_hiss1', free.x, free.y + 1.2, free.z, 1.0, 0.75);
@@ -245,3 +234,4 @@ function applyEvents(x: PooledXenomorph, now: number): void {
   if (useGameStore.getState().status === 'DEFEAT') AudioManager.play2D('marine_death', 0.9);
 }
 useGLTF.preload('/models/xenomorph.glb');
+useGLTF.preload('/models/alien_queen.glb');

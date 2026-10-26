@@ -28,7 +28,8 @@ function severLimb(
   fx: ImpactFXHandle | null
 ): void {
   const bone = t.limbBones[slot];
-  if (t.severedLimbs[slot] || !bone) return;
+  // The Alien Queen is one solid mesh: there are no drone limbs to shed
+  if (t.isBoss || t.severedLimbs[slot] || !bone) return;
   t.root.updateMatrixWorld(true);
   bone.getWorldPosition(_joint);
   t.severedLimbs[slot] = true;
@@ -56,7 +57,7 @@ function killXeno(t: PooledXenomorph, counter: DeathCounter, fx: ImpactFXHandle 
   AudioManager.play3D('xeno_explode1', t.x, t.y + 0.6, t.z, 0.88);
   AudioManager.play3D('xeno_bodyfall', t.x, 0.1, t.z, 0.8);
   AudioManager.play3D('acid_burn', t.x, 0.1, t.z, 0.85);
-  fx?.triggerAcidPool(t.x, t.z, 1.15);
+  fx?.triggerAcidPool(t.x, t.z, t.isBoss ? 2.0 : 1.15);
   fx?.startXenoMelt(t.id, XENO_DEATH_SECONDS);
   useGameStore.getState().registerKill(t.isBoss ? 'boss' : 'drone');
 }

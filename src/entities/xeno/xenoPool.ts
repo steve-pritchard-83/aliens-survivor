@@ -3,6 +3,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { BALANCE } from '../../data/balance';
 import { POOL_SIZE, LIMB_NAMES, PooledXenomorph, playClip, CLIP_IDLE } from '../XenoTypes';
 import { restoreMelt } from '../fx/meltTint';
+import { QueenRig, showDrone, showQueen } from './queenRig';
 
 export const XENO_BASE_EMISSIVE = { hex: 0x101c22, intensity: 0 };
 const BOSS_EMISSIVE_HEX = 0x331010;
@@ -66,6 +67,7 @@ export function buildXenoPool(scene: THREE.Group, clips: THREE.AnimationClip[]):
       actions,
       currentClip: '',
       materials,
+      skin: materials,
       limbBones,
       severedLimbs: [false, false, false, false, false]
     };
@@ -91,6 +93,8 @@ export interface SpawnParams {
   hp: number;
   scale: number;
   baseSpeed: number;
+  /** When set, a boss spawns as the Alien Queen on this rig instead of a scaled-up drone. */
+  queen?: QueenRig | null;
 }
 
 /** Brings a pooled drone to life at a spawn node. Visual reset only; audio is left to the caller. */
@@ -104,7 +108,7 @@ export function spawnXeno(x: PooledXenomorph, p: SpawnParams): void {
   x.x = p.nodeX;
   x.y = p.nodeY;
   x.z = p.nodeZ;
-  const speed = p.isBoss ? BALANCE.PRAETORIAN.SPEED : p.baseSpeed;
+  const speed = p.isBoss ? BALANCE.QUEEN.SPEED : p.baseSpeed;
   x.speed = speed * (Math.random() < 0.3 ? 0.82 : 0.94 + Math.random() * 0.18);
   x.laneOffset = (Math.random() - 0.5) * 0.24;
   x.preferCW = Math.random() < 0.5;
@@ -119,10 +123,15 @@ export function spawnXeno(x: PooledXenomorph, p: SpawnParams): void {
   x.root.scale.set(1, 1, 1);
   x.clonedMeshGroup.scale.setScalar(p.scale);
   x.clonedMeshGroup.position.set(0.09, -0.24, 0);
-  restoreMelt(x.materials);
-  for (let i = 0; i < x.materials.length; i++) {
-    x.materials[i].emissive.setHex(p.isBoss ? BOSS_EMISSIVE_HEX : XENO_BASE_EMISSIVE.hex);
-    x.materials[i].emissiveIntensity = XENO_BASE_EMISSIVE.intensity;
+  if (p.isBoss && p.queen) showQueen(p.queen, x);
+  else showDrone(p.queen, x);
+  restoreMelt(x.skin);
+  // The Alien Queen is shown as authored; only drone-based enemies get the base or boss tint
+  if (x.skin === x.materials) {
+    for (let i = 0; i < x.materials.length; i++) {
+      x.materials[i].emissive.setHex(p.isBoss ? BOSS_EMISSIVE_HEX : XENO_BASE_EMISSIVE.hex);
+      x.materials[i].emissiveIntensity = XENO_BASE_EMISSIVE.intensity;
+    }
   }
   x.root.position.set(x.x, x.y, x.z);
   x.root.visible = true;

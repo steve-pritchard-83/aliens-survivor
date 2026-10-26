@@ -18,10 +18,12 @@ describe('CREDITS.md stays in sync with the shipped models', () => {
     }
   });
 
-  it('flags every non-CC-BY model licence so attribution terms are not missed', () => {
+  it('names the licence of every model that is not plain CC BY 4.0, so restrictive terms are not missed', () => {
     for (const file of models) {
       const info = summarise(readGlbJson(readFileSync(`public/models/${file}`)));
-      expect(info.license, `${file} licence`).toMatch(/^CC-BY-4\.0/);
+      const licence = String(info.license).split(' ')[0];
+      if (/^CC-BY-4\.0/.test(licence)) continue;
+      expect(credits, `${file} licence ${licence}`).toContain(licence);
     }
   });
 });

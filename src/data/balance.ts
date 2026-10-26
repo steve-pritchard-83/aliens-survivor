@@ -36,16 +36,24 @@ export const BALANCE = {
     BASE_SPEEDS: [2.85, 3.35, 3.85, 4.35],
     MAX_HPS: [300, 360, 420, 480],
     SCALE: 0.45,
+    /** Hit sphere (centre height above the deck, radius, and radius while still emerging), metres. */
+    HIT_CENTER_Y: 0.72,
+    HIT_RADIUS: 0.84,
+    SPAWN_HIT_RADIUS: 0.54,
     LEAP_DAMAGE: 38,
     SLASH_DAMAGE: 34,
     SLASH_INTERVAL: 1.15,
     LEAP_MIN_DIST: 3.2,
     LEAP_MAX_DIST: 8.5
   },
-  PRAETORIAN: {
+  /** The Alien Queen boss (alien_queen.glb): one per phase 3 and 4, shown in place of a drone on a pool slot. */
+  QUEEN: {
     HP: 1100,
     SPEED: 3.1,
-    SCALE: 0.62,
+    /** Metres per model unit: the authored model is 295 units tall, so about 2.1 m (the corridor is 2.5 m high). */
+    SCALE: 0.0072,
+    HIT_CENTER_Y: 1.15,
+    HIT_RADIUS: 1.15,
     /** Multiplier on damage taken (0.65 = 35% damage resistance). */
     DAMAGE_TAKEN_MULT: 0.65
   },
@@ -60,7 +68,7 @@ export const BALANCE = {
   XP: {
     DRONE_KILL: 25,
     SMALL_KILL: 15,
-    PRAETORIAN_KILL: 150,
+    QUEEN_KILL: 150,
     LEVEL_THRESHOLDS: [50, 120, 220, 360, 550, 800, 1150]
   },
   TRACKER: {

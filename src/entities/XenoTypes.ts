@@ -52,6 +52,8 @@ export interface PooledXenomorph {
   actions: Record<string, THREE.AnimationAction>;
   currentClip: string;
   materials: THREE.MeshStandardMaterial[];
+  /** The materials currently on show (the drone's own, or the Alien Queen's while this slot is the boss). */
+  skin: THREE.MeshStandardMaterial[];
   limbBones: (THREE.Object3D | null)[];
   severedLimbs: boolean[];
 }

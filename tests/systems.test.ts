@@ -16,8 +16,8 @@ describe('combatMath', () => {
   it('boss takes reduced damage and emerging aliens take less', () => {
     expect(damageAgainstXeno(24, false, false)).toBe(24);
     expect(damageAgainstXeno(24, true, false)).toBeCloseTo(18);
-    expect(damageAgainstXeno(24, false, true)).toBeCloseTo(24 * BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT);
-    expect(damageAgainstXeno(24, true, true)).toBeCloseTo(18 * BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT);
+    expect(damageAgainstXeno(24, false, true)).toBeCloseTo(24 * BALANCE.QUEEN.DAMAGE_TAKEN_MULT);
+    expect(damageAgainstXeno(24, true, true)).toBeCloseTo(18 * BALANCE.QUEEN.DAMAGE_TAKEN_MULT);
   });
 
   it('acid resistance only applies to acid damage and only with the upgrade', () => {

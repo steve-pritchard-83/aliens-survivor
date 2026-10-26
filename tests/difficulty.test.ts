@@ -102,7 +102,7 @@ describe('difficulty in play', () => {
     }
     expect(scaledHp(300, DIFFICULTY.marine)).toBe(300);
     expect(scaledHp(300, DIFFICULTY.ultimate_badass)).toBe(375);
-    expect(scaledHp(BALANCE.PRAETORIAN.HP, DIFFICULTY.recruit)).toBe(880);
+    expect(scaledHp(BALANCE.QUEEN.HP, DIFFICULTY.recruit)).toBe(880);
   });
 
   it('small aliens spawn with scaled hit points', () => {

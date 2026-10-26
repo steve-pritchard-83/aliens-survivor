@@ -8,7 +8,7 @@ export interface DifficultyProfile {
   label: string;
   /** Multiplies spawn intervals (higher = fewer enemies). */
   spawnIntervalMult: number;
-  /** Multiplies drone, Praetorian and small-alien hit points. */
+  /** Multiplies drone, Alien Queen and small-alien hit points. */
   enemyHpMult: number;
   /** Multiplies every hit the player takes from enemies. */
   enemyDamageMult: number;

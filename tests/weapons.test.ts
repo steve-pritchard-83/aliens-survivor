@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as THREE from 'three';
 import { WEAPONS, WEAPON_ORDER, DEFAULT_WEAPON, nextWeapon, WeaponId, WeaponProfile } from '../src/data/weapons';
 import { useGameStore } from '../src/core/GameStore';
+import { UPGRADE_CATALOG } from '../src/data/balance';
 import { CombatSystem, TargetProvider } from '../src/core/CombatEvents';
 import { AudioManager } from '../src/core/AudioManager';
 import { createRifleState } from '../src/entities/rifle/RifleState';
@@ -87,8 +88,10 @@ describe('weapon switching in the store', () => {
   });
 
   it('switching swaps the profile, costs a reload and keeps owned upgrades', () => {
-    s().chooseUpgrade('extended_mag');
-    s().chooseUpgrade('fire_rate');
+    for (const id of ['extended_mag', 'fire_rate']) {
+      useGameStore.setState({ status: 'LEVEL_UP', offeredUpgrades: UPGRADE_CATALOG.filter((u) => u.id === id) });
+      s().chooseUpgrade(id);
+    }
     s().cycleWeapon(['m41a', TEST_ID] as WeaponId[]);
     expect(s().activeWeapon).toBe(TEST_ID);
     expect(s().maxAmmo).toBe(TEST_WEAPON.extendedMagazine);
@@ -151,7 +154,8 @@ describe('the rifle follows the active weapon profile', () => {
     updateFiring(rs, s(), true, 0.016, ctx);
     expect(applyHit.mock.calls[0][4].amount).toBe(TEST_WEAPON.damage);
     expect(ranges[0]).toBe(TEST_WEAPON.maxRange);
-    expect(rs.fireCooldown).toBe(TEST_WEAPON.fireInterval);
+    // The 0.016 s overshoot of the first frame is carried into the next interval
+    expect(rs.fireCooldown).toBeCloseTo(TEST_WEAPON.fireInterval - 0.016);
     expect(sound).toHaveBeenCalledWith(TEST_WEAPON.shotSounds);
     CombatSystem.unregisterProvider('xeno');
   });

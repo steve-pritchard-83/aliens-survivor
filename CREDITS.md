@@ -6,12 +6,14 @@ Regenerate the model rows with `node scripts/list-asset-metadata.mjs`.
 
 ## 3D models (`public/models/*.glb`)
 
-All nine shipped models carry their Sketchfab attribution in the glTF `asset.extras`, and all are licensed
-**CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/). That licence **requires visible attribution** to
-the author, a link to the licence and a note of any changes. The files are shipped as authored.
+All eight shipped models carry their Sketchfab attribution in the glTF `asset.extras`. Seven are licensed
+**CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/), which **requires visible attribution** to the
+author, a link to the licence and a note of any changes. The eighth, `alien_queen.glb`, is licensed
+**CC BY-NC-ND 4.0** (see the warning below). The files are shipped as authored.
 
 | File | Title | Author | Source |
 |---|---|---|---|
+| `alien_queen.glb` | alien_queen_posed_1 | Quasar3000 | https://sketchfab.com/3d-models/alien-queen-posed-1-5e094d8a752f4934a56eba3a24fce8ce |
 | `chestburster.glb` | ChestBurster | Love me pls (LoveMeToo) | https://sketchfab.com/3d-models/chestburster-ab7af0d34ee84e2db1b7576326a3a314 |
 | `corridor.glb` | Sci-Fi Corridors | SRFstudio | https://sketchfab.com/3d-models/sci-fi-corridors-e91df3be5acf4ad29d664f6fc20c125c |
 | `egg.glb` | Face Hugger Egg | by.antihrist | https://sketchfab.com/3d-models/face-hugger-egg-cbb1b8b38c1d49359ec36fbb2bb3020c |
@@ -23,7 +25,13 @@ the author, a link to the licence and a note of any changes. The files are shipp
 Note: a CC BY licence covers the 3D artist's work only. It does not license the underlying film, game or
 character IP depicted (see `docs/IP_REVIEW.md`).
 
-Unused source model: `assets/models/alien_queen.glb` is not shipped.
+> **Warning: `alien_queen.glb` is CC-BY-NC-ND-4.0** (http://creativecommons.org/licenses/by-nc-nd/4.0/).
+> *NonCommercial*: it may not be used for commercial purposes. *NoDerivatives*: modified versions may not be
+> shared. The game shows it with no geometry changes (it is scaled, posed and moved, given a brightness lift like the
+> drones so it is visible in the dim corridor,
+> its material is set opaque) and darkens it while the creature dies. Whether that, or hosting
+> the game publicly, is compatible with the licence is an owner decision; if it is not, replace the model or
+> obtain the author's permission. See `docs/IP_REVIEW.md`.
 
 ## Font
 

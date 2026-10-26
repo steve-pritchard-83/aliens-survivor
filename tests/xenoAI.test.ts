@@ -43,6 +43,7 @@ function makeXeno(overrides: Partial<PooledXenomorph> = {}): PooledXenomorph {
     actions: {},
     currentClip: '',
     materials: [],
+    skin: [],
     limbBones: [null, null, null, null, null],
     severedLimbs: [false, false, false, false, false],
     ...overrides
@@ -136,7 +137,7 @@ describe('xeno damage', () => {
     expect(drone.hp).toBeCloseTo(300 - 24);
     const boss = makeXeno({ isBoss: true, hp: 1100, maxHp: 1100 });
     applyXenoHit(boss, point, origin, dir, { amount: 24, source: 'player' }, null, counter);
-    expect(boss.hp).toBeCloseTo(1100 - 24 * BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT);
+    expect(boss.hp).toBeCloseTo(1100 - 24 * BALANCE.QUEEN.DAMAGE_TAKEN_MULT);
     const emerging = makeXeno({ state: 'SPAWNING' });
     applyXenoHit(emerging, point, origin, dir, { amount: 24, source: 'player' }, null, counter);
     expect(emerging.hp).toBeCloseTo(300 - 18);
@@ -157,6 +158,6 @@ describe('xeno damage', () => {
     const xpBefore = useGameStore.getState().xp;
     const boss = makeXeno({ isBoss: true, hp: 5, maxHp: 1100 });
     applyXenoHit(boss, point, origin, dir, { amount: 24, source: 'player' }, null, counter);
-    expect(useGameStore.getState().xp).toBeGreaterThanOrEqual(xpBefore + BALANCE.XP.PRAETORIAN_KILL);
+    expect(useGameStore.getState().xp).toBeGreaterThanOrEqual(xpBefore + BALANCE.XP.QUEEN_KILL);
   });
 });

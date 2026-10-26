@@ -100,7 +100,7 @@ describe('store: progression and upgrades', () => {
 
   it('levels at most once per kill even when XP overshoots several thresholds', () => {
     s().registerKill('boss');
-    expect(s().xp).toBe(BALANCE.XP.PRAETORIAN_KILL);
+    expect(s().xp).toBe(BALANCE.XP.QUEEN_KILL);
     expect(s().level).toBe(2);
     expect(s().status).toBe('LEVEL_UP');
   });

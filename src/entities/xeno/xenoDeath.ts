@@ -23,7 +23,7 @@ export function stepXenoDeath(x: PooledXenomorph, dt: number, pose: XenoPose): b
     x.y = -k * k * (3 - 2 * k) * 0.42;
     meltScale(k, _scale);
     x.root.scale.set(_scale.x, _scale.y, _scale.z);
-    tintMelt(x.materials, Math.min(1, k * 1.8));
+    tintMelt(x.skin, Math.min(1, k * 1.8));
   }
   if (x.stateTimer > 0) return false;
   x.active = false;

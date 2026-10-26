@@ -159,7 +159,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (s.status !== 'PLAYING') return;
     Haptics.kill();
     const earnedXp =
-      kind === 'boss' ? BALANCE.XP.PRAETORIAN_KILL : kind === 'small' ? BALANCE.XP.SMALL_KILL : BALANCE.XP.DRONE_KILL;
+      kind === 'boss' ? BALANCE.XP.QUEEN_KILL : kind === 'small' ? BALANCE.XP.SMALL_KILL : BALANCE.XP.DRONE_KILL;
     const nextXp = s.xp + earnedXp;
     const nextKills = s.kills + 1;
     const killsByKind = { ...s.killsByKind, [kind]: s.killsByKind[kind] + 1 };

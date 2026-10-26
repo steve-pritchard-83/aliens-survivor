@@ -3,7 +3,7 @@ import { BALANCE } from '../data/balance';
 import { isSpawnVisibleToPlayer } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
 
-/** First phase in which a Praetorian boss may appear. */
+/** First phase in which a Alien Queen boss may appear. */
 export const BOSS_FIRST_PHASE = 3;
 
 /** A boss spawns at most once per phase (phases 3 and 4), and never while another boss is alive. */

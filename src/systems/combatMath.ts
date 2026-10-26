@@ -10,7 +10,7 @@ export function damageAgainstXeno(amount: number, isSpawning: boolean, isBoss: b
   return (
     amount *
     (isSpawning ? BALANCE.WEAPON.SPAWNING_TARGET_DAMAGE_SCALE : 1) *
-    (isBoss ? BALANCE.PRAETORIAN.DAMAGE_TAKEN_MULT : 1)
+    (isBoss ? BALANCE.QUEEN.DAMAGE_TAKEN_MULT : 1)
   );
 }
 

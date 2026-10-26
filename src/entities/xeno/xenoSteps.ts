@@ -1,7 +1,7 @@
 import { POOL_SIZE } from '../XenoTypes';
 import { BOSS_STEP, DRONE_STEP, StrideCounter, playEnemyStep } from '../../core/footsteps';
 
-// Footsteps for the pooled drones and the Praetorian. Per-slot state lives here, indexed by pool slot, so the
+// Footsteps for the pooled drones and the Alien Queen. Per-slot state lives here, indexed by pool slot, so the
 // pooled entity type needs no extra fields.
 const counters = Array.from({ length: POOL_SIZE }, () => new StrideCounter());
 const lastX = new Float32Array(POOL_SIZE);
