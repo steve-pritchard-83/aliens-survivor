@@ -8,7 +8,7 @@ export const MB = 1024 * 1024;
 export const LIMITS = {
   largestChunkBytes: 900 * KB,
   totalJsBytes: 1.6 * MB,
-  precacheBytes: 48 * MB,
+  precacheBytes: 36 * MB,
   dynamicLights: 4
 };
 

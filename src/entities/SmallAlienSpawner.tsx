@@ -33,7 +33,7 @@ const CB_EMISSIVE = { hex: 0x28100c, intensity: 0 };
 const _pose: SmallPose = { pitch: 0, roll: 0, melt: 0 };
 const _events: SmallEvents = { playerDamage: 0, leapHit: false, died: false };
 const _meltScale = { x: 1, y: 1, z: 1 };
-// Reused threat record published to the store (read via getState by Bishop, tracker and auto-aim)
+// Reused threat record published to the store (read via getState by the tracker and auto-aim)
 const _threat: ActiveThreat = { id: SMALL_ALIEN_ID, x: 0, z: 0, state: 'PURSUING' };
 
 function clearSmallThreat(state: GameState): void {

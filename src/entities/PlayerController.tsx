@@ -1,11 +1,11 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
 import { BALANCE } from '../data/balance';
 import { isE2E } from '../core/e2e';
 import { InputManager } from '../core/InputManager';
+import { PLAYER_STEP, StrideCounter, playPlayerStep } from '../core/footsteps';
 import { AudioManager } from '../core/AudioManager';
 import { constrainToCorridorInto, XZ } from '../core/CorridorNav';
 import { getActiveLevel } from '../levels';
@@ -23,8 +23,7 @@ const _headLocal = new THREE.Vector3();
 
 export function PlayerController() {
   const { camera } = useThree();
-  const ripleyGltf = useGLTF('/models/ripley.glb');
-  const ripleyRef = useRef<THREE.Group>(null);
+  const strideRef = useRef(new StrideCounter());
   const yawRef = useRef(Math.PI);
   const pitchRef = useRef(0);
   const xrYawRef = useRef(0);
@@ -37,20 +36,6 @@ export function PlayerController() {
   const levelUpGate = useRef({ calm: 0, waiting: 0 });
 
   const status = useGameStore((s) => s.status);
-
-  // Clone Ellen Ripley character mesh, hiding upper head/haircap so first-person camera never clips inside her skull
-  const clonedRipley = useMemo(() => {
-    const clone = ripleyGltf.scene.clone(true);
-    clone.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const m = child as THREE.Mesh;
-        if (m.name.includes('RipleyHead') || m.name.includes('RipleyHair') || m.name.includes('RipleyEyes')) {
-          m.visible = false;
-        }
-      }
-    });
-    return clone;
-  }, [ripleyGltf.scene]);
 
   useEffect(() => {
     if (isE2E()) {
@@ -209,12 +194,16 @@ export function PlayerController() {
       xrOrigin ? BALANCE.PLAYER.XR_MOVE_SPEED : BALANCE.PLAYER.MOVE_SPEED
     );
     const pos = posRef.current;
+    const stepFromX = pos.x,
+      stepFromZ = pos.z;
     if (xrOrigin) {
       // VR: the head is the player; walking into a wall (by stick or by room-scale) is clamped and pushed back
       moveHeadClamped(xrOrigin, _headLocal, _delta.x, _delta.z, BALANCE.PLAYER.XR_WALL_MARGIN, pos);
     } else {
       constrainToCorridorInto(pos.x + _delta.x, pos.z + _delta.z, 0, pos);
     }
+
+    if (strideRef.current.add(Math.hypot(pos.x - stepFromX, pos.z - stepFromZ), PLAYER_STEP.stride)) playPlayerStep();
 
     let bobOffset = 0;
     if (moveMag > 0.05 && !xrOrigin) {
@@ -233,11 +222,6 @@ export function PlayerController() {
       camera.position.set(pos.x + rightX * shakeX, eyeY, pos.z + rightZ * shakeX);
     }
 
-    if (ripleyRef.current) {
-      ripleyRef.current.position.set(pos.x + Math.sin(yaw) * 0.14, 0.0, pos.z + Math.cos(yaw) * 0.14);
-      ripleyRef.current.rotation.set(0, yaw + Math.PI, 0);
-    }
-
     if (now - lastTransformSync.current > TRANSFORM_SYNC_SECONDS) {
       lastTransformSync.current = now;
       state.updatePlayerTransform(pos.x, EYE_HEIGHT + bobOffset, pos.z, yaw);
@@ -245,10 +229,6 @@ export function PlayerController() {
     AudioManager.updateListener(pos.x, eyeY, pos.z, yaw);
   });
 
-  return (
-    <group ref={ripleyRef} name="RipleyPlayerAvatar" scale={0.32}>
-      <primitive object={clonedRipley} />
-    </group>
-  );
+  // First person: there is no player model to draw
+  return null;
 }
-useGLTF.preload('/models/ripley.glb');

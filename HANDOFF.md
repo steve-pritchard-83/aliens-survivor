@@ -22,7 +22,7 @@
 |---|---|
 | No source file over **250 lines** (blank lines and comments excluded), **one statement per line**, no empty `catch` blocks, no unused locals or parameters | ESLint (`max-lines`, `max-statements-per-line`, `no-empty`), `tsc` |
 | At most **4 dynamic lights** (key light + beacon in `CorridorLevel`, muzzle flash in the rifle; the torch was removed, so one slot is free). Never mount or unmount a light at runtime: toggle `visible` or `intensity` | `scripts/check-budgets.mjs` and `tests/budgets.test.ts` |
-| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 48 MB | `scripts/check-budgets.mjs` |
+| Largest JS chunk ≤ 900 kB, total JS ≤ 1.6 MB, service-worker precache ≤ 36 MB | `scripts/check-budgets.mjs` |
 | Logic-layer coverage ≥ 80% lines / 75% functions / 65% branches | `vitest.config.ts` |
 | `CREDITS.md` lists every shipped model with its author and source | `tests/credits.test.ts` |
 
@@ -84,7 +84,7 @@ src/
 │   ├── PlayerController.tsx + player/{playerMotion,xrRig}.ts
 │   ├── CorridorLevel.tsx + level/{envRaycast,trimSectorWalls}.ts
 │   ├── MotionTracker.tsx + tracker/trackerCanvas.ts
-│   ├── BishopCompanion.tsx, BishopRig.ts, ComfortVignette.tsx, AlienEggs.tsx
+│   ├── ComfortVignette.tsx, AlienEggs.tsx
 │   └── WallImpactFX, XenomorphImpactFX, CorridorAtmosphereFX + fx/*
 └── ui/                        2D overlays and VR menus
     ├── HUD.tsx → MainMenu, VictoryScreen, Leaderboard, StatusBar, TouchControls, PwaInstallPrompt, SettingsPanel, LevelUpModal
@@ -112,6 +112,7 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 - **Frame ownership:** `PlayerController` ticks the store (`tick(dt, now)`) each frame and integrates movement into a local position ref; the store copy of the player position is throttled to 20 Hz for other systems.
 - **VR rig:** the head (XR viewer pose) is the player. Turns pivot about the head, locomotion and room-scale movement are clamped to the corridor with a 15 cm margin, and seated mode raises the origin. See `entities/player/xrRig.ts`.
 - **Quality:** `XRStore` picks the framebuffer scale once per device class (three.js ignores scale changes mid-session). `AdaptiveQuality` then adjusts effect tiers from measured FPS (sparks, decals, droplets, eggs).
+- **Footsteps:** metal deck steps (`stepmetal1-4.wav`), one per stride walked: the player from `core/footsteps.ts` (called in `PlayerController`), drones and the Praetorian from `entities/xeno/xenoSteps.ts` (the boss is slower, deeper and louder).
 - **Audio:** master/SFX gain buses, a 24-voice cap (gunfire, damage and UI are exempt), HRTF only for key cues, music through an `<audio>` element.
 - **Settings:** stored under `uscm_settings_v1` (validated per field); `SettingsBinding` applies them live.
 - **Difficulty:** the chosen profile is resolved once per run into `state.rules` (spawn interval, enemy HP and damage, concurrent drones, regen); marine equals the original balance, and it cannot change mid-run.

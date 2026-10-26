@@ -12,14 +12,12 @@ the author, a link to the licence and a note of any changes. The files are shipp
 
 | File | Title | Author | Source |
 |---|---|---|---|
-| `bishop.glb` | Bishop / Lance Henriksen (Aliens) | angemturc | https://sketchfab.com/3d-models/bishop-lance-henriksen-aliens-0357cb94f325416baecd1d7013e26206 |
 | `chestburster.glb` | ChestBurster | Love me pls (LoveMeToo) | https://sketchfab.com/3d-models/chestburster-ab7af0d34ee84e2db1b7576326a3a314 |
 | `corridor.glb` | Sci-Fi Corridors | SRFstudio | https://sketchfab.com/3d-models/sci-fi-corridors-e91df3be5acf4ad29d664f6fc20c125c |
 | `egg.glb` | Face Hugger Egg | by.antihrist | https://sketchfab.com/3d-models/face-hugger-egg-cbb1b8b38c1d49359ec36fbb2bb3020c |
 | `facehugger.glb` | Facehugger | Love me pls (LoveMeToo) | https://sketchfab.com/3d-models/facehugger-7a8c0a476c3845a48b73d9b94cbf0809 |
 | `motion_tracker.glb` | Alien Isolation Motion Tracker | letsteach1979 | https://sketchfab.com/3d-models/alien-isolation-motion-tracker-a2d468175c574939bb93a8c667e96c92 |
 | `pulse_rifle.glb` | Aliens Pulse Rifle | sirsaugsage | https://sketchfab.com/3d-models/aliens-pulse-rifle-70201c6c5c024b418110903c5bfa4046 |
-| `ripley.glb` | Ellen Ripley (Aliens) | Stefano Cagnani | https://sketchfab.com/3d-models/ellen-ripley-aliens-0dd45a371c1d4608aadf04a1ca88f1ff |
 | `xenomorph.glb` | Realistic Xenomorph Rig | NO DONT EAT ME CASEOH (Ferris wheel) | https://sketchfab.com/3d-models/realistic-xenomorph-rig-9b84acf1f7bf4ada867408a8d05c60d0 |
 
 Note: a CC BY licence covers the 3D artist's work only. It does not license the underlying film, game or

@@ -12,7 +12,7 @@ export type TargetKind = 'xeno' | 'small';
 
 export interface DamageSpec {
   amount: number;
-  source: 'player' | 'bishop';
+  source: 'player';
 }
 
 export interface TargetQueryOut {

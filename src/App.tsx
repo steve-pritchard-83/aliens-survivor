@@ -7,7 +7,6 @@ import { PlayerController } from './entities/PlayerController';
 import { PulseRifle } from './entities/PulseRifle';
 import { XenomorphPool } from './entities/XenomorphPool';
 import { SmallAlienSpawner } from './entities/SmallAlienSpawner';
-import { BishopCompanion } from './entities/BishopCompanion';
 import { WallImpactFX } from './entities/WallImpactFX';
 import { MotionTracker } from './entities/MotionTracker';
 import { HUD } from './ui/HUD';
@@ -60,7 +59,6 @@ export function App() {
             <PlayerController />
             <PulseRifle />
             <MotionTracker />
-            <BishopCompanion />
             <XenomorphPool />
             <SmallAlienSpawner />
             <VRHud />

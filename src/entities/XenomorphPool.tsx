@@ -19,6 +19,7 @@ import type { GameRules } from '../data/difficulty';
 import { XenomorphImpactFX, ImpactFXHandle } from './XenomorphImpactFX';
 import { POOL_SIZE, PooledXenomorph, sanitizeClips } from './XenoTypes';
 import { buildXenoPool, resetXenoPool, spawnXeno } from './xeno/xenoPool';
+import { stepXenoFootsteps } from './xeno/xenoSteps';
 import { applyXenoHit, DeathCounter } from './xeno/xenoDamage';
 import { stepXeno, XenoPose, XenoEvents } from './xeno/xenoAI';
 import { stepXenoDeath } from './xeno/xenoDeath';
@@ -183,6 +184,7 @@ export function XenomorphPool() {
         if (stepXenoDeath(x, dt, _pose)) continue;
       } else {
         stepXeno(x, px, pz, dt, _pose, _events);
+        stepXenoFootsteps(i, x, px, pz);
         applyEvents(x, now);
       }
       x.root.position.set(x.x, x.y, x.z);

@@ -18,7 +18,11 @@
 ### Changed (gameplay)
 - **Level-ups no longer freeze the game mid-fight.** If a hostile is within 14 m when the XP line is crossed, the upgrade is held back (a "FIELD PROMOTION READY" hint shows on flat screens) and the cards open after 1.5 s of calm, or after 60 s at the latest.
 
+### Added (audio)
+- **Metal deck footsteps** for the player and for drones and the Praetorian (heavier and deeper), one every stride actually walked, from four new sounds, `stepmetal1.wav` to `stepmetal4.wav`.
+
 ### Removed
+- **Bishop and the Ripley player model.** The AI companion (patrol, covering fire, rig) and the hidden first-person body are gone, along with their two models (about 14 MB less to download).
 - **The rifle torch** (flashlight): the spotlight, the F key, the Quest controller button and the `flashlightOn` state.
 
 ### Fixed
@@ -37,6 +41,6 @@
 - **Walking speed is now frame-rate independent:** 3.0 m/s on desktop and touch, 1.8 m/s in VR (`BALANCE.PLAYER.MOVE_SPEED`, `XR_MOVE_SPEED`). It used to integrate from a position refreshed only every 50 ms, so the real speed varied with frame rate (about 1.4 m/s at 60 fps, 2.8 at 30 fps). A first attempt at 1.2 m/s was too slow.
 - Facehugger and chestburster kills now award 15 XP (previously 25, the same as a drone).
 - `balance.ts` is the single source of truth for combat numbers (values unchanged unless listed here).
-- Sound effects and music are AAC and the largest script chunk dropped from 1.44 MB to 834 kB. Models are back to their original uncompressed files, so the offline cache is about 46 MB.
+- Sound effects and music are AAC and the largest script chunk dropped from 1.44 MB to 834 kB. Models are back to their original uncompressed files, so the offline cache is about 31.5 MB (after removing Bishop and Ripley).
 - Wall hit tests use a BVH and no longer allocate per shot; the motion tracker redraws at 20 Hz.
 - The Quest APK workflow now signs from repository secrets and fails clearly if they are missing; no credentials are stored in the repository.

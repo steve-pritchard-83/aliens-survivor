@@ -42,6 +42,10 @@ export type SoundKey =
   | 'distant_boom2'
   | 'console_alarm'
   | 'spark'
+  | 'step_metal1'
+  | 'step_metal2'
+  | 'step_metal3'
+  | 'step_metal4'
   | 'ui_beep'
   | 'defeat';
 
@@ -88,6 +92,10 @@ export const SOUND_URLS: Record<SoundKey, string> = {
   distant_boom2: '/audio/sfx_distant_boom2.m4a',
   console_alarm: '/audio/sfx_console_alarm.m4a',
   spark: '/audio/sfx_spark.m4a',
+  step_metal1: '/audio/stepmetal1.wav',
+  step_metal2: '/audio/stepmetal2.wav',
+  step_metal3: '/audio/stepmetal3.wav',
+  step_metal4: '/audio/stepmetal4.wav',
   ui_beep: '/audio/sfx_ui_beep.wav',
   defeat: '/audio/defeat.mp3'
 };

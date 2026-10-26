@@ -17,7 +17,7 @@ what is in use so that question can be answered deliberately.
 |---|---|---|
 | Titles and settings | `README.md`, `index.html` title, `manifest.json`, menus, `src/ui/*` | "Aliens Survivor", "USS Sulaco", "LV-426" (roadmap), "Sector 4" |
 | Corporations and organisations | `src/ui/PwaInstallPrompt.tsx`, `LevelUpModal.tsx`, `VRStatusCanvas.ts` | "Weyland-Yutani", "USCM" (United States Colonial Marines) |
-| Characters (names and likeness) | `ripley.glb`, `bishop.glb`, `src/entities/BishopCompanion.tsx`, `PlayerController.tsx` | Ellen Ripley, Bishop (Lance Henriksen likeness in the model title) |
+| Characters (names and likeness) | none shipped: the Ripley and Bishop models were removed from the game | (formerly Ellen Ripley and Bishop; the source files remain in `assets/models/`) |
 | Creatures | `xenomorph.glb`, `facehugger.glb`, `chestburster.glb`, `egg.glb`, Praetorian mini-boss | Xenomorph drone, Praetorian, Facehugger, Chestburster, Ovomorph |
 | Props and weapons | `pulse_rifle.glb` (M41A), `motion_tracker.glb` (M314), `src/entities/MotionTracker.tsx` | Model titles reference *Aliens* and *Alien: Isolation* |
 | Audio | `public/audio/*`, `assets/sound effects/**` | Sound effects and speech of unknown origin; some may be from films or games |

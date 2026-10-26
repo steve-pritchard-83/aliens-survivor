@@ -50,9 +50,6 @@
   * `alien_xenos_drone_SK_Xenos_Drone_skeleton|run1`
   * `alien_xenos_drone_SK_Xenos_Drone_skeleton|walk`
 
-### 1.4 Bishop Synthetic Companion (`/models/bishop.glb`) — 1.41 MB
-* Posable synthetic marine companion running alongside the player with procedural walk gait, aiming, and covering fire.
-
 ### 1.5 M314 Motion Tracker (`/models/motion_tracker.glb`) — 163 KB
 * Canonical USCM tracker model equipped with LED display grid, cathode sweep line, and range indicators.
 
@@ -60,7 +57,6 @@
 * **Facehugger (`/models/facehugger.glb`)** — 37 KB
 * **Chestburster (`/models/chestburster.glb`)** — 55 KB
 * **Ovomorph Alien Egg (`/models/egg.glb`)** — 528 KB
-* **Ripley Model (`/models/ripley.glb`)** — 534 KB
 
 ---
 
@@ -75,6 +71,7 @@
 
 ### 3.1 Background & Ambiance
 * `/audio/bgm_sulaco.m4a` — Atmospheric ambient tension loop
+* `/audio/stepmetal1.wav` to `stepmetal4.wav` — metal deck footsteps (keys `step_metal1` to `step_metal4`); the player, drones and the Praetorian play a random one per stride (`src/core/footsteps.ts`)
 * `/audio/sfx_distant_boom1.m4a` & `sfx_distant_boom2.m4a` — Distant Sulaco hull groans
 * `/audio/sfx_console_alarm.m4a` — Klaxon alert
 * `/audio/sfx_spark.m4a` — Electrical sparking

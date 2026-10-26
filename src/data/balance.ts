@@ -23,20 +23,6 @@ export const BALANCE = {
     /** Damage scale against aliens still emerging from vents (18 / 24). */
     SPAWNING_TARGET_DAMAGE_SCALE: 0.75
   },
-  BISHOP: {
-    DAMAGE: 24,
-    FIRE_INTERVAL_MIN: 0.24,
-    FIRE_INTERVAL_JITTER: 0.12,
-    ENGAGE_RANGE: 22,
-    FOLLOW_SPEED: 4.15,
-    CATCHUP_SPEED: 5.2,
-    /** Idle patrol: walking pace, how far from the player he may wander, and how close a waypoint may be to them. */
-    PATROL_SPEED: 1.7,
-    PATROL_LEASH: 12,
-    PATROL_PLAYER_GAP: 2.8,
-    /** A patrol path must keep at least this far from the player, so he never has to squeeze past them. */
-    PATROL_PATH_CLEARANCE: 1.7
-  },
   PHASES: {
     PHASE_1_END: 225,
     PHASE_2_END: 120,
