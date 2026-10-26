@@ -17,6 +17,7 @@ import {
   setRadarView
 } from './tracker/trackerCanvas';
 import { drawCrtNoise } from './tracker/trackerNoise';
+import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
 
 const MAX_RANGE: number = BALANCE.TRACKER.BASE_RANGE;
 const DRAW_HZ = 20;
@@ -57,6 +58,7 @@ export function MotionTracker() {
     tex.minFilter = THREE.LinearFilter;
     return { canvas: c, texture: tex };
   }, []);
+  useDisposeOnUnmount(texture);
 
   const publish = () => {
     texture.needsUpdate = true;

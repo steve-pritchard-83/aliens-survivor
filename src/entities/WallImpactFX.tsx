@@ -5,6 +5,7 @@ import { CombatSystem } from '../core/CombatEvents';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
 import { createBulletMarkTexture, createSparkTexture } from './fx/wallImpactTextures';
+import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
 
 const MAX_DECAL_COUNT = 48;
 const MAX_SPARK_COUNT = 160;
@@ -38,6 +39,7 @@ export function WallImpactFX() {
   const markTexture = useMemo(() => createBulletMarkTexture(), []);
   const sparkTexture = useMemo(() => createSparkTexture(), []);
   const decalGeo = useMemo(() => new THREE.PlaneGeometry(0.22, 0.22), []);
+  useDisposeOnUnmount(decalGeo);
 
   const decalStates = useMemo<DecalState[]>(
     () => Array.from({ length: MAX_DECAL_COUNT }, () => ({ active: false, age: 0, maxAge: 25.0 })),

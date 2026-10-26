@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
+import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
 
 const COUNT = 54;
 /** Mist exists in a disc around the player; puffs that drift out of it are recycled on the far side. */
@@ -63,6 +64,7 @@ export function MistFX() {
     geo.setAttribute('color', new THREE.BufferAttribute(col, 4));
     return { geometry: geo, drift: dr, seed: sd, texture: makePuffTexture() };
   }, []);
+  useDisposeOnUnmount(geometry, texture);
 
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState();

@@ -7,6 +7,7 @@ import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
 import { createAcidTextures, buildActualLimbTemplates } from './fx/acidFxAssets';
 import { createGibPool, createPuddlePool } from './fx/acidFxState';
+import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
 
 const _gibXZ = { x: 0, z: 0 };
 const PARTICLE_COUNT = 64,
@@ -30,6 +31,7 @@ export const XenomorphImpactFX = forwardRef<ImpactFXHandle>((_, ref) => {
 
   const { dropletTex, puddleTex } = useMemo(() => createAcidTextures(), []);
   const { geos: limbGeos, mat: limbMat } = useMemo(() => buildActualLimbTemplates(scene), [scene]);
+  useDisposeOnUnmount(dropletTex, puddleTex, limbMat, ...limbGeos);
   const particleVel = useMemo(() => new Float32Array(PARTICLE_COUNT * 3), []);
   const gibState = useMemo(() => createGibPool(GIB_POOL_SIZE), []);
   const puddleState = useMemo(() => createPuddlePool(PUDDLE_POOL_SIZE), []);

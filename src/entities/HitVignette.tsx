@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useGameStore } from '../core/GameStore';
+import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
 
 // Drawn in clip space like the comfort vignette, so it covers the whole view of each eye whatever the head does
 const VERTEX = /* glsl */ `
@@ -52,6 +53,8 @@ export function HitVignette() {
     material.uniforms.uFlash.value = flash;
     mesh.visible = flash > 0.01;
   });
+
+  useDisposeOnUnmount(material);
 
   if (!session) return null;
   return (
