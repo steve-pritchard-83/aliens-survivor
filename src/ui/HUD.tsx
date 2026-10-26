@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useStore } from 'zustand';
 import { useGameStore } from '../core/GameStore';
 import { InputManager, InputMode } from '../core/InputManager';
 import { AudioManager } from '../core/AudioManager';
@@ -41,11 +42,22 @@ export function HUD() {
   const [inputMode, setInputMode] = useState<InputMode>(InputManager.mode);
   const [isQuest] = useState(() => Platform.isQuest);
   const [isVrApp] = useState(() => Platform.isVrApp);
+  // Desktop and other browsers offer VR only when a headset is actually available
+  const [vrSupported, setVrSupported] = useState(() => Platform.isVrApp);
+  const hasXrSession = useStore(xrStore, (s) => s.session != null);
   const [isStandalone, setIsStandalone] = useState(true);
   const [pwaDismissed, setPwaDismissed] = useState(readPwaDismissed);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallEvent | null>(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const prevStatusRef = useRef(status);
+
+  useEffect(() => {
+    if (Platform.isVrApp) return;
+    navigator.xr
+      ?.isSessionSupported('immersive-vr')
+      .then(setVrSupported)
+      .catch((e) => console.warn('[HUD] VR support check failed', e));
+  }, []);
 
   useEffect(() => {
     const unsub = InputManager.onModeChange(setInputMode);
@@ -76,8 +88,17 @@ export function HUD() {
   }, [status]);
 
   const handleLaunch = async (mode: 'STANDARD' | 'VR') => {
+    if (mode === 'VR') {
+      // Enter first (this must happen inside the click): a failed entry must not leave a flat mission running
+      try {
+        await xrStore.enterVR();
+      } catch (e) {
+        console.warn('[HUD] enterVR failed', e);
+        return;
+      }
+      if (!xrStore.getState().session) return;
+    }
     launchMission();
-    if (mode === 'VR') xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e));
     try {
       await navigator.wakeLock?.request('screen');
     } catch {
@@ -163,9 +184,15 @@ export function HUD() {
       )}
       {status === 'PLAYING' && showStatusBar && inputMode !== 'XR' && !isQuest && <StatusBar />}
       {status === 'PLAYING' && inputMode === 'TOUCH' && !isQuest && <TouchControls onPause={pauseGame} />}
-      {status === 'PLAYING' && !isVrApp && isQuest && inputMode !== 'XR' && (
+      {isVrApp && !hasXrSession && (
+        // On Quest the flat page is only ever seen after leaving VR: offer the way back in
         <button
-          onClick={() => xrStore.enterVR().catch((e) => console.warn('[HUD] enterVR failed', e))}
+          onClick={() =>
+            xrStore
+              .enterVR()
+              .then(() => AudioManager.unlock())
+              .catch((e) => console.warn('[HUD] enterVR failed', e))
+          }
           style={solidButton({
             position: 'absolute',
             top: 20,
@@ -176,11 +203,11 @@ export function HUD() {
             letterSpacing: 2,
             color: INK,
             pointerEvents: 'auto',
-            zIndex: 30,
+            zIndex: 100,
             boxShadow: '0 0 25px rgba(0,255,136,0.6)'
           })}
         >
-          ENTER FULLSCREEN 3D VR
+          ENTER VR
         </button>
       )}
       {status === 'MENU' && isMobileDevice && !isStandalone && !pwaDismissed && (
@@ -205,7 +232,7 @@ export function HUD() {
       {!isVrApp && (status === 'MENU' || status === 'DEFEAT') && (
         <MainMenu
           status={status}
-          vrCapable={isQuest || isVrApp}
+          vrCapable={vrSupported}
           stats={{ timeRemaining, kills, accuracy, best }}
           difficulty={difficulty}
           onDifficulty={(id) => updateSettings({ difficulty: id })}

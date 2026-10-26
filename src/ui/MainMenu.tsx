@@ -41,7 +41,7 @@ export function MainMenu({
   const defeat = status === 'DEFEAT';
   const accent = defeat ? RED : GREEN;
   const intro = vrCapable
-    ? 'META QUEST 2 DETECTED. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready.'
+    ? 'VR HEADSET READY. Dual 6DoF Touch Motion Controls & Stereoscopic 3D ready.'
     : 'USS SULACO — SECTOR 4 CORRIDOR. Emergency klaxons active. Hold the corridor against Xenomorph breaches for 5 minutes until rescue dropship extraction.';
   const summary = `SURVIVAL TIME: ${formatTimer(300 - stats.timeRemaining)} | XENOMORPHS ELIMINATED: ${stats.kills} | ACCURACY: ${stats.accuracy}% | BEST: ${stats.best}`;
 

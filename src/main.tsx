@@ -6,13 +6,23 @@ import { useGameStore } from './core/GameStore';
 import { xrStore } from './core/XRStore';
 import { bindSettings } from './core/SettingsBinding';
 import { isE2E } from './core/e2e';
+import { canApplyUpdate } from './core/updatePolicy';
 
 // Register Workbox Service Worker for offline Mobile PWA & Meta Quest 2 asset caching.
 // A browser only looks for a new service worker when a page loads, and a Quest tab is usually resumed rather than
-// reloaded, so check on a timer and whenever the page becomes visible again. Never in the middle of a mission:
-// an update reloads the page.
-registerSW({
+// reloaded, so check on a timer and whenever the page becomes visible again. Applying an update reloads the page,
+// so a downloaded update waits (registerType 'prompt') until the player is between missions and outside VR.
+let updateReady = false;
+const applyUpdateIfSafe = () => {
+  if (!updateReady) return;
+  if (canApplyUpdate(useGameStore.getState().status, xrStore.getState().session != null)) void updateSW(true);
+};
+const updateSW = registerSW({
   immediate: true,
+  onNeedRefresh() {
+    updateReady = true;
+    applyUpdateIfSafe();
+  },
   onRegisteredSW(_url, registration) {
     if (!registration) return;
     const check = () => {
@@ -26,6 +36,13 @@ registerSW({
     });
   }
 });
+let lastStatus = useGameStore.getState().status;
+useGameStore.subscribe((s) => {
+  if (s.status === lastStatus) return;
+  lastStatus = s.status;
+  applyUpdateIfSafe();
+});
+xrStore.subscribe(applyUpdateIfSafe);
 
 // Test hook for the browser smoke test (?e2e=1 or dev server); inert in normal play
 if (isE2E()) {
