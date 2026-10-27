@@ -21,6 +21,11 @@
 - CI runs the browser tests on every push and pull request, uses a read-only token, cancels superseded runs, pins third-party actions in the signing job and validates the Gradle wrapper. `vercel.json` adds cache and security headers and 404s missing files instead of serving the app.
 - Cleanup: the torch, companion, gyro and other dead code are gone; game numbers and map layout (spark emitters, egg spots, lights) moved to `balance.ts` and the level definition; GPU resources are freed on unmount.
 
+### Changed (VR feel)
+- **Jog instead of walk** in VR: 2.8 m/s (was 1.8).
+- **Faster turning:** smooth turning is about 200 degrees a second (was about 126), and **pulling the turn stick straight back spins you round 180 degrees** in any turn mode.
+- **Less flicker:** the drifting mist is off in VR (its point sprites popped in and out per eye) and fixed foveated rendering is medium instead of maximum.
+
 ### Changed (boss)
 - **The Praetorian is replaced by the Alien Queen** (`alien_queen.glb`). Same behaviour and numbers (HP, speed, damage resistance, one per phase 3 and 4); the model is a single static mesh, so she is animated procedurally: breathing, a heavy stomping gait with tail swing, a rear-back and lunge for each slash, and a thrash, rear-up and slump when killed. She cannot be dismembered and her hit sphere now matches her size. **Licence note:** the model is CC BY-NC-ND 4.0; see `CREDITS.md`.
 

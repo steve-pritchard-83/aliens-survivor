@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useXR } from '@react-three/xr';
 import { useGameStore, isSimulationFrozen } from '../core/GameStore';
 import { quality } from '../core/QualityState';
 import { useDisposeOnUnmount } from './fx/useDisposeOnUnmount';
@@ -43,6 +44,9 @@ const smooth = (a: number, b: number, x: number): number => {
  * camera (no big fill-rate cost or popping) and recycle at the edge of the disc, so the haze is always around you.
  */
 export function MistFX() {
+  // Off in VR: each puff is a large point sprite, and a point vanishes the moment its centre leaves an eye's view, so
+  // puffs near the head popped in and out differently per eye (flicker). The fog gives VR the same look.
+  const { session } = useXR();
   const { geometry, drift, seed, texture } = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(COUNT * 3),
@@ -68,7 +72,7 @@ export function MistFX() {
 
   useFrame(({ clock }, dt) => {
     const state = useGameStore.getState();
-    if (isSimulationFrozen(state.status)) return;
+    if (session || isSimulationFrozen(state.status)) return;
     const [px, , pz] = state.playerPos;
     const t = clock.getElapsedTime();
     const pos = geometry.attributes.position as THREE.BufferAttribute,
@@ -97,7 +101,7 @@ export function MistFX() {
   });
 
   return (
-    <points geometry={geometry} frustumCulled={false} renderOrder={2}>
+    <points geometry={geometry} frustumCulled={false} renderOrder={2} visible={!session}>
       <pointsMaterial
         map={texture}
         vertexColors

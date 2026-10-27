@@ -139,7 +139,7 @@ docs/    AUDIT.md, IP_REVIEW.md, adr/, design/ (weapons, LV-426)
 1. **`@pmndrs/xr` emulator stub.** `vite.config.ts` aliases the library's `emulate.js` to `src/core/emulate-stub.js`; it otherwise adds ~6 MB. Keep the alias.
 2. **No impact lights.** Alien hits use an emissive flash and particle sparks; do not add lights for impacts.
 3. **Static meshes are frozen** (`matrixAutoUpdate = false`) in `CorridorLevel`; update world matrices before freezing if you change geometry.
-4. **Walking speed** is frame-rate independent: 3.0 m/s on desktop and touch (`BALANCE.PLAYER.MOVE_SPEED`) and 1.8 m/s in VR (`XR_MOVE_SPEED`). 1.2 m/s was tried and judged too slow; both values are untuned guesses until tested on a headset.
+4. **Walking speed** is frame-rate independent: 3.0 m/s on desktop and touch (`BALANCE.PLAYER.MOVE_SPEED`) and a 2.8 m/s jog in VR (`XR_MOVE_SPEED`; 1.8 felt like a slow walk on the headset). 1.2 m/s was tried and judged too slow; both values are untuned guesses until tested on a headset.
 5. **three-mesh-bvh is pinned to 0.8.x** to match drei's copy (two versions cause duplicate type declarations).
 6. **e2e builds include the IWER headset emulator** (`VITE_E2E_XR=1`, set by `playwright.config.ts`); production builds do not. IWER spoofs a Quest user agent, so the app auto-enters VR in those tests. Software-rendered XR runs at a few frames per second, so VR tests hold inputs for about a second.
 7. **PowerShell:** do not chain with `&&`; use `;`. Bash tool and npm scripts are fine.

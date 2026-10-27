@@ -13,7 +13,8 @@ export const xrStore = createXRStore({
   planeDetection: false,
   hitTest: false,
   anchors: false,
-  foveation: 1.0,
+  // Medium fixed foveation: the maximum (1.0) made the edges of the view shimmer against the fog and lights
+  foveation: 0.5,
   frameRate: () => 72,
   // three.js cannot change framebuffer scale mid-session, so pick it once per device class
   frameBufferScaling: (max: number) => Math.min(max, Platform.isQuest3 ? 0.85 : 0.8),

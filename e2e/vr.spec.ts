@@ -234,5 +234,5 @@ test('VR mission starts with the head on the start position and walks at the con
   // 1.2 m/s (CI and local runs, including the baseline commit), so a lower bound only measures the runner. That the
   // head moved at all is checked above; the configured speed is pinned by tests/playerMovement.test.ts.
   expect(speed).toBeGreaterThan(0);
-  expect(speed).toBeLessThan(2.1);
+  expect(speed).toBeLessThan(3.3);
 });

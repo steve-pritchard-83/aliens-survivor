@@ -131,9 +131,9 @@ describe('readHeadLocal', () => {
 });
 
 describe('configured walking speeds', () => {
-  it('keeps VR slower than flat-screen play, in a comfortable walking range', () => {
-    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeGreaterThan(1.5);
-    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThan(2.1);
-    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThan(BALANCE.PLAYER.MOVE_SPEED);
+  it('moves at a jog in VR, no faster than flat-screen play', () => {
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeGreaterThan(2.4);
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThan(3.2);
+    expect(BALANCE.PLAYER.XR_MOVE_SPEED).toBeLessThanOrEqual(BALANCE.PLAYER.MOVE_SPEED);
   });
 });

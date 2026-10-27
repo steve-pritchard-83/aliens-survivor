@@ -8,8 +8,8 @@ export const BALANCE = {
      * independent; 1.2 proved too slow on desktop, so this is a brisk walk.
      */
     MOVE_SPEED: 3.0,
-    /** Walking speed in m/s in VR, kept lower than flat-screen play for comfort. */
-    XR_MOVE_SPEED: 1.8,
+    /** Movement speed in m/s in VR: a jog (1.8 felt like a slow walk), a little under flat-screen play for comfort. */
+    XR_MOVE_SPEED: 2.8,
     /** Raises the XR origin for seated play (headset sits lower than when standing), metres. */
     SEATED_HEIGHT_OFFSET: 0.45,
     /** Keep-out distance from corridor walls for the headset, so the view cannot poke through geometry. */

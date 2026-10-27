@@ -20,6 +20,7 @@ export interface VRControllerInput {
 export interface VRControllerLatches {
   weaponCooldown: number;
   snapTurnLatched: boolean;
+  quickTurnLatched: boolean;
   pauseCooldown: number;
 }
 
@@ -28,13 +29,18 @@ export function createVRControllerInput(): VRControllerInput {
 }
 
 export function createVRControllerLatches(): VRControllerLatches {
-  return { weaponCooldown: 0, snapTurnLatched: false, pauseCooldown: 0 };
+  return { weaponCooldown: 0, snapTurnLatched: false, quickTurnLatched: false, pauseCooldown: 0 };
 }
 
 const SNAP_PRESS = 0.65;
 const SNAP_RELEASE = 0.25;
 const SMOOTH_DEADZONE = 0.15;
-const SMOOTH_TURN_RATE = 2.2;
+/** Full-deflection smooth turn, rad/s (about 200 degrees a second; it was 2.2, which felt sluggish). */
+const SMOOTH_TURN_RATE = 3.5;
+// Quick turn: pull the turn stick back past PRESS (and not far sideways) for 180 degrees; release below RELEASE
+const QUICK_TURN_PRESS = 0.8;
+const QUICK_TURN_RELEASE = 0.3;
+const QUICK_TURN_MAX_SIDEWAYS = 0.5;
 // Quest controller gamepad layout (xr-standard): 0 trigger, 1 grip, 3 stick click, 4 A/X, 5 B/Y
 const BTN_TRIGGER = 0;
 const BTN_GRIP = 1;
@@ -65,12 +71,32 @@ export function controllerRole(handedness: XRHandedness, leftHanded: boolean): '
   return handedness === (leftHanded ? 'left' : 'right') ? 'weapon' : 'off';
 }
 
-function applyTurn(turnAxis: number, dt: number, latches: VRControllerLatches): void {
+/**
+ * Pulling the turn stick straight back spins the player round 180 degrees, once per pull, in any turn mode (for an
+ * alien that has come up behind). Stick y is positive when pulled back (xr-standard).
+ */
+export function quickTurnDue(stickX: number, stickY: number, latches: VRControllerLatches): boolean {
+  if (latches.quickTurnLatched) {
+    if (stickY < QUICK_TURN_RELEASE) latches.quickTurnLatched = false;
+    return false;
+  }
+  if (stickY <= QUICK_TURN_PRESS || Math.abs(stickX) >= QUICK_TURN_MAX_SIDEWAYS) return false;
+  latches.quickTurnLatched = true;
+  return true;
+}
+
+function applyTurn(turnAxis: number, turnY: number, dt: number, latches: VRControllerLatches): void {
   const state = useGameStore.getState();
   comfort.turnRate = 0;
   // Turning only applies during play; otherwise the stick drives menus and must not queue turns
   if (state.status !== 'PLAYING') {
     latches.snapTurnLatched = Math.abs(turnAxis) > SNAP_RELEASE;
+    latches.quickTurnLatched = turnY > QUICK_TURN_RELEASE;
+    return;
+  }
+  if (quickTurnDue(turnAxis, turnY, latches)) {
+    comfort.snapPulse = SNAP_PULSE_SECONDS;
+    InputManager.addSnapTurn(Math.PI);
     return;
   }
   const snap = state.settings.snapAngle;
@@ -137,7 +163,7 @@ export function pollControllers(
         // rightStick* is the weapon-hand stick (the right one unless left-handed): turning and menu input
         out.rightStickX = sx;
         out.rightStickY = sy;
-        applyTurn(sx, dt, latches);
+        applyTurn(sx, sy, dt, latches);
       } else {
         out.moveX = sx;
         out.moveZ = -sy;
