@@ -83,6 +83,8 @@ export function VRHud() {
     const st = useGameStore.getState();
     if (st.status !== prevStatusRef.current) {
       prevStatusRef.current = st.status;
+      // A new menu opens in front of the head (follow() re-places a hidden panel)
+      if (statusMeshRef.current) statusMeshRef.current.visible = false;
       if (st.status === 'LEVEL_UP') {
         navRef.current.arm(0.6);
         selectedRef.current = 0;

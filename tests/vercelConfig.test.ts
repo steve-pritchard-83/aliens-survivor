@@ -18,6 +18,8 @@ describe('vercel.json', () => {
     const rule = config.headers.find((h) => h.source.includes('sw.js'));
     expect(rule?.source).toContain('index.html');
     expect(rule?.headers[0].value).toMatch(/max-age=0, must-revalidate/);
+    // The document itself is requested as "/", not "/index.html"
+    expect(valueFor('/', 'Cache-Control')).toMatch(/max-age=0, must-revalidate/);
   });
 
   it('caches hashed assets forever', () => {

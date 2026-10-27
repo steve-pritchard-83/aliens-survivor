@@ -27,6 +27,14 @@ test('boots, starts a mission, runs, pauses and resumes without page errors', as
 
   await page.getByRole('button', { name: 'RESUME MISSION' }).click();
   await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
+
+  // Escape pauses and resumes too (a second Escape handler once resumed and then re-paused straight away)
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__game?.getState().status === 'PAUSED');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => window.__game?.getState().status === 'PLAYING');
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  expect(await page.evaluate(() => window.__game!.getState().status)).toBe('PLAYING');
   expect(errors).toEqual([]);
 });
 

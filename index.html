@@ -27,10 +27,11 @@
             session.addEventListener('end', function () {
               ended = true;
             });
-            // If the app never claims the session (bundle failed to load), do not strand the player in a black headset
+            // If the app never claims the session (the bundle failed to load), do not strand the player in a black
+            // headset. Generous, so a slow first load after an update still gets its session
             setTimeout(function () {
               if (!handedOver) session.end().catch(function () {});
-            }, 20000);
+            }, 90000);
           }, function () {});
           xr.requestSession = function (mode, init) {
             if (mode === 'immersive-vr' && !handedOver && !ended) {

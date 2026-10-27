@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useGameStore } from '../core/GameStore';
 import { useFocusTrap } from './useFocusTrap';
 import { SNAP_ANGLE_OPTIONS, VIGNETTE_OPTIONS, MOUSE_SENSITIVITY_RANGE } from '../core/Persistence';
@@ -27,15 +27,7 @@ export function SettingsPanel({ onResume, onRestart }: { onResume: () => void; o
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, status === 'PAUSED');
-  useEffect(() => {
-    if (status !== 'PAUSED') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onResume();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [status, onResume]);
-
+  // Escape needs no handler here: InputManager already maps it (with P) to the pause toggle
   if (status !== 'PAUSED') return null;
 
   return (
