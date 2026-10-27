@@ -9,8 +9,9 @@ import { canApplyUpdate } from './updatePolicy';
 //   files itself, which doubles the first-visit download.
 // - A browser only looks for a new worker when a page loads, and a Quest tab is usually resumed rather than
 //   reloaded, so check on a timer and whenever the page becomes visible again.
-// - Applying an update reloads the page, so a downloaded update waits (registerType 'prompt') until the player is
-//   between missions and outside VR.
+// - A new worker takes control as soon as it installs (workbox skipWaiting + clientsClaim in vite.config.ts) and the
+//   page is not reloaded: the next launch runs the new version. The prompt path below only matters if a worker is
+//   ever left waiting; it then reloads between missions and outside VR.
 let started = false;
 let updateReady = false;
 let updateSW: (reload?: boolean) => Promise<void> = () => Promise.resolve();

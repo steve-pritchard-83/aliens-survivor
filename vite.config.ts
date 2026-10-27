@@ -27,6 +27,11 @@ export default defineConfig({
       includeAssets: ['models/*.glb', 'audio/*.wav', 'audio/*.m4a', 'audio/*.mp3', 'fonts/*.otf'],
       manifest: false, // Using public/manifest.json directly per PRD structure
       workbox: {
+        // A new worker takes over as soon as it has installed, without reloading the page (in 'prompt' mode the
+        // plugin only reloads when a worker is left waiting). A running mission keeps its loaded code, and the next
+        // launch runs the new version. Waiting for a safe moment did not work on Quest: the app is always in VR.
+        skipWaiting: true,
+        clientsClaim: true,
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,glb,wav,m4a,mp3,otf,json}'],
         globIgnores: ['**/emulate*', '**/*room*', '**/office_*']
